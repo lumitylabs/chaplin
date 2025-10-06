@@ -45,9 +45,6 @@ function LoginModal() {
           <p>Perfeito para jogos, projetos,</p>
           <p>assistentes e tarefas desafiadoras</p>
         </div>
-
-
-
         <IconGrid />
       </div>
       Sign In
@@ -71,6 +68,17 @@ function Login() {
   return (
     <>
       <div className="w-screen h-screen bg-[#18181B] font-inter">
+        <div className="flex items-center justify-between p-4">
+          <div className="font-extrabold text-white text-xl">persona</div>
+          <div className="flex gap-3 font-medium">
+            <div className="p-1 px-5 border-[#303136] border-2 rounded-4xl text-white w-25 flex justify-center items-center">
+              Discord
+            </div>
+            <div className="p-1 px-5 bg-white rounded-4xl w-25 flex justify-center items-center">
+              Docs
+            </div>
+          </div>
+        </div>
         <div className="flex flex-row items-center justify-center gap-10 pt-20">
           <LoginModal />
           <ImageBg />
