@@ -3,6 +3,8 @@ import React from "react";
 import Avatar from "../../../assets/Avatar.png";
 import Persona from "../../../assets/Persona.png";
 import FavoriteIcon from "../../../assets/star_icon.svg";
+import SimpleBar from "simplebar-react";
+import "simplebar-react/dist/simplebar.min.css";
 
 function PersonaItem({ name, image }) {
   return (
@@ -17,9 +19,24 @@ function YourPersonas() {
   return (
     <div className="flex flex-col gap-3">
       Your Personas
-      <div className="flex flex-col gap-3">
-        <PersonaItem name="Orc" image={Persona} />
-        <PersonaItem name="Orc" image={Persona} />
+      <div className="">
+        <SimpleBar
+          style={{ maxHeight: "15rem", minHeight: "15rem" }}
+          autoHide={false}
+          className="pl-4 pr-6"
+          id="scrollbar"
+        >
+          <div className="flex flex-col gap-3">
+            <PersonaItem name="Orc" image={Persona} />
+            <PersonaItem name="Orc" image={Persona} />
+            <PersonaItem name="Orc" image={Persona} />
+            <PersonaItem name="Orc" image={Persona} />
+            <PersonaItem name="Orc" image={Persona} />
+            <PersonaItem name="Orc" image={Persona} />
+            <PersonaItem name="Orc" image={Persona} />
+            <PersonaItem name="Orc" image={Persona} />
+          </div>
+        </SimpleBar>
       </div>
     </div>
   );
@@ -36,9 +53,30 @@ function UserAccount() {
 
 function UserFavorites() {
   return (
-    <div className="flex gap-3 items-center">
-      <img className="w-4 h-4" src={FavoriteIcon} />
-      <div className="">Favorites</div>
+    <div className="flex flex-col gap-3">
+      <div className="flex gap-3 items-center">
+        <img className="w-4 h-4" src={FavoriteIcon} />
+        <div className="">Favorites</div>
+      </div>
+      <div className="">
+        <SimpleBar
+          style={{ maxHeight: "15rem", minHeight: "15rem" }}
+          autoHide={false}
+          className="pl-4 pr-6"
+          id="scrollbar"
+        >
+          <div className="flex flex-col gap-3">
+            <PersonaItem name="Orc" image={Persona} />
+            <PersonaItem name="Orc" image={Persona} />
+            <PersonaItem name="Orc" image={Persona} />
+            <PersonaItem name="Orc" image={Persona} />
+            <PersonaItem name="Orc" image={Persona} />
+            <PersonaItem name="Orc" image={Persona} />
+            <PersonaItem name="Orc" image={Persona} />
+            <PersonaItem name="Orc" image={Persona} />
+          </div>
+        </SimpleBar>
+      </div>
     </div>
   );
 }
@@ -57,7 +95,7 @@ function NavbarHeader() {
 function PersonaNavbar() {
   return (
     <div className="w-[15%] h-full bg-[#D9D9D9] font-inter p-5 flex flex-col justify-between">
-      <div className="flex flex-col gap-10">
+      <div className="flex flex-col gap-8">
         <NavbarHeader />
         <UserFavorites />
         <YourPersonas />
