@@ -51,32 +51,16 @@ function UserAccount() {
   );
 }
 
-function UserFavorites() {
+function PersonaPage() {
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-3 font-semibold text-[#817676]">
       <div className="flex gap-3 items-center">
-        <img className="w-4 h-4" src={FavoriteIcon} />
+        <div className="">All</div>
+      </div>
+      <div className="flex gap-3 items-center">
         <div className="">Favorites</div>
       </div>
-      <div className="">
-        <SimpleBar
-          style={{ maxHeight: "15rem", minHeight: "15rem" }}
-          autoHide={false}
-          className="pl-4 pr-6"
-          id="scrollbar"
-        >
-          <div className="flex flex-col gap-3">
-            <PersonaItem name="Orc" image={Persona} />
-            <PersonaItem name="Orc" image={Persona} />
-            <PersonaItem name="Orc" image={Persona} />
-            <PersonaItem name="Orc" image={Persona} />
-            <PersonaItem name="Orc" image={Persona} />
-            <PersonaItem name="Orc" image={Persona} />
-            <PersonaItem name="Orc" image={Persona} />
-            <PersonaItem name="Orc" image={Persona} />
-          </div>
-        </SimpleBar>
-      </div>
+      
     </div>
   );
 }
@@ -97,7 +81,7 @@ function PersonaNavbar() {
     <div className="w-[15%] h-full bg-[#D9D9D9] font-inter p-5 flex flex-col justify-between">
       <div className="flex flex-col gap-8">
         <NavbarHeader />
-        <UserFavorites />
+        <PersonaPage />
         <YourPersonas />
       </div>
       <UserAccount />
