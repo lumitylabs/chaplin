@@ -10,6 +10,7 @@ import Icon5 from "../assets/login_app_icon_5.svg";
 import Icon6 from "../assets/login_app_icon_6.svg";
 import Icon7 from "../assets/login_app_icon_7.svg";
 import MetaMaskIcon from "../assets/metamask_icon.png";
+import LumityFooter from "../assets/login_powered_by_lumity.svg";
 import Navbar from "../components/ui/general/Navbar";
 
 function IconButton({ icon }) {
@@ -36,23 +37,25 @@ function IconGrid() {
 
 function LoginModal() {
   return (
-    <div className="w-[420px] h-[420px] bg-[#26272B] text-white p-10 flex flex-col items-center justify-between rounded-2xl">
-      <div className=" flex flex-col items-center gap-5">
-        <div className="flex flex-col items-center font-extrabold text-3xl">
-          <p>Get access to create</p>
-          <p>and use your personas</p>
+    <div className="w-[420px] h-[420px] -ml-32">
+      <div className="w-[420px] h-[420px] bg-[#26272B] text-white p-10 flex flex-col items-center justify-between rounded-2xl absolute ml-30 ">
+        <div className=" flex flex-col items-center gap-5">
+          <div className="flex flex-col items-center font-extrabold text-3xl">
+            <p>Get access to create</p>
+            <p>and use your personas</p>
+          </div>
+          <div className="flex flex-col items-center text-sm">
+            <p>Perfeito para jogos, projetos,</p>
+            <p>assistentes e tarefas desafiadoras</p>
+          </div>
+          <IconGrid />
         </div>
-        <div className="flex flex-col items-center text-sm">
-          <p>Perfeito para jogos, projetos,</p>
-          <p>assistentes e tarefas desafiadoras</p>
-        </div>
-        <IconGrid />
+        Sign In
+        <button className="w-full h-10 text-black bg-[#D9D9D9] rounded-lg font-semibold hover:bg-[#e4e0e0] flex items-center  justify-center gap-5">
+          <img src={MetaMaskIcon} />
+          Continue with MetaMask
+        </button>
       </div>
-      Sign In
-      <button className="w-full h-10 text-black bg-[#D9D9D9] rounded-lg font-semibold hover:bg-[#e4e0e0] flex items-center  justify-center gap-5">
-        <img src={MetaMaskIcon} />
-        Continue with MetaMask
-      </button>
     </div>
   );
 }
@@ -65,14 +68,29 @@ function ImageBg() {
   );
 }
 
+function Footer() {
+  return (
+    <div className="flex flex-col gap-5 justify-center items-center mt-8">
+      <div className="flex text-[#818182] gap-3 text-sm">
+        <div className="w-25">How it Works</div>
+        <div className="w-25">Blog</div>
+      </div>
+      <img src={LumityFooter} />
+    </div>
+  );
+}
+
 function Login() {
   return (
     <>
       <div className="w-screen h-screen bg-[#18181B] font-inter">
-        <Navbar/>
-        <div className="flex flex-row items-center justify-center gap-10 pt-20">
-          <LoginModal />
-          <ImageBg />
+        <Navbar />
+        <div className="flex flex-col items-center justify-between gap-10 pt-20 relative">
+          <div className="flex flex-row items-center justify-center">
+            <LoginModal />
+            <ImageBg />
+          </div>
+          <Footer />
         </div>
       </div>
     </>
