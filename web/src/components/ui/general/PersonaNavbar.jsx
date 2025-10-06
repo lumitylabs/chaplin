@@ -78,7 +78,7 @@ function NavbarHeader() {
 
 function PersonaNavbar() {
   return (
-    <div className="w-[15%] h-full bg-[#D9D9D9] font-inter p-5 flex flex-col justify-between">
+<div className="fixed left-0 top-0 h-screen w-[15%] bg-[#D9D9D9] font-inter p-5 flex flex-col justify-between">
       <div className="flex flex-col gap-8">
         <NavbarHeader />
         <PersonaPage />
