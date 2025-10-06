@@ -10,6 +10,7 @@ import Icon5 from "../assets/login_app_icon_5.svg";
 import Icon6 from "../assets/login_app_icon_6.svg";
 import Icon7 from "../assets/login_app_icon_7.svg";
 import MetaMaskIcon from "../assets/metamask_icon.png";
+import Navbar from "../components/ui/general/Navbar";
 
 function IconButton({ icon }) {
   return (
@@ -68,17 +69,7 @@ function Login() {
   return (
     <>
       <div className="w-screen h-screen bg-[#18181B] font-inter">
-        <div className="flex items-center justify-between p-4">
-          <div className="font-extrabold text-white text-xl">persona</div>
-          <div className="flex gap-3 font-medium">
-            <div className="p-1 px-5 border-[#303136] border-2 rounded-4xl text-white w-25 flex justify-center items-center">
-              Discord
-            </div>
-            <div className="p-1 px-5 bg-white rounded-4xl w-25 flex justify-center items-center">
-              Docs
-            </div>
-          </div>
-        </div>
+        <Navbar/>
         <div className="flex flex-row items-center justify-center gap-10 pt-20">
           <LoginModal />
           <ImageBg />
