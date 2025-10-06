@@ -37,8 +37,8 @@ function IconGrid() {
 
 function LoginModal() {
   return (
-    <div className="w-[420px] h-[420px] -ml-32">
-      <div className="w-[420px] h-[420px] bg-[#26272B] text-white p-10 flex flex-col items-center justify-between rounded-2xl absolute ml-30 ">
+    <div className="w-[420px] h-[420px] lg:-ml-32">
+      <div className="w-[420px] h-[420px] bg-[#26272B] text-white p-10 flex flex-col items-center justify-between rounded-2xl absolute lg:ml-30 ">
         <div className=" flex flex-col items-center gap-5">
           <div className="flex flex-col items-center font-extrabold text-3xl">
             <p>Get access to create</p>
@@ -62,7 +62,7 @@ function LoginModal() {
 
 function ImageBg() {
   return (
-    <div className="w-[1000px] h-[600px]">
+    <div className="w-[1000px] h-[600px] hidden lg:block">
       <img src={LoginBg} />
     </div>
   );
