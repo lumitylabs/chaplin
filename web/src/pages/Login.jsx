@@ -15,7 +15,7 @@ import Navbar from "../components/ui/general/Navbar";
 
 function IconButton({ icon }) {
   return (
-    <div className="p-2 bg-[#363639] rounded-xl">
+    <div className="p-2 bg-[#363639] rounded-xl w-8 h-8">
       <img src={icon} />
     </div>
   );
