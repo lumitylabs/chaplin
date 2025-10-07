@@ -95,7 +95,7 @@ function Home() {
   return (
     <>
       <div className="bg-[#4A4A4A] w-screen h-screen font-inter">
-        <div className="flex h-full w-full">
+        <div className="flex h-full w-[75%] ml-[15%]">
           <PersonaNavbar />
           <div className="flex flex-col gap-3 p-6 w-full">
             <TopBar />
