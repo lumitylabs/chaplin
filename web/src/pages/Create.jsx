@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import PersonaNavbar from "../components/ui/general/PersonaNavbar";
 import InputBox from "../components/ui/general/InputBox";
 import InputBoxClean from "../components/ui/general/InputBoxClean";
@@ -12,6 +12,9 @@ import LockOpenIcon from "../assets/open_lock_icon.svg";
 import LockClosedIcon from "../assets/closed_lock_icon.svg";
 import OutputIcon from "../assets/output_icon.svg";
 import PlayIcon from "../assets/play_icon.svg";
+import ResponseIcon from "../assets/reponse_icon.svg";
+import CloseIcon from "../assets/close_icon.svg";
+import ExpandBox from "../components/ui/general/ExpandBox";
 
 function BasicForm({ formData, setFormData }) {
   return (
@@ -73,7 +76,7 @@ function SaveButton() {
   );
 }
 
-function ProjectDescription({ formData, setFormData }) {
+function ProjectDescription({ formData, setFormData, setShowModal }) {
   return (
     <div className="flex flex-col gap-3 mt-20">
       <div className="flex items-center gap-2">
@@ -83,17 +86,18 @@ function ProjectDescription({ formData, setFormData }) {
           <div className="h-0.5 w-50 bg-[#585858]"></div>
         </div>
       </div>
-      <InputBoxClean
+      <ExpandBox
         size={"15rem"}
         formData={formData}
         setFormData={setFormData}
         field="personaDescription"
+        setShowModal={setShowModal}
       />
     </div>
   );
 }
 
-function Specialist({ number, name, prompt }) {
+function Specialist({ number, name, prompt, setShowModal }) {
   const [formData, setFormData] = useState({
     prompt: prompt,
   });
@@ -114,11 +118,12 @@ function Specialist({ number, name, prompt }) {
 
         <div className="flex flex-col gap-2">
           <div className="text-[#989898]">Prompt</div>
-          <InputBoxClean
+          <ExpandBox
             size={"18rem"}
             formData={formData}
             setFormData={setFormData}
             field="prompt"
+            setShowModal={setShowModal}
           />
         </div>
       </div>
@@ -130,7 +135,7 @@ function Specialist({ number, name, prompt }) {
   );
 }
 
-function WorkGroup() {
+function WorkGroup({setShowModal}) {
   return (
     <div className="">
       <div className="min-h-80 w-100 border border-[#585858] rounded-xl">
@@ -144,15 +149,15 @@ function WorkGroup() {
         </div>
         {/** body */}
         <div className="flex flex-col items-center justify-center gap-10 mb-10">
-          <Specialist number={1} name={"Orc"} prompt={"Orc putasso"} />
-          <Specialist number={1} name={"Orc"} prompt={"Orc putasso"} />
+          <Specialist number={1} name={"Orc"} prompt={"Orc putasso"} setShowModal={setShowModal}/>
+          <Specialist number={1} name={"Orc"} prompt={"Orc putasso"} setShowModal={setShowModal}/>
         </div>
       </div>
     </div>
   );
 }
 
-function Output() {
+function Output({setShowModal}) {
   const [formData, setFormData] = useState({
     prompt: prompt,
   });
@@ -164,8 +169,8 @@ function Output() {
         <div className="h-0.5 w-20 bg-[#585858]"></div>
       </div>
       <div className="flex flex-col gap-3">
-        <div className="text-[#989898] font-semibold text-md">Output</div>
-        <InputBoxClean
+        <div className="text-[#989898] font-semibold text-md">Input</div>
+        <ExpandBox
           size={"18rem"}
           formData={formData}
           setFormData={setFormData}
@@ -173,24 +178,81 @@ function Output() {
           hasButton={true}
           buttonName={"Run"}
           maxLength={200}
+          setShowModal={setShowModal}
         />
+        <div className="text-[#989898] font-semibold text-md">Output</div>
         <div
           className="flex flex-col gap-1 text-sm text-[#B0B0B0] border border-[#666] rounded-md px-3 py-2 h-30"
           style={{ width: "18rem" }}
         >
-            Waiting prompt...
+          Waiting prompt...
         </div>
       </div>
     </div>
   );
 }
 
-function CreateWorkGroup({ formData, setFormData }) {
+function CreateWorkGroup({ formData, setFormData, setShowModal }) {
   return (
     <div className="flex">
-      <ProjectDescription formData={formData} setFormData={setFormData} />
-      <WorkGroup />
-      <Output />
+      <ProjectDescription formData={formData} setFormData={setFormData} setShowModal={setShowModal}/>
+      <WorkGroup  setFormData={setFormData} setShowModal={setShowModal} />
+      <Output  setFormData={setFormData} setShowModal={setShowModal}  />
+    </div>
+  );
+}
+
+function Modal({ setShowModal }) {
+  const modalRef = useRef(null);
+
+  function handleClickOutside(e) {
+    // Se o clique não estiver dentro do conteúdo do modal
+    if (modalRef.current && !modalRef.current.contains(e.target)) {
+      setShowModal(false);
+    }
+  }
+
+  return (
+    <div
+      className="bg-black/30 w-screen h-screen fixed z-10 backdrop-blur-sm flex items-center justify-center"
+      onClick={handleClickOutside}
+    >
+      <div
+        ref={modalRef}
+        className="w-250 h-150 bg-[#2D2D2D] rounded-4xl border border-[#6C6C6C] p-10"
+      >
+        {/* header */}
+        <div className="flex justify-between">
+          <div className="flex gap-2">
+            <div>
+              <img src={ResponseIcon} alt="" />
+            </div>
+            <div className="flex items-baseline flex-col">
+              <div className="text-sm font-semibold text-white">
+                StoryTeller Output
+              </div>
+              <div className="text-sm text-[#747474]">
+                Inspect the output of storyteller below.
+              </div>
+            </div>
+          </div>
+          <div
+            className="cursor-pointer"
+            onClick={() => setShowModal(false)}
+          >
+            <img src={CloseIcon} alt="" />
+          </div>
+        </div>
+
+        <div className="mt-5 w-[calc(100%)] h-[calc(100%-4rem)] bg-[#363636] rounded-2xl p-5 text-white text-sm overflow-auto">
+          What is Lorem Ipsum? Lorem Ipsum is simply dummy text of the printing
+          and typesetting industry. Lorem Ipsum has been the industry's standard
+          dummy text ever since the 1500s, when an unknown printer took a galley
+          of type and scrambled it to make a type specimen book. It has survived
+          not only five centuries, but also the leap into electronic
+          typesetting, remaining essentially unchanged...
+        </div>
+      </div>
     </div>
   );
 }
@@ -202,12 +264,15 @@ function Create() {
     tag: "",
   });
 
+  const [showModal, setShowModal] = useState(false);
+
   return (
     <>
-<div className="bg-[#4A4A4A] min-h-screen font-inter ">
+      <div className="bg-[#4A4A4A] min-h-screen font-inter ">
+        {showModal ? <Modal setShowModal={setShowModal}/>: <></>}
         <div className="flex h-full w-full">
           <PersonaNavbar />
-         <div className="ml-[15%] w-[75%] p-12 flex flex-col gap-5 text-[#D0D0D0] ">
+          <div className="ml-[15%] w-[75%] p-12 flex flex-col gap-5 text-[#D0D0D0] ">
             <BackButton></BackButton>
             <div className="flex flex-row justify-between">
               <div className="flex gap-20 ">
@@ -216,7 +281,7 @@ function Create() {
               </div>
               <SaveButton />
             </div>
-            <CreateWorkGroup />
+            <CreateWorkGroup setShowModal={setShowModal} />
           </div>
         </div>
       </div>
