@@ -10,6 +10,8 @@ import Icon7 from "../assets/login_app_icon_7.svg";
 import MetaMaskIcon from "../assets/metamask_icon.png";
 import LumityFooter from "../assets/login_powered_by_lumity.svg";
 import Navbar from "../components/ui/general/Navbar";
+import "simplebar-react/dist/simplebar.min.css";
+import SimpleBar from 'simplebar-react';
 
 // --- COMPONENTES AUXILIARES ---
 
@@ -135,23 +137,26 @@ function Footer() {
 }
 
 function Login() {
-  return (
-    <div className="bg-[#18181B] font-inter text-white overflow-hidden">
-      <Navbar />
 
-      <main
-        className="
+  return (
+    <SimpleBar style={{ maxHeight: '100vh' }} className="login-page-scrollbar">
+      <div className="bg-[#18181B] font-inter text-white overflow-hidden">
+        <Navbar />
+
+        <main
+          className="
           relative min-h-screen flex flex-col justify-start items-center
           md:flex-row md:justify-center md:items-center
           md:overflow-visible pb-16 md:pb-0
         "
-      >
-        <ImageBg />
-        <LoginModal />
-      </main>
+        >
+          <ImageBg />
+          <LoginModal />
+        </main>
 
-      <Footer />
-    </div>
+        <Footer />
+      </div>
+    </SimpleBar>
   );
 }
 
