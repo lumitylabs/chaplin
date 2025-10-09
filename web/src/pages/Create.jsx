@@ -1,15 +1,15 @@
+
+
 import React, { useRef, useState } from "react";
 import PersonaNavbar from "../components/ui/general/PersonaNavbar";
 import InputBox from "../components/ui/general/InputBox";
-import InputBoxClean from "../components/ui/general/InputBoxClean";
-
 import BackIcon from "../assets/back_icon.svg";
 import EditIcon from "../assets/edit_icon.svg";
 import GenerateWandIcon from "../assets/generate_wand_icon.svg";
 import Persona from "../assets/persona.png";
 import PublicIcon from "../assets/public_icon.svg";
 import LockOpenIcon from "../assets/open_lock_icon.svg";
-import LockClosedIcon from "../assets/closed_lock_icon.svg";
+// import LockClosedIcon from "../assets/closed_lock_icon.svg";
 import OutputIcon from "../assets/output_icon.svg";
 import PlayIcon from "../assets/play_icon.svg";
 import ResponseIcon from "../assets/reponse_icon.svg";
@@ -17,6 +17,7 @@ import CloseIcon from "../assets/close_icon.svg";
 import ExpandBox from "../components/ui/general/ExpandBox";
 
 function BasicForm({ formData, setFormData }) {
+
   return (
     <div className="flex flex-col gap-3 ">
       Visibility
@@ -49,7 +50,9 @@ function BasicForm({ formData, setFormData }) {
   );
 }
 
+
 function PersonaImage() {
+
   return (
     <div className="relative w-30 h-30">
       <img src={Persona} alt="" className="w-30 h-30 rounded-2xl" />
@@ -61,6 +64,7 @@ function PersonaImage() {
 }
 
 function BackButton() {
+
   return (
     <div className="">
       <img src={BackIcon} alt="" />
@@ -69,6 +73,7 @@ function BackButton() {
 }
 
 function SaveButton() {
+
   return (
     <div className="p-2 bg-[#D9D9D9] h-6 w-20 flex items-center justify-center rounded-xl cursor-pointer text-[#989898]">
       Save
@@ -76,7 +81,8 @@ function SaveButton() {
   );
 }
 
-function ProjectDescription({ formData, setFormData, setShowModal }) {
+
+function ProjectDescription({ description, onOpenModal }) { 
   return (
     <div className="flex flex-col gap-3 mt-20">
       <div className="flex items-center gap-2">
@@ -88,20 +94,15 @@ function ProjectDescription({ formData, setFormData, setShowModal }) {
       </div>
       <ExpandBox
         size={"15rem"}
-        formData={formData}
-        setFormData={setFormData}
-        field="personaDescription"
-        setShowModal={setShowModal}
+        value={description} 
+        placeholder="Persona description..."
+        onOpenModal={onOpenModal}
       />
     </div>
   );
 }
 
-function Specialist({ number, name, prompt, setShowModal }) {
-  const [formData, setFormData] = useState({
-    prompt: prompt,
-  });
-
+function Specialist({ number, name, prompt, onOpenModal }) {
   return (
     <div className="w-80 h-50 border border-[#585858] rounded-xl font-inter text-sm flex flex-col justify-between">
       <div className="flex flex-col gap-3 p-4">
@@ -120,10 +121,9 @@ function Specialist({ number, name, prompt, setShowModal }) {
           <div className="text-[#989898]">Prompt</div>
           <ExpandBox
             size={"18rem"}
-            formData={formData}
-            setFormData={setFormData}
-            field="prompt"
-            setShowModal={setShowModal}
+            value={prompt} 
+            placeholder="Specialist prompt..."
+            onOpenModal={onOpenModal}
           />
         </div>
       </div>
@@ -135,7 +135,7 @@ function Specialist({ number, name, prompt, setShowModal }) {
   );
 }
 
-function WorkGroup({setShowModal}) {
+function WorkGroup({ workgroupData, onOpenSpecialistModal }) { 
   return (
     <div className="">
       <div className="min-h-80 w-100 border border-[#585858] rounded-xl">
@@ -149,19 +149,23 @@ function WorkGroup({setShowModal}) {
         </div>
         {/** body */}
         <div className="flex flex-col items-center justify-center gap-10 mb-10">
-          <Specialist number={1} name={"Orc"} prompt={"Orc putasso"} setShowModal={setShowModal}/>
-          <Specialist number={1} name={"Orc"} prompt={"Orc putasso"} setShowModal={setShowModal}/>
+
+          {workgroupData.map((specialist, index) => (
+            <Specialist
+              key={specialist.id}
+              number={index + 1}
+              name={specialist.name}
+              prompt={specialist.prompt}
+              onOpenModal={() => onOpenSpecialistModal(index)} // Pass the index
+            />
+          ))}
         </div>
       </div>
     </div>
   );
 }
 
-function Output({setShowModal}) {
-  const [formData, setFormData] = useState({
-    prompt: prompt,
-  });
-
+function Output({ input, output, onOpenModal }) {
   return (
     <div className="flex items-baseline">
       <div className="flex items-center">
@@ -172,104 +176,208 @@ function Output({setShowModal}) {
         <div className="text-[#989898] font-semibold text-md">Input</div>
         <ExpandBox
           size={"18rem"}
-          formData={formData}
-          setFormData={setFormData}
-          field="prompt"
+          value={input} 
+          placeholder="Input prompt..."
+          onOpenModal={onOpenModal}
           hasButton={true}
           buttonName={"Run"}
           maxLength={200}
-          setShowModal={setShowModal}
         />
         <div className="text-[#989898] font-semibold text-md">Output</div>
         <div
           className="flex flex-col gap-1 text-sm text-[#B0B0B0] border border-[#666] rounded-md px-3 py-2 h-30"
           style={{ width: "18rem" }}
         >
-          Waiting prompt...
+          {output}
         </div>
       </div>
     </div>
   );
 }
 
-function CreateWorkGroup({ formData, setFormData, setShowModal }) {
+function CreateWorkGroup({ formData, onOpenModal }) { 
   return (
     <div className="flex">
-      <ProjectDescription formData={formData} setFormData={setFormData} setShowModal={setShowModal}/>
-      <WorkGroup  setFormData={setFormData} setShowModal={setShowModal} />
-      <Output  setFormData={setFormData} setShowModal={setShowModal}  />
+
+      <ProjectDescription
+        description={formData.personaDescription}
+        onOpenModal={() => onOpenModal({ type: "description" })}
+      />
+      <WorkGroup
+        workgroupData={formData.workgroup}
+        onOpenSpecialistModal={(index) => onOpenModal({ type: "specialist", index })}
+      />
+      <Output
+        input={formData.io.input}
+        output={formData.io.output}
+        onOpenModal={() => onOpenModal({ type: "io_input" })}
+      />
     </div>
   );
 }
 
-function Modal({ setShowModal }) {
+
+
+function Modal({ initialText, onSave, onClose }) {
   const modalRef = useRef(null);
+  const [currentText, setCurrentText] = useState(initialText);
+
+  const handleAttemptClose = () => {
+    const hasUnsavedChanges = initialText !== currentText;
+
+    if (hasUnsavedChanges) {
+      const userConfirmed = window.confirm(
+        "You have unsaved changes. Are you sure you want to close?"
+      );
+      if (userConfirmed) {
+        onClose();
+      }
+    } else {
+      onClose();
+    }
+  };
 
   function handleClickOutside(e) {
-    // Se o clique não estiver dentro do conteúdo do modal
     if (modalRef.current && !modalRef.current.contains(e.target)) {
-      setShowModal(false);
+      handleAttemptClose();
     }
+  }
+
+  function handleSave() {
+    onSave(currentText);
+    onClose();
   }
 
   return (
     <div
-      className="bg-black/30 w-screen h-screen fixed z-10 backdrop-blur-sm flex items-center justify-center"
+      className="bg-black/30 w-screen h-screen fixed z-10 top-0 left-0 backdrop-blur-sm flex items-center justify-center"
       onClick={handleClickOutside}
     >
       <div
         ref={modalRef}
-        className="w-250 h-150 bg-[#2D2D2D] rounded-4xl border border-[#6C6C6C] p-10"
+        className="w-250 h-150 bg-[#2D2D2D] rounded-4xl border border-[#6C6C6C] p-10 flex flex-col"
       >
-        {/* header */}
-        <div className="flex justify-between">
+        <div className="flex justify-between items-start">
           <div className="flex gap-2">
             <div>
               <img src={ResponseIcon} alt="" />
             </div>
             <div className="flex items-baseline flex-col">
               <div className="text-sm font-semibold text-white">
-                StoryTeller Output
+                Edit Content
               </div>
               <div className="text-sm text-[#747474]">
-                Inspect the output of storyteller below.
+                Modify the content below and click save.
               </div>
             </div>
           </div>
-          <div
-            className="cursor-pointer"
-            onClick={() => setShowModal(false)}
-          >
+          <div className="cursor-pointer" onClick={handleAttemptClose}>
             <img src={CloseIcon} alt="" />
           </div>
         </div>
 
-        <div className="mt-5 w-[calc(100%)] h-[calc(100%-4rem)] bg-[#363636] rounded-2xl p-5 text-white text-sm overflow-auto">
-          What is Lorem Ipsum? Lorem Ipsum is simply dummy text of the printing
-          and typesetting industry. Lorem Ipsum has been the industry's standard
-          dummy text ever since the 1500s, when an unknown printer took a galley
-          of type and scrambled it to make a type specimen book. It has survived
-          not only five centuries, but also the leap into electronic
-          typesetting, remaining essentially unchanged...
+        <textarea
+          value={currentText}
+          onChange={(e) => setCurrentText(e.target.value)}
+          className="mt-5 w-full flex-grow bg-[#363636] rounded-2xl p-5 text-white text-sm outline-none resize-none"
+        />
+
+        <div className="flex justify-end mt-4">
+          <button
+            onClick={handleSave}
+            className="bg-[#E0E0E0] text-black font-semibold py-2 px-6 rounded-lg hover:bg-white transition-colors"
+          >
+            Save
+          </button>
         </div>
       </div>
     </div>
   );
 }
 
+
+
+
 function Create() {
+
   const [formData, setFormData] = useState({
     name: "",
     category: "",
     tag: "",
+    personaDescription: "",
+    workgroup: [
+      { id: 1, name: "Orc", prompt: "An Orc chieftain who is angry." },
+      { id: 2, name: "Elf", prompt: "A wise Elf loremaster." },
+    ],
+    io: {
+      input: "",
+      output: "Waiting for input...",
+    },
   });
 
   const [showModal, setShowModal] = useState(false);
 
+  const [editingField, setEditingField] = useState(null);
+
+  function handleOpenModal(fieldIdentifier) {
+    setEditingField(fieldIdentifier);
+    setShowModal(true);
+  }
+  
+
+  function handleCloseModal() {
+    setShowModal(false);
+    setEditingField(null); 
+  }
+
+
+  function handleSaveModal(newText) {
+    if (!editingField) return;
+
+    const { type, index } = editingField;
+
+    setFormData((prevData) => {
+        const newData = { ...prevData };
+        if(type === 'description') {
+            newData.personaDescription = newText;
+        } else if (type === 'specialist') {
+            const newWorkgroup = [...newData.workgroup];
+            newWorkgroup[index] = { ...newWorkgroup[index], prompt: newText };
+            newData.workgroup = newWorkgroup;
+        } else if (type === 'io_input') {
+            newData.io = { ...newData.io, input: newText };
+        }
+        return newData;
+    });
+  }
+
+
+  function getInitialTextForModal() {
+    if (!editingField) return "";
+
+    const { type, index } = editingField;
+    if(type === 'description') {
+        return formData.personaDescription;
+    } else if (type === 'specialist') {
+        return formData.workgroup[index]?.prompt || "";
+    } else if (type === 'io_input') {
+        return formData.io.input;
+    }
+    return "";
+  }
+
+
   return (
     <>
       <div className="bg-[#4A4A4A] min-h-screen font-inter ">
-        {showModal ? <Modal setShowModal={setShowModal}/>: <></>}
+
+        {showModal && (
+          <Modal
+            onClose={handleCloseModal}
+            onSave={handleSaveModal}
+            initialText={getInitialTextForModal()}
+          />
+        )}
         <div className="flex h-full w-full">
           <PersonaNavbar />
           <div className="ml-[15%] w-[75%] p-12 flex flex-col gap-5 text-[#D0D0D0] ">
@@ -281,12 +389,17 @@ function Create() {
               </div>
               <SaveButton />
             </div>
-            <CreateWorkGroup setShowModal={setShowModal} />
+
+            <CreateWorkGroup
+              formData={formData}
+              onOpenModal={handleOpenModal}
+            />
           </div>
         </div>
       </div>
     </>
   );
 }
+
 
 export default Create;

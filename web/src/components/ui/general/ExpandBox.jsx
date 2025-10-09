@@ -1,38 +1,33 @@
 import React from "react";
-
 import ExpandIcon from "../../../assets/expand_icon.svg";
-
 
 function ExpandBox({
   size,
-  formData,
-  field,
+  value, 
+  placeholder,
+  onOpenModal, 
   hasButton = false,
   buttonName = null,
-  setShowModal,
 }) {
-  function handleOpenModal() {
-
-    console.log(setShowModal)
-    if (setShowModal) setShowModal(true);
-  }
-
   return (
     <div
       className="flex flex-col gap-1 text-sm text-[#B0B0B0]"
       style={{ width: size }}
     >
       <div className="relative h-full">
-        {/* Campo não editável que abre modal ao clicar */}
+
         <div
-          onClick={handleOpenModal}
+          onClick={onOpenModal} 
           style={{ width: size }}
-          className={`cursor-pointer bg-transparent border border-[#666] rounded-md px-3 py-2 text-[#E0E0E0] placeholder-gray-500 focus:outline-none focus:border-[#888] transition truncate h-10 ${
+          className={`cursor-pointer bg-transparent border border-[#666] rounded-md px-3 py-2 text-[#E0E0E0] placeholder-gray-500 focus:outline-none focus:border-[#888] transition truncate h-10 flex items-center ${ // NEW: flex items-center to vertically center text
             hasButton ? "pr-20" : ""
           }`}
         >
-          {formData?.[field] || (
-            <span className="text-[#777]">Clique para editar...</span>
+
+          {value ? (
+            value
+          ) : (
+            <span className="text-[#777]">{placeholder}</span>
           )}
         </div>
 
@@ -43,9 +38,15 @@ function ExpandBox({
           >
             {buttonName}
           </button>
-        ) : (<div>
-          <img src={ExpandIcon} alt="" className="absolute right-1 top-1/2 -translate-y-1/2 px-3 flex items-center justify-center pointer-events-none" />
-        </div>)}
+        ) : (
+          <div>
+            <img
+              src={ExpandIcon}
+              alt=""
+              className="absolute right-1 top-1/2 -translate-y-1/2 px-3 flex items-center justify-center pointer-events-none"
+            />
+          </div>
+        )}
       </div>
     </div>
   );
