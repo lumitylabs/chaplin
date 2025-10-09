@@ -74,7 +74,6 @@ function ApiModal({ persona, onClose }) {
           </button>
         </div>
 
-        {/* Campo da URL com botão de copiar e tooltip acima */}
         <div className="relative">
           <input
             type="text"
@@ -97,7 +96,6 @@ function ApiModal({ persona, onClose }) {
           )}
         </div>
 
-        {/* Bloco do cURL com botão de copiar e tooltip visível dentro do container */}
         <div className="bg-[#292929] text-white p-4 rounded-lg font-mono text-sm relative overflow-visible">
           <button
             onClick={handleCopyCurl}

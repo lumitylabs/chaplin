@@ -4,14 +4,13 @@ import PersonaNavbar from "../components/ui/general/PersonaNavbar";
 import { Search } from 'lucide-react';
 import FavoriteIcon from "../assets/star_icon.svg";
 
-// Importe as imagens das personas - substitua pelos seus caminhos corretos
 import OrcImage from "../assets/persona.png"; 
 import MinerImage from "../assets/persona.png";
 import AnalystImage from "../assets/persona.png";
 import ApiModal from "../components/ui/general/ApiModal";
 import TryModal from "../components/ui/general/TryModal";
 
-// Dados das Personas para tornar a lista dinâmica
+
 const personasData = [
   {
     id: 1,
@@ -34,11 +33,11 @@ const personasData = [
     desc: "Um auxiliar para criação de propagandas para...",
     apiUrl: "http://persona.request/analyst-7734",
   },
-  // Adicione mais personas aqui se necessário
+
 ];
 
 
-// SEU CÓDIGO ORIGINAL - SEM ALTERAÇÕES DE LAYOUT
+
 function TopBar() {
   return (
     <div className="flex justify-between items-center">
@@ -73,7 +72,7 @@ function FilterBar() {
   );
 }
 
-// COMPONENTE MODIFICADO APENAS PARA ADICIONAR onClicks
+
 function PersonaCard({ persona, onApiClick, onTryClick }) {
   return (
     <div className="flex gap-3 h-40 w-84 bg-[#202024] rounded-2xl justify-center items-center p-4 relative">
@@ -85,7 +84,7 @@ function PersonaCard({ persona, onApiClick, onTryClick }) {
       <div className="flex flex-col gap-1 h-full">
         <div className="font-semibold text-[#989898]">{persona.name}</div>
         <div className="text-sm text-[#989898] mb-2 line-clamp-2 w-40 h-60">{persona.desc}</div>
-        {/* Adicionando a funcionalidade de clique aos divs originais */}
+
         <div 
           onClick={() => onApiClick(persona)}
           className="bg-[#4A4343] w-auto rounded-full flex items-center justify-center text-[#989898] cursor-pointer"
@@ -103,7 +102,7 @@ function PersonaCard({ persona, onApiClick, onTryClick }) {
   );
 }
 
-// COMPONENTE MODIFICADO PARA USAR DADOS DINÂMICOS
+
 function PersonaList({ onApiClick, onTryClick }) {
   return (
     <div className="mt-5 flex flex-wrap gap-10">
@@ -121,8 +120,8 @@ function PersonaList({ onApiClick, onTryClick }) {
 
 
 function Home() {
-  // LÓGICA PARA CONTROLAR OS MODAIS
-  const [activeModal, setActiveModal] = useState(null); // 'api', 'try', or null
+
+  const [activeModal, setActiveModal] = useState(null); 
   const [selectedPersona, setSelectedPersona] = useState(null);
 
   const handleApiClick = (persona) => {
@@ -153,7 +152,6 @@ function Home() {
         </div>
       </div>
 
-      {/* RENDERIZAÇÃO CONDICIONAL DOS MODAIS (FORA DO LAYOUT PRINCIPAL) */}
       {activeModal === "api" && selectedPersona && (
         <ApiModal persona={selectedPersona} onClose={handleCloseModal} />
       )}
