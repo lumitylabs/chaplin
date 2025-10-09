@@ -60,7 +60,7 @@ function LoginModal() {
     >
       <div className="flex flex-col items-center text-center justify-between py-1 space-y-6">
         <div className="space-y-2">
-          <div className="font-inter font-extrabold text-3xl leading-[1.2]">
+          <div className="font-inter font-bold text-3xl leading-[1.2]">
             <h1>Get access to create</h1>
             <h1>and use your Chaplins</h1>
           </div>

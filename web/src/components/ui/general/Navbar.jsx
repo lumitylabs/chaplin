@@ -3,7 +3,7 @@ import React from "react";
 function Navbar() {
   return (
     <div className="flex items-center justify-between p-5 lg:px-10">
-      <div className=" text-white text-3xl tracking-[-0.04em]">chaplin</div>
+      <div className="font-mali text-white text-3xl tracking-[-0.04em] font-medium">Chaplin</div>
       <div className="flex gap-3">
         {/* 
           Botão "Discord" (Secundário)
