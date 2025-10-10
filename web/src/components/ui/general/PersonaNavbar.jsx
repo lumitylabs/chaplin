@@ -1,12 +1,14 @@
-import React from "react";
+import React, { useState } from "react";
 
 import Avatar from "../../../assets/Avatar.png";
 import Persona from "../../../assets/Persona.png";
 import SimpleBar from "simplebar-react";
 import "simplebar-react/dist/simplebar.min.css";
 import { Plus } from 'iconoir-react';
-import { CandyCane, Star, ChevronDown } from 'lucide-react';
+import { LogOut, CandyCane, Star, ChevronDown } from 'lucide-react';
 import hatIcon from "../../../assets/hatIcon.svg";
+import { SignOutButton, useUser } from '@clerk/clerk-react';
+import { useNavigate } from "react-router-dom";
 
 function PersonaItem({ name, image }) {
   return (
@@ -52,17 +54,48 @@ function YourPersonas() {
   );
 }
 
+
+
 function UserAccount() {
+  const [isOpen, setIsOpen] = useState(false);
+  const { user } = useUser();
+
+  // Função para formatar o endereço da carteira com reticências no meio
+  const formatWalletAddress = (address, startChars = 7, endChars = 4) => {
+    if (!address || address.length <= startChars + endChars) return address;
+    return `${address.slice(0, startChars)}...${address.slice(-endChars)}`;
+  };
+
+  // Busca o endereço da primeira carteira Web3 do usuário
+  const walletAddress = user?.web3Wallets?.[0]?.web3Wallet;
+  const displayText = walletAddress ? formatWalletAddress(walletAddress) : '1A1zP1e...22e';
+
   return (
     <div className="px-5 mt-4 mb-4">
-      <div className="flex items-center border-t-1 border-[#26272B]">
-        <button className="flex mt-3 px-2 py-1.5 w-full items-center gap-3 hover:bg-[#3F3F46] rounded-lg cursor-pointer">
-          <img className="w-10 h-10 rounded-full shadow-xl" src={Avatar} />
+      <div className="flex items-center border-t-1 border-[#26272B] relative">
+        <button 
+          onClick={() => setIsOpen(!isOpen)}
+          className="flex mt-3 px-2 py-1.5 w-full items-center gap-3 hover:bg-[#3F3F46] rounded-lg cursor-pointer"
+        >
+          <img className="w-10 h-10 rounded-full shadow-xl" src={user?.imageUrl || Avatar} />
           <div className="flex w-full items-center px-1 justify-between">
-            <span className="font-inter text-[#F4F1F4] font-light text-[0.78em]">1A1zP1e...22e</span>
+            <span className="font-inter text-[#F4F1F4] font-light text-[0.78em]">
+              {displayText}
+            </span>
             <ChevronDown size={16} color="#A2A2AB" />
           </div>
         </button>
+
+        {isOpen && (
+          <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 w-48 bg-[#27272A] border border-[#3F3F46] rounded-lg shadow-lg overflow-hidden">
+            <SignOutButton>
+              <button className="flex w-full items-center gap-3 px-4 py-3 hover:bg-[#3F3F46] text-[#F4F1F4] font-inter text-sm">
+                <LogOut size={16} />
+                <span>Logout</span>
+              </button>
+            </SignOutButton>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -85,10 +118,12 @@ function PersonaPage() {
 }
 
 function NavbarHeader() {
+  const navigate = useNavigate();
+
   return (
     <div className="flex flex-col gap-6 px-5 pt-0 pb-0 mt-5">
-      <div className="font-mali font-medium text-2xl text-white tracking-[-0.04em]">Chaplin</div>
-      <button className="flex p-1.5 px-3 gap-1 bg-[#202024] w-32 items-center rounded-full text-[#FAFAFA] text-[0.84em] border-[1px] border-[#26272B] cursor-pointer hover:bg-[#3B3B41]">
+      <div className="font-mali font-medium text-2xl text-white tracking-[-0.04em] cursor-pointer" onClick={()=>navigate("/home")}>Chaplin</div>
+      <button className="flex p-1.5 px-3 gap-1 bg-[#202024] w-32 items-center rounded-full text-[#FAFAFA] text-[0.84em] border-[1px] border-[#26272B] cursor-pointer hover:bg-[#3B3B41]" onClick={()=>navigate("/create")}>
         <Plus color="#94949C" height={36} width={36} />
         Create
       </button>

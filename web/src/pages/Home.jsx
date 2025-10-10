@@ -11,6 +11,7 @@ import ApiModal from "../components/ui/general/ApiModal";
 import TryModal from "../components/ui/general/TryModal";
 
 
+
 const personasData = [
   {
     id: 1,
