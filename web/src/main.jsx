@@ -2,7 +2,7 @@ import React from "react";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { useAuth } from "@clerk/clerk-react";
+
 import "./index.css";
 import Login from "./pages/Login.jsx";
 import Home from "./pages/Home.jsx";
@@ -22,7 +22,7 @@ if (!PUBLISHABLE_KEY) {
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
-    <ClerkProvider publishableKey={PUBLISHABLE_KEY}>
+    <ClerkProvider publishableKey={PUBLISHABLE_KEY} >
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<PublicRoute><Login /></PublicRoute>} />
