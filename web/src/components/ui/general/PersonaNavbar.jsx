@@ -1,14 +1,55 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
+// --- ÍCONES E ASSETS ---
+// Verifique se os caminhos estão corretos para o seu projeto
+import { Plus } from 'iconoir-react';
+import { LogOut, Star, ChevronDown } from 'lucide-react';
+import hatIcon from "../../../assets/hatIcon.svg";
 import Avatar from "../../../assets/Avatar.png";
 import Persona from "../../../assets/Persona.png";
 import SimpleBar from "simplebar-react";
 import "simplebar-react/dist/simplebar.min.css";
-import { Plus } from 'iconoir-react';
-import { LogOut, CandyCane, Star, ChevronDown } from 'lucide-react';
-import hatIcon from "../../../assets/hatIcon.svg";
-import { SignOutButton, useUser } from '@clerk/clerk-react';
-import { useNavigate } from "react-router-dom";
+import { SignOutButton, useUser } from "@clerk/clerk-react";
+// import { SignOutButton, useUser } from '@clerk/clerk-react'; // Descomente se usar Clerk
+
+// --- SUB-COMPONENTES DA NAVBAR ---
+
+function NavbarHeader() {
+  const navigate = useNavigate();
+  return (
+    <div className="flex flex-col gap-6 px-5 pt-0 pb-0 mt-5">
+      <div className="font-mali font-medium text-2xl text-white tracking-[-0.04em] cursor-pointer" onClick={() => navigate("/home")}>Chaplin</div>
+      <button className="flex p-1.5 px-3 gap-1 bg-[#202024] w-32 items-center rounded-full text-[#FAFAFA] text-[0.84em] border-[1px] border-[#26272B] cursor-pointer hover:bg-[#3B3B41]" onClick={() => navigate("/create")}>
+        <Plus color="#94949C" height={36} width={36} />
+        Create
+      </button>
+    </div>
+  );
+}
+
+function PersonaPage({ viewMode, setViewMode }) {
+  const baseButtonClasses = "flex items-center gap-3 p-3.5 text-[0.84em] rounded-lg transition-all duration-200 active:scale-95 cursor-pointer";
+  const activeClasses = "bg-[#26272B] text-white font-semibold";
+  const inactiveClasses = "text-white hover:bg-[#1F1F22] font-normal";
+
+  return (
+    <div className="flex flex-col gap-2 font-semibold text-[#817676] px-5">
+      <button className={`${baseButtonClasses} ${viewMode === 'all' ? activeClasses : inactiveClasses}`} onClick={() => setViewMode('all')}>
+        <img className="w-5" src={hatIcon} alt="All Chaplins" />
+        Chaplins
+      </button>
+      <button className={`${baseButtonClasses} ${viewMode === 'favorites' ? activeClasses : inactiveClasses}`} onClick={() => setViewMode('favorites')}>
+        <Star
+          fill="white"
+          color="white"
+          size={20}
+        />
+        Favorites
+      </button>
+    </div>
+  );
+}
 
 function PersonaItem({ name, image }) {
   return (
@@ -25,43 +66,15 @@ function YourPersonas() {
   return (
     <div className="flex h-full text-[0.80em] text-[#9898A0] flex-col gap-2 px-5">
       Your Chaplins
-      <SimpleBar
-        className="flex"
-        style={{ maxHeight: "32.5rem", minHeight: "15rem" }}
-        autoHide={false}
-        id="scrollbar"
-      >
+      <SimpleBar style={{ maxHeight: "32.5rem", minHeight: "15rem" }} autoHide={false}>
         <div className="flex max-h-full flex-col gap-3">
           <PersonaItem name="Orc" image={Persona} />
-          <PersonaItem name="Orc" image={Persona} />
-          <PersonaItem name="Orc" image={Persona} />
-          <PersonaItem name="Orc" image={Persona} />
-          <PersonaItem name="Orc" image={Persona} />
-          <PersonaItem name="Orc" image={Persona} />
-          <PersonaItem name="Orc" image={Persona} />
-          <PersonaItem name="Orc" image={Persona} />
-          <PersonaItem name="Orc" image={Persona} />
-          <PersonaItem name="Orc" image={Persona} />
-          <PersonaItem name="Orc" image={Persona} />
-          <PersonaItem name="Orc" image={Persona} />
-          <PersonaItem name="Orc" image={Persona} />
-          <PersonaItem name="Orc" image={Persona} />
-          <PersonaItem name="Orc" image={Persona} />
-          <PersonaItem name="Orc" image={Persona} />
-          <PersonaItem name="Orc" image={Persona} />
-          <PersonaItem name="Orc" image={Persona} />
-          <PersonaItem name="Orc" image={Persona} />
-          <PersonaItem name="Orc" image={Persona} />
-          <PersonaItem name="Orc" image={Persona} />
-
+          <PersonaItem name="Miner" image={Persona} />
         </div>
       </SimpleBar>
-
     </div>
   );
 }
-
-
 
 function UserAccount() {
   const [isOpen, setIsOpen] = useState(false);
@@ -96,7 +109,7 @@ function UserAccount() {
         {isOpen && (
           <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 w-48 bg-[#27272A] border border-[#3F3F46] rounded-lg shadow-lg overflow-hidden">
             <SignOutButton>
-              <button className="flex w-full items-center gap-3 px-4 py-3 hover:bg-[#3F3F46] text-[#F4F1F4] font-inter text-sm">
+              <button className="flex w-full items-center gap-3 px-4 py-3 hover:bg-[#3F3F46] text-[#F4F1F4] font-inter text-sm cursor-pointer">
                 <LogOut size={16} />
                 <span>Logout</span>
               </button>
@@ -108,44 +121,16 @@ function UserAccount() {
   );
 }
 
-function PersonaPage() {
-  return (
-    <div className="flex flex-col gap-2 font-semibold text-[#817676] px-5">
-      <button className="flex items-center gap-3 p-3.5 bg-[#26272B] rounded-lg text-white text-[0.84em] transition duration-200 active:scale-95 cursor-pointer">
-        <img className="w-5" src={hatIcon} alt="All Chaplins" />
-        {/* <CandyCane fill="white" color="white" size={20}></CandyCane> */}
-        Chaplins
-      </button>
-      <button className="flex items-center gap-3 p-3.5 text-[0.84em] text-white hover:bg-[#1F1F22] rounded-lg transition duration-200 active:scale-95 cursor-pointer">
-        <Star fill="white" color="white" size={20} />
-        Favorites
-      </button>
-    </div>
-  );
-}
 
-function NavbarHeader() {
-  const navigate = useNavigate();
+// --- COMPONENTE PRINCIPAL DA NAVBAR ---
 
-  return (
-    <div className="flex flex-col gap-6 px-5 pt-0 pb-0 mt-5">
-      <div className="font-mali font-medium text-2xl text-white tracking-[-0.04em] cursor-pointer" onClick={() => navigate("/home")}>Chaplin</div>
-      <button className="flex p-1.5 px-3 gap-1 bg-[#202024] w-32 items-center rounded-full text-[#FAFAFA] text-[0.84em] border-[1px] border-[#26272B] cursor-pointer hover:bg-[#3B3B41]" onClick={() => navigate("/create")}>
-        <Plus color="#94949C" height={36} width={36} />
-        Create
-      </button>
-    </div>
-  );
-}
-
-function PersonaNavbar() {
+function PersonaNavbar({ viewMode, setViewMode }) {
   return (
     <div className="fixed left-0 top-0 h-screen w-[15%] bg-[#131316] border-r-[1px] border-[#26272B] font-inter flex flex-col justify-between">
-
       <div className="flex flex-col gap-8 h-full">
         <div className="flex flex-col gap-5">
           <NavbarHeader />
-          <PersonaPage />
+          <PersonaPage viewMode={viewMode} setViewMode={setViewMode} />
         </div>
         <div className="flex flex-col">
           <YourPersonas />
