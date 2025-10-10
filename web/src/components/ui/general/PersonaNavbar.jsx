@@ -46,6 +46,13 @@ function YourPersonas() {
           <PersonaItem name="Orc" image={Persona} />
           <PersonaItem name="Orc" image={Persona} />
           <PersonaItem name="Orc" image={Persona} />
+          <PersonaItem name="Orc" image={Persona} />
+          <PersonaItem name="Orc" image={Persona} />
+          <PersonaItem name="Orc" image={Persona} />
+          <PersonaItem name="Orc" image={Persona} />
+          <PersonaItem name="Orc" image={Persona} />
+          <PersonaItem name="Orc" image={Persona} />
+          <PersonaItem name="Orc" image={Persona} />
 
         </div>
       </SimpleBar>
@@ -73,7 +80,7 @@ function UserAccount() {
   return (
     <div className="px-5 mt-4 mb-4">
       <div className="flex items-center border-t-1 border-[#26272B] relative">
-        <button 
+        <button
           onClick={() => setIsOpen(!isOpen)}
           className="flex mt-3 px-2 py-1.5 w-full items-center gap-3 hover:bg-[#3F3F46] rounded-lg cursor-pointer"
         >
@@ -104,12 +111,12 @@ function UserAccount() {
 function PersonaPage() {
   return (
     <div className="flex flex-col gap-2 font-semibold text-[#817676] px-5">
-      <button className="flex items-center gap-3 p-3.5 bg-[#26272B] rounded-lg text-white text-[0.84em] cursor-pointer">
+      <button className="flex items-center gap-3 p-3.5 bg-[#26272B] rounded-lg text-white text-[0.84em] transition duration-200 active:scale-95 cursor-pointer">
         <img className="w-5" src={hatIcon} alt="All Chaplins" />
         {/* <CandyCane fill="white" color="white" size={20}></CandyCane> */}
-        All
+        Chaplins
       </button>
-      <button className="flex items-center gap-3 p-3.5 text-[0.84em] text-white hover:bg-[#1F1F22] rounded-lg cursor-pointer">
+      <button className="flex items-center gap-3 p-3.5 text-[0.84em] text-white hover:bg-[#1F1F22] rounded-lg transition duration-200 active:scale-95 cursor-pointer">
         <Star fill="white" color="white" size={20} />
         Favorites
       </button>
@@ -122,8 +129,8 @@ function NavbarHeader() {
 
   return (
     <div className="flex flex-col gap-6 px-5 pt-0 pb-0 mt-5">
-      <div className="font-mali font-medium text-2xl text-white tracking-[-0.04em] cursor-pointer" onClick={()=>navigate("/home")}>Chaplin</div>
-      <button className="flex p-1.5 px-3 gap-1 bg-[#202024] w-32 items-center rounded-full text-[#FAFAFA] text-[0.84em] border-[1px] border-[#26272B] cursor-pointer hover:bg-[#3B3B41]" onClick={()=>navigate("/create")}>
+      <div className="font-mali font-medium text-2xl text-white tracking-[-0.04em] cursor-pointer" onClick={() => navigate("/home")}>Chaplin</div>
+      <button className="flex p-1.5 px-3 gap-1 bg-[#202024] w-32 items-center rounded-full text-[#FAFAFA] text-[0.84em] border-[1px] border-[#26272B] cursor-pointer hover:bg-[#3B3B41]" onClick={() => navigate("/create")}>
         <Plus color="#94949C" height={36} width={36} />
         Create
       </button>
