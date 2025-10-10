@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 
 // --- ÍCONES E ASSETS ---
@@ -11,7 +11,6 @@ import Persona from "../../../assets/Persona.png";
 import SimpleBar from "simplebar-react";
 import "simplebar-react/dist/simplebar.min.css";
 import { SignOutButton, useUser } from "@clerk/clerk-react";
-// import { SignOutButton, useUser } from '@clerk/clerk-react'; // Descomente se usar Clerk
 
 // --- SUB-COMPONENTES DA NAVBAR ---
 
@@ -76,28 +75,54 @@ function YourPersonas() {
   );
 }
 
+// --- COMPONENTE ATUALIZADO ---
 function UserAccount() {
   const [isOpen, setIsOpen] = useState(false);
   const { user } = useUser();
+  const dropdownRef = useRef(null); // Ref para o menu dropdown
+  const buttonRef = useRef(null); // Ref para o botão que abre o menu
 
-  // Função para formatar o endereço da carteira com reticências no meio
+  // Função para formatar o endereço da carteira
   const formatWalletAddress = (address, startChars = 7, endChars = 4) => {
     if (!address || address.length <= startChars + endChars) return address;
     return `${address.slice(0, startChars)}...${address.slice(-endChars)}`;
   };
 
-  // Busca o endereço da primeira carteira Web3 do usuário
   const walletAddress = user?.web3Wallets?.[0]?.web3Wallet;
   const displayText = walletAddress ? formatWalletAddress(walletAddress) : '1A1zP1e...22e';
+
+  // Hook para detectar cliques fora do componente
+  useEffect(() => {
+    function handleClickOutside(event) {
+      // Se o clique foi fora do dropdown E também fora do botão, feche o menu.
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target) &&
+        buttonRef.current &&
+        !buttonRef.current.contains(event.target)
+      ) {
+        setIsOpen(false);
+      }
+    }
+
+    if (isOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isOpen]);
 
   return (
     <div className="px-5 mt-4 mb-4">
       <div className="flex items-center border-t-1 border-[#26272B] relative">
         <button
+          ref={buttonRef} // Anexa a ref ao botão
           onClick={() => setIsOpen(!isOpen)}
           className="flex mt-3 px-2 py-1.5 w-full items-center gap-3 hover:bg-[#3F3F46] rounded-lg cursor-pointer"
         >
-          <img className="w-10 h-10 rounded-full shadow-xl" src={user?.imageUrl || Avatar} />
+          <img className="w-9 h-9 rounded-full shadow-xl" src={user?.imageUrl || Avatar} />
           <div className="flex w-full items-center px-1 justify-between">
             <span className="font-inter text-[#F4F1F4] font-light text-[0.78em]">
               {displayText}
@@ -107,11 +132,14 @@ function UserAccount() {
         </button>
 
         {isOpen && (
-          <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 w-48 bg-[#27272A] border border-[#3F3F46] rounded-lg shadow-lg overflow-hidden">
+          <div
+            ref={dropdownRef} // Anexa a ref ao menu
+            className="absolute bottom-14 left-0 w-62 bg-[#202024] rounded-lg shadow-lg overflow-hidden z-10"
+          >
             <SignOutButton>
-              <button className="flex w-full items-center gap-3 px-4 py-3 hover:bg-[#3F3F46] text-[#F4F1F4] font-inter text-sm cursor-pointer">
-                <LogOut size={16} />
+              <button className="flex w-full items-center justify-between gap-3 px-4 py-3 hover:bg-[#3F3F46] text-[#EDEFF1] font-inter text-sm cursor-pointer">
                 <span>Logout</span>
+                <LogOut size={18} />
               </button>
             </SignOutButton>
           </div>
