@@ -13,8 +13,8 @@ import Navbar from "../components/ui/general/Navbar";
 import "simplebar-react/dist/simplebar.min.css";
 import SimpleBar from 'simplebar-react';
 import { SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/clerk-react';
-
-// --- COMPONENTES AUXILIARES ---
+import { useSignIn } from '@clerk/clerk-react';
+import { useState } from 'react';
 
 function IconButton({ icon }) {
   return (
@@ -44,9 +44,28 @@ function IconGrid() {
   );
 }
 
-// --- COMPONENTES PRINCIPAIS ---
-
 function LoginModal() {
+  const { signIn, setActive } = useSignIn();
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleMetaMaskSignIn = async () => {
+    if (!signIn) return;
+    
+    setIsLoading(true);
+    try {
+      const signInAttempt = await signIn.authenticateWithMetamask();
+      
+      
+      if (signInAttempt.status === 'complete') {
+        await setActive({ session: signInAttempt.createdSessionId });
+      }
+    } catch (error) {
+      console.error('Erro na autenticação:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div
       className="
@@ -79,10 +98,14 @@ function LoginModal() {
             <img src={MetaMaskIcon} className="w-6 h-6" alt="MetaMask Icon" />
             Continue with MetaMask
           </button> */}
-          <SignInButton  className="w-full h-12 bg-white text-black rounded-xl hover:bg-[#E3E3E4] transition-colors flex items-center justify-center gap-3 text-[0.92em] tracking-tight cursor-pointer">
-            <div className=""><img src={MetaMaskIcon} className="w-6 h-6" alt="MetaMask Icon" />
-            <span>Continue with MetaMask</span></div>
-          </SignInButton>
+          <button 
+        onClick={handleMetaMaskSignIn}
+        disabled={isLoading}
+        className="w-full h-12 bg-white text-black rounded-xl hover:bg-[#E3E3E4] transition-colors flex items-center justify-center gap-3 text-[0.92em] tracking-tight cursor-pointer disabled:opacity-50"
+      >
+        <img src={MetaMaskIcon} className="w-6 h-6" alt="MetaMask Icon" />
+        <span>{isLoading ? 'Conecting...' : 'Continue with MetaMask'}</span>
+      </button>
           
           <div className="text-xs text-gray-500 text-center max-w-[18rem] pt-2">
             By continuing, you agree with the{" "}
