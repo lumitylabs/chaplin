@@ -114,7 +114,7 @@ function PersonaPage() {
       <button className="flex items-center gap-3 p-3.5 bg-[#26272B] rounded-lg text-white text-[0.84em] transition duration-200 active:scale-95 cursor-pointer">
         <img className="w-5" src={hatIcon} alt="All Chaplins" />
         {/* <CandyCane fill="white" color="white" size={20}></CandyCane> */}
-        All
+        Chaplins
       </button>
       <button className="flex items-center gap-3 p-3.5 text-[0.84em] text-white hover:bg-[#1F1F22] rounded-lg transition duration-200 active:scale-95 cursor-pointer">
         <Star fill="white" color="white" size={20} />

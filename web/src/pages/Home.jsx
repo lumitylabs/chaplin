@@ -37,25 +37,20 @@ const personasData = [
   },
 ];
 
-// --- Componente TopBar Modificado ---
-// Adicionada a lógica para destacar o botão "All" e o evento de clique.
-function TopBar({ searchTerm, onSearchChange, activeCategory, onCategorySelect }) {
-  const isAllActive = activeCategory === "All";
-
+// --- Componente TopBar com a cor do texto do input ajustada ---
+function TopBar({ searchTerm, onSearchChange }) {
   return (
     <div className="flex justify-between items-center">
-      <button
-        onClick={() => onCategorySelect("All")}
-        className={`font-inter font-semibold text-[1em] transition-colors ${isAllActive ? "text-white" : "text-[#D0D0D0] hover:text-white"}`}
-      >
-        All
-      </button>
+      <div className="font-inter font-semibold text-[1em] text-[#FAFAFA]">
+        Community Chaplins
+      </div>
       <div className="flex items-center gap-2 px-6 p-3.5 w-90 rounded-full bg-[#202024]">
         <Search color="#FAFAFA" size={14} />
         <input
           type="text"
           placeholder="Search"
-          className="bg-transparent text-[#959BA5] placeholder:text-[#959BA5] text-sm focus:outline-none w-full"
+          // A mágica acontece aqui: text-[#FAFAFA] para o texto digitado e placeholder:text-[#959BA5] para o placeholder.
+          className="bg-transparent text-[#FAFAFA] placeholder:text-[#959BA5] text-sm focus:outline-none w-full"
           value={searchTerm}
           onChange={onSearchChange}
         />
@@ -64,8 +59,7 @@ function TopBar({ searchTerm, onSearchChange, activeCategory, onCategorySelect }
   );
 }
 
-// --- Componente FilterTag Modificado ---
-// Agora é um componente dinâmico que recebe seu estado (ativo/inativo) via props.
+// --- Componente FilterTag (sem alterações) ---
 function FilterTag({ name, isActive, onClick }) {
   const baseClasses = "flex items-center justify-center font-inter font-medium text-[0.90em] p-3 px-4 rounded-xl cursor-pointer transition-colors";
   const activeClasses = "bg-[#FAFAFA] text-[#1C1C1F]";
@@ -81,10 +75,10 @@ function FilterTag({ name, isActive, onClick }) {
   );
 }
 
-// --- Componente FilterBar Modificado ---
-// Mapeia uma lista de categorias e passa as props necessárias para cada FilterTag.
+// --- Componente FilterBar (sem alterações) ---
 function FilterBar({ activeCategory, onCategorySelect }) {
   const categories = [
+    "All",
     "Assistant",
     "Anime",
     "Creativity & Writing",
@@ -110,7 +104,6 @@ function FilterBar({ activeCategory, onCategorySelect }) {
 
 // --- Componente PersonaCard (sem alterações) ---
 function PersonaCard({ persona, onApiClick, onTryClick }) {
-  // ... (código inalterado)
   return (
     <div className="flex gap-3 h-40 w-88 bg-[#202024] rounded-2xl py-4 px-4 relative items-center">
       <img src={persona.image} className="w-24 h-32 object-cover rounded-2xl" />
@@ -138,7 +131,6 @@ function PersonaCard({ persona, onApiClick, onTryClick }) {
 
 // --- Componente PersonaList (sem alterações) ---
 function PersonaList({ personas, onApiClick, onTryClick }) {
-  // ... (código inalterado)
   return (
     <div className="mt-5 flex flex-wrap gap-2">
       {personas.map((persona) => (
@@ -153,13 +145,12 @@ function PersonaList({ personas, onApiClick, onTryClick }) {
   );
 }
 
-// --- Componente Home Modificado ---
-// Gerencia o estado da busca e da categoria, e filtra os resultados.
+// --- Componente Home (sem alterações) ---
 function Home() {
   const [activeModal, setActiveModal] = useState(null);
   const [selectedPersona, setSelectedPersona] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [activeCategory, setActiveCategory] = useState("All"); // 1. Novo estado para a categoria
+  const [activeCategory, setActiveCategory] = useState("All");
 
   const handleApiClick = (persona) => {
     setSelectedPersona(persona);
@@ -176,19 +167,15 @@ function Home() {
     setSelectedPersona(null);
   };
 
-  // Função para atualizar a categoria ativa
   const handleCategorySelect = (category) => {
     setActiveCategory(category);
   };
 
-  // 2. Lógica de filtro combinada
   const filteredPersonas = personasData
     .filter((persona) => {
-      // Filtro de categoria
       return activeCategory === "All" ? true : persona.category === activeCategory;
     })
     .filter((persona) => {
-      // Filtro de busca (aplicado ao resultado do filtro anterior)
       return persona.name.toLowerCase().includes(searchTerm.toLowerCase());
     });
 
@@ -201,15 +188,13 @@ function Home() {
             <TopBar
               searchTerm={searchTerm}
               onSearchChange={(e) => setSearchTerm(e.target.value)}
-              activeCategory={activeCategory}
-              onCategorySelect={handleCategorySelect}
             />
             <FilterBar
               activeCategory={activeCategory}
               onCategorySelect={handleCategorySelect}
             />
             <PersonaList
-              personas={filteredPersonas} // Passa a lista duplamente filtrada
+              personas={filteredPersonas}
               onApiClick={handleApiClick}
               onTryClick={handleTryClick}
             />
