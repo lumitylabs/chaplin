@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Search, Star } from 'lucide-react';
 
 // --- COMPONENTES E ASSETS ---
@@ -98,8 +98,19 @@ function Home() {
   const [selectedPersona, setSelectedPersona] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeCategory, setActiveCategory] = useState("All");
-  const [favorites, setFavorites] = useState([]);
   const [viewMode, setViewMode] = useState('all');
+
+  const [favorites, setFavorites] = useState(() => {
+    const savedFavorites = localStorage.getItem('favoritePersonas');
+    if (savedFavorites) {
+      return JSON.parse(savedFavorites);
+    }
+    return [];
+  });
+
+  useEffect(() => {
+    localStorage.setItem('favoritePersonas', JSON.stringify(favorites));
+  }, [favorites]);
 
   const handleApiClick = (persona) => { setSelectedPersona(persona); setActiveModal("api"); };
   const handleTryClick = (persona) => { setSelectedPersona(persona); setActiveModal("try"); };

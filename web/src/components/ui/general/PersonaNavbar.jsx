@@ -18,7 +18,7 @@ function NavbarHeader() {
   const navigate = useNavigate();
   return (
     <div className="flex flex-col gap-6 px-5 pt-0 pb-0 mt-5">
-      <div className="font-mali font-medium text-2xl text-white tracking-[-0.04em] cursor-pointer" onClick={() => navigate("/home")}>Chaplin</div>
+      <div className="font-mali w-min font-medium text-2xl text-white tracking-[-0.04em] cursor-pointer" onClick={() => navigate("/home")}>Chaplin</div>
       <button className="flex p-1.5 px-3 gap-1 bg-[#202024] w-32 items-center rounded-full text-[#FAFAFA] text-[0.84em] border-[1px] border-[#26272B] cursor-pointer hover:bg-[#3B3B41]" onClick={() => navigate("/create")}>
         <Plus color="#94949C" height={36} width={36} />
         Create
@@ -28,17 +28,23 @@ function NavbarHeader() {
 }
 
 function PersonaPage({ viewMode, setViewMode }) {
+  const navigate = useNavigate();
   const baseButtonClasses = "flex items-center gap-3 p-3.5 text-[0.84em] rounded-lg transition-all duration-200 active:scale-95 cursor-pointer";
   const activeClasses = "bg-[#26272B] text-white font-semibold";
   const inactiveClasses = "text-white hover:bg-[#1F1F22] font-normal";
 
+  const handleNavigation = (targetView) => {
+    navigate("/home");
+    setViewMode(targetView);
+  };
+
   return (
     <div className="flex flex-col gap-2 font-semibold text-[#817676] px-5">
-      <button className={`${baseButtonClasses} ${viewMode === 'all' ? activeClasses : inactiveClasses}`} onClick={() => setViewMode('all')}>
+      <button className={`${baseButtonClasses} ${viewMode === 'all' ? activeClasses : inactiveClasses}`} onClick={() => handleNavigation('all')}>
         <img className="w-5" src={hatIcon} alt="All Chaplins" />
         Chaplins
       </button>
-      <button className={`${baseButtonClasses} ${viewMode === 'favorites' ? activeClasses : inactiveClasses}`} onClick={() => setViewMode('favorites')}>
+      <button className={`${baseButtonClasses} ${viewMode === 'favorites' ? activeClasses : inactiveClasses}`} onClick={() => handleNavigation('favorites')}>
         <Star
           fill="white"
           color="white"
@@ -75,14 +81,12 @@ function YourPersonas() {
   );
 }
 
-// --- COMPONENTE ATUALIZADO ---
 function UserAccount() {
   const [isOpen, setIsOpen] = useState(false);
   const { user } = useUser();
-  const dropdownRef = useRef(null); // Ref para o menu dropdown
-  const buttonRef = useRef(null); // Ref para o botão que abre o menu
+  const dropdownRef = useRef(null);
+  const buttonRef = useRef(null);
 
-  // Função para formatar o endereço da carteira
   const formatWalletAddress = (address, startChars = 7, endChars = 4) => {
     if (!address || address.length <= startChars + endChars) return address;
     return `${address.slice(0, startChars)}...${address.slice(-endChars)}`;
@@ -91,10 +95,8 @@ function UserAccount() {
   const walletAddress = user?.web3Wallets?.[0]?.web3Wallet;
   const displayText = walletAddress ? formatWalletAddress(walletAddress) : '1A1zP1e...22e';
 
-  // Hook para detectar cliques fora do componente
   useEffect(() => {
     function handleClickOutside(event) {
-      // Se o clique foi fora do dropdown E também fora do botão, feche o menu.
       if (
         dropdownRef.current &&
         !dropdownRef.current.contains(event.target) &&
@@ -118,7 +120,7 @@ function UserAccount() {
     <div className="px-5 mt-4 mb-4">
       <div className="flex items-center border-t-1 border-[#26272B] relative">
         <button
-          ref={buttonRef} // Anexa a ref ao botão
+          ref={buttonRef}
           onClick={() => setIsOpen(!isOpen)}
           className="flex mt-3 px-2 py-1.5 w-full items-center gap-3 hover:bg-[#3F3F46] rounded-lg cursor-pointer"
         >
@@ -133,7 +135,7 @@ function UserAccount() {
 
         {isOpen && (
           <div
-            ref={dropdownRef} // Anexa a ref ao menu
+            ref={dropdownRef}
             className="absolute bottom-14 left-0 w-62 bg-[#202024] rounded-lg shadow-lg overflow-hidden z-10"
           >
             <SignOutButton>
