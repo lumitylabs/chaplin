@@ -15,6 +15,7 @@ import PlayIcon from "../assets/play_icon.svg";
 import ResponseIcon from "../assets/reponse_icon.svg";
 import CloseIcon from "../assets/close_icon.svg";
 import ExpandBox from "../components/ui/general/ExpandBox";
+import { useNavigate } from "react-router-dom";
 
 function BasicForm({ formData, setFormData }) {
 
@@ -64,9 +65,9 @@ function PersonaImage() {
 }
 
 function BackButton() {
-
+  const navigate = useNavigate();
   return (
-    <div className="">
+    <div className="cursor-pointer" onClick={()=>navigate("/home")}>
       <img src={BackIcon} alt="" />
     </div>
   );
@@ -299,6 +300,8 @@ function Modal({ initialText, onSave, onClose }) {
 
 
 function Create() {
+
+
 
   const [formData, setFormData] = useState({
     name: "",

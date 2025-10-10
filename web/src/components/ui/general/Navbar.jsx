@@ -1,9 +1,9 @@
 import React from "react";
-
+import { Navigate } from "react-router-dom";
 function Navbar() {
   return (
     <div className="flex items-center justify-between p-5 lg:px-10">
-      <div className="font-mali text-white text-3xl tracking-[-0.04em] font-medium">Chaplin</div>
+      <div className="font-mali text-white text-3xl tracking-[-0.04em] font-medium" >Chaplin</div>
       <div className="flex gap-3">
         {/* 
           Botão "Discord" (Secundário)
