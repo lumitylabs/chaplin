@@ -9,22 +9,21 @@ import OrcImage from "../assets/persona.png";
 import MinerImage from "../assets/persona.png";
 import AnalystImage from "../assets/persona.png";
 
-
-// --- Dados Mockados ---
+// --- Dados Mockados com Categoria ---
 const personasData = [
   {
     id: 1,
     name: "Charlie Chaplin",
     image: OrcImage,
-    category: "Entertainment & Gaming",
+    category: "Humor",
     desc: "Um putasso, mas que tem um coração...",
     apiUrl: "http://persona.request/orc-1832",
   },
   {
     id: 2,
-    name: "Minerador",
+    name: "Orc Minerador",
     image: MinerImage,
-    category: "Learning",
+    category: "Entertainment & Gaming",
     desc: "Um ego minerador que fala com o jogador.",
     apiUrl: "http://persona.request/miner-4512",
   },
@@ -39,11 +38,18 @@ const personasData = [
 ];
 
 // --- Componente TopBar Modificado ---
-// Agora recebe o valor da busca e a função para alterá-lo como props.
-function TopBar({ searchTerm, onSearchChange }) {
+// Adicionada a lógica para destacar o botão "All" e o evento de clique.
+function TopBar({ searchTerm, onSearchChange, activeCategory, onCategorySelect }) {
+  const isAllActive = activeCategory === "All";
+
   return (
     <div className="flex justify-between items-center">
-      <div className="font-inter font-semibold text-[1em] text-[#D0D0D0]">All</div>
+      <button
+        onClick={() => onCategorySelect("All")}
+        className={`font-inter font-semibold text-[1em] transition-colors ${isAllActive ? "text-white" : "text-[#D0D0D0] hover:text-white"}`}
+      >
+        All
+      </button>
       <div className="flex items-center gap-2 px-6 p-3.5 w-90 rounded-full bg-[#202024]">
         <Search color="#FAFAFA" size={14} />
         <input
@@ -58,29 +64,53 @@ function TopBar({ searchTerm, onSearchChange }) {
   );
 }
 
-function FilterTag({ name }) {
+// --- Componente FilterTag Modificado ---
+// Agora é um componente dinâmico que recebe seu estado (ativo/inativo) via props.
+function FilterTag({ name, isActive, onClick }) {
+  const baseClasses = "flex items-center justify-center font-inter font-medium text-[0.90em] p-3 px-4 rounded-xl cursor-pointer transition-colors";
+  const activeClasses = "bg-[#FAFAFA] text-[#1C1C1F]";
+  const inactiveClasses = "bg-[#26272B] text-[#A2A2AB] hover:text-white";
+
   return (
-    <button className="flex items-center justify-center font-inter font-medium text-[0.90em] p-3 px-4 rounded-xl bg-[#26272B] text-[#A2A2AB] hover:text-white cursor-pointer">
+    <button
+      className={`${baseClasses} ${isActive ? activeClasses : inactiveClasses}`}
+      onClick={() => onClick(name)}
+    >
       {name}
     </button>
   );
 }
 
-function FilterBar() {
+// --- Componente FilterBar Modificado ---
+// Mapeia uma lista de categorias e passa as props necessárias para cada FilterTag.
+function FilterBar({ activeCategory, onCategorySelect }) {
+  const categories = [
+    "Assistant",
+    "Anime",
+    "Creativity & Writing",
+    "Entertainment & Gaming",
+    "History",
+    "Humor",
+    "Learning",
+  ];
+
   return (
     <div className="flex gap-2">
-      <FilterTag name="Assistant" />
-      <FilterTag name="Anime" />
-      <FilterTag name="Creativity & Writing" />
-      <FilterTag name="Entertainment & Gaming" />
-      <FilterTag name="History" />
-      <FilterTag name="Humor" />
-      <FilterTag name="Learning" />
+      {categories.map((category) => (
+        <FilterTag
+          key={category}
+          name={category}
+          isActive={activeCategory === category}
+          onClick={onCategorySelect}
+        />
+      ))}
     </div>
   );
 }
 
+// --- Componente PersonaCard (sem alterações) ---
 function PersonaCard({ persona, onApiClick, onTryClick }) {
+  // ... (código inalterado)
   return (
     <div className="flex gap-3 h-40 w-88 bg-[#202024] rounded-2xl py-4 px-4 relative items-center">
       <img src={persona.image} className="w-24 h-32 object-cover rounded-2xl" />
@@ -106,9 +136,9 @@ function PersonaCard({ persona, onApiClick, onTryClick }) {
   );
 }
 
-// --- Componente PersonaList Modificado ---
-// Agora recebe a lista de personas filtrada como uma prop.
+// --- Componente PersonaList (sem alterações) ---
 function PersonaList({ personas, onApiClick, onTryClick }) {
+  // ... (código inalterado)
   return (
     <div className="mt-5 flex flex-wrap gap-2">
       {personas.map((persona) => (
@@ -124,11 +154,12 @@ function PersonaList({ personas, onApiClick, onTryClick }) {
 }
 
 // --- Componente Home Modificado ---
-// Gerencia o estado da busca e filtra os resultados.
+// Gerencia o estado da busca e da categoria, e filtra os resultados.
 function Home() {
   const [activeModal, setActiveModal] = useState(null);
   const [selectedPersona, setSelectedPersona] = useState(null);
-  const [searchTerm, setSearchTerm] = useState(""); // Estado para o campo de busca
+  const [searchTerm, setSearchTerm] = useState("");
+  const [activeCategory, setActiveCategory] = useState("All"); // 1. Novo estado para a categoria
 
   const handleApiClick = (persona) => {
     setSelectedPersona(persona);
@@ -145,10 +176,21 @@ function Home() {
     setSelectedPersona(null);
   };
 
-  // Filtra a lista de personas com base no searchTerm
-  const filteredPersonas = personasData.filter((persona) =>
-    persona.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Função para atualizar a categoria ativa
+  const handleCategorySelect = (category) => {
+    setActiveCategory(category);
+  };
+
+  // 2. Lógica de filtro combinada
+  const filteredPersonas = personasData
+    .filter((persona) => {
+      // Filtro de categoria
+      return activeCategory === "All" ? true : persona.category === activeCategory;
+    })
+    .filter((persona) => {
+      // Filtro de busca (aplicado ao resultado do filtro anterior)
+      return persona.name.toLowerCase().includes(searchTerm.toLowerCase());
+    });
 
   return (
     <>
@@ -159,10 +201,15 @@ function Home() {
             <TopBar
               searchTerm={searchTerm}
               onSearchChange={(e) => setSearchTerm(e.target.value)}
+              activeCategory={activeCategory}
+              onCategorySelect={handleCategorySelect}
             />
-            <FilterBar />
+            <FilterBar
+              activeCategory={activeCategory}
+              onCategorySelect={handleCategorySelect}
+            />
             <PersonaList
-              personas={filteredPersonas} // Passa a lista filtrada
+              personas={filteredPersonas} // Passa a lista duplamente filtrada
               onApiClick={handleApiClick}
               onTryClick={handleTryClick}
             />
