@@ -4,17 +4,16 @@ import PersonaNavbar from "../components/ui/general/PersonaNavbar";
 import { Search } from 'lucide-react';
 import FavoriteIcon from "../assets/star_icon.svg";
 
-import OrcImage from "../assets/persona.png"; 
+import OrcImage from "../assets/persona.png";
 import MinerImage from "../assets/persona.png";
 import AnalystImage from "../assets/persona.png";
 import ApiModal from "../components/ui/general/ApiModal";
 import TryModal from "../components/ui/general/TryModal";
 
-
 const personasData = [
   {
     id: 1,
-    name: "ORC",
+    name: "Charlie Chaplin",
     image: OrcImage,
     desc: "Um putasso, mas que tem um coração...",
     apiUrl: "http://persona.request/orc-1832",
@@ -35,8 +34,6 @@ const personasData = [
   },
 
 ];
-
-
 
 function TopBar() {
   return (
@@ -75,28 +72,35 @@ function FilterBar() {
 
 function PersonaCard({ persona, onApiClick, onTryClick }) {
   return (
-    <div className="flex gap-3 h-40 w-84 bg-[#202024] rounded-2xl justify-center items-center p-4 relative">
-      <div className="absolute top-0 right-0">
+    <div className="flex gap-3 h-40 w-88 bg-[#202024] rounded-2xl py-4 px-4 relative items-center">
+
+      {/*<div className="absolute top-0 right-0">
         <img src={FavoriteIcon} className="w-4 h-4 mr-2 mt-2 cursor-pointer" />
-      </div>
+      </div>*/}
 
-      <img src={persona.image} className="w-auto h-full rounded-2xl" />
-      <div className="flex flex-col gap-1 h-full">
-        <div className="font-semibold text-[#989898]">{persona.name}</div>
-        <div className="text-sm text-[#989898] mb-2 line-clamp-2 w-40 h-60">{persona.desc}</div>
+      <img src={persona.image} className="w-24 h-32 object-cover rounded-2xl" />
+      <div className="flex flex-col gap-1 h-full w-full">
+        <div className="font-inter font-bold text-[0.84em] text-[#F7F7F7] ">{persona.name}</div>
+        <div className="w-full text-[0.84em] text-[#88888F] mb-2 line-clamp-2 h-60">{persona.desc}</div>
 
-        <div 
-          onClick={() => onApiClick(persona)}
-          className="bg-[#4A4343] w-auto rounded-full flex items-center justify-center text-[#989898] cursor-pointer"
-        >
-          API
+
+
+        <div className="flex gap-2 justify-end">
+          <button
+            onClick={() => onApiClick(persona)}
+            className="flex w-20 py-1.5 px-5 border-[#303136] border rounded-full text-white text-[0.84em] justify-center items-center cursor-pointer transition duration-200 active:scale-95 hover:bg-[#1F1F23]"
+          >
+            API
+          </button>
+          <button
+            onClick={() => onTryClick(persona)}
+            className="flex w-20 py-1.5 px-5 bg-white text-black text-[0.84em] rounded-full justify-center items-center cursor-pointer transition duration-200 active:scale-95 hover:bg-[#E3E3E4] "
+          >
+            Try
+          </button>
         </div>
-        <div 
-          onClick={() => onTryClick(persona)}
-          className="bg-[#CECECE] w-auto rounded-full flex items-center justify-center text-[#989898] cursor-pointer"
-        >
-          TRY
-        </div>
+
+
       </div>
     </div>
   );
@@ -105,7 +109,7 @@ function PersonaCard({ persona, onApiClick, onTryClick }) {
 
 function PersonaList({ onApiClick, onTryClick }) {
   return (
-    <div className="mt-5 flex flex-wrap gap-10">
+    <div className="mt-5 flex flex-wrap gap-2">
       {personasData.map((persona) => (
         <PersonaCard
           key={persona.id}
@@ -121,7 +125,7 @@ function PersonaList({ onApiClick, onTryClick }) {
 
 function Home() {
 
-  const [activeModal, setActiveModal] = useState(null); 
+  const [activeModal, setActiveModal] = useState(null);
   const [selectedPersona, setSelectedPersona] = useState(null);
 
   const handleApiClick = (persona) => {

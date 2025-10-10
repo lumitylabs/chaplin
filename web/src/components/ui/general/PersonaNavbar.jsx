@@ -44,6 +44,13 @@ function YourPersonas() {
           <PersonaItem name="Orc" image={Persona} />
           <PersonaItem name="Orc" image={Persona} />
           <PersonaItem name="Orc" image={Persona} />
+          <PersonaItem name="Orc" image={Persona} />
+          <PersonaItem name="Orc" image={Persona} />
+          <PersonaItem name="Orc" image={Persona} />
+          <PersonaItem name="Orc" image={Persona} />
+          <PersonaItem name="Orc" image={Persona} />
+          <PersonaItem name="Orc" image={Persona} />
+          <PersonaItem name="Orc" image={Persona} />
 
         </div>
       </SimpleBar>
@@ -71,12 +78,12 @@ function UserAccount() {
 function PersonaPage() {
   return (
     <div className="flex flex-col gap-2 font-semibold text-[#817676] px-5">
-      <button className="flex items-center gap-3 p-3.5 bg-[#26272B] rounded-lg text-white text-[0.84em] cursor-pointer">
+      <button className="flex items-center gap-3 p-3.5 bg-[#26272B] rounded-lg text-white text-[0.84em] transition duration-200 active:scale-95 cursor-pointer">
         <img className="w-5" src={hatIcon} alt="All Chaplins" />
         {/* <CandyCane fill="white" color="white" size={20}></CandyCane> */}
         All
       </button>
-      <button className="flex items-center gap-3 p-3.5 text-[0.84em] text-white hover:bg-[#1F1F22] rounded-lg cursor-pointer">
+      <button className="flex items-center gap-3 p-3.5 text-[0.84em] text-white hover:bg-[#1F1F22] rounded-lg transition duration-200 active:scale-95 cursor-pointer">
         <Star fill="white" color="white" size={20} />
         Favorites
       </button>
@@ -88,7 +95,7 @@ function NavbarHeader() {
   return (
     <div className="flex flex-col gap-6 px-5 pt-0 pb-0 mt-5">
       <div className="font-mali font-medium text-2xl text-white tracking-[-0.04em]">Chaplin</div>
-      <button className="flex p-1.5 px-3 gap-1 bg-[#202024] w-32 items-center rounded-full text-[#FAFAFA] text-[0.84em] border-[1px] border-[#26272B] cursor-pointer hover:bg-[#3B3B41]">
+      <button className="flex p-1.5 px-3 gap-1 bg-[#202024] w-32 items-center rounded-full text-[#FAFAFA] text-[0.84em] border-[1px] border-[#26272B] hover:bg-[#3B3B41] transition duration-200 active:scale-95 cursor-pointer">
         <Plus color="#94949C" height={36} width={36} />
         Create
       </button>
