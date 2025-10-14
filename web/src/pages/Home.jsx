@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { Search, Star } from 'lucide-react';
+import { useLocation } from "react-router-dom"; // Importar useLocation
+import { Search, Star, Menu } from 'lucide-react';
 
 // --- COMPONENTES E ASSETS ---
-// Verifique se os caminhos estão corretos para o seu projeto
 import PersonaNavbar from "../components/ui/general/PersonaNavbar";
 import ApiModal from "../components/ui/general/ApiModal";
 import TryModal from "../components/ui/general/TryModal";
@@ -18,15 +18,14 @@ const personasData = [
 ];
 
 // --- SUB-COMPONENTES DA PÁGINA HOME ---
-
 function TopBar({ searchTerm, onSearchChange, viewMode }) {
   return (
-    <div className="flex justify-between items-center">
-      <div className="font-inter font-semibold text-[1em] text-[#FAFAFA]">
+    <header className="flex justify-end md:justify-between items-center w-full gap-4 pl-12 md:pl-0">
+      <h1 className="hidden md:block font-inter font-semibold text-lg text-[#FAFAFA] whitespace-nowrap">
         {viewMode === 'favorites' ? 'Favorites' : 'Community Chaplins'}
-      </div>
-      <div className="flex items-center gap-2 px-6 p-3.5 w-90 rounded-full bg-[#202024]">
-        <Search color="#FAFAFA" size={14} />
+      </h1>
+      <div className="flex items-center gap-2 px-4 py-4 w-full max-w-xs rounded-full bg-[#202024]">
+        <Search color="#959BA5" size={16} />
         <input
           type="text"
           placeholder="Search"
@@ -35,12 +34,12 @@ function TopBar({ searchTerm, onSearchChange, viewMode }) {
           onChange={onSearchChange}
         />
       </div>
-    </div>
+    </header>
   );
 }
 
 function FilterTag({ name, isActive, onClick }) {
-  const baseClasses = "flex items-center justify-center font-inter font-medium text-[0.90em] p-3 px-4 rounded-xl cursor-pointer transition-colors";
+  const baseClasses = "flex items-center justify-center font-inter font-medium text-[0.90em] p-3 px-4 rounded-xl cursor-pointer transition-colors whitespace-nowrap";
   const activeClasses = "bg-[#FAFAFA] text-[#1C1C1F]";
   const inactiveClasses = "bg-[#26272B] text-[#A2A2AB] hover:text-white";
   return (
@@ -53,27 +52,29 @@ function FilterTag({ name, isActive, onClick }) {
 function FilterBar({ activeCategory, onCategorySelect }) {
   const categories = ["All", "Assistant", "Anime", "Creativity & Writing", "Entertainment & Gaming", "History", "Humor", "Learning"];
   return (
-    <div className="flex gap-2">
-      {categories.map((category) => (
-        <FilterTag key={category} name={category} isActive={activeCategory === category} onClick={onCategorySelect} />
-      ))}
+    <div className="w-full overflow-x-auto pb-2">
+      <div className="flex gap-2">
+        {categories.map((category) => (
+          <FilterTag key={category} name={category} isActive={activeCategory === category} onClick={onCategorySelect} />
+        ))}
+      </div>
     </div>
   );
 }
 
 function PersonaCard({ persona, onApiClick, onTryClick, isFavorite, onToggleFavorite }) {
   return (
-    <div className="flex gap-3 h-40 w-88 bg-[#202024] rounded-2xl py-4 px-4 relative items-center">
+    <div className="flex flex-col sm:flex-row gap-4 h-auto sm:h-40 w-full bg-[#202024] rounded-2xl p-4 relative items-center">
       <button onClick={() => onToggleFavorite(persona.id)} className="absolute top-3.5 right-4 p-1 z-10 cursor-pointer" aria-label="Toggle Favorite">
         <Star size={15} className={`transition-colors ${isFavorite ? 'text-yellow-400' : 'text-[#9C9CA5] hover:text-[#FAFAFA]'}`} fill={isFavorite ? 'currentColor' : 'transparent'} />
       </button>
-      <img src={persona.image} className="w-24 h-32 object-cover rounded-2xl" />
+      <img src={persona.image} className="w-24 h-32 object-cover rounded-2xl flex-shrink-0" alt={persona.name} />
       <div className="flex flex-col gap-1 h-full w-full">
-        <div className="font-inter font-bold text-[0.84em] text-[#F7F7F7]">{persona.name}</div>
-        <div className="w-full text-[0.84em] text-[#88888F] mb-2 line-clamp-2 h-60">{persona.desc}</div>
-        <div className="flex gap-2 justify-end">
-          <button onClick={() => onApiClick(persona)} className="flex w-20 py-1.5 px-5 border-[#303136] border rounded-full text-white text-[0.84em] justify-center items-center cursor-pointer transition duration-200 active:scale-95 hover:bg-[#1F1F23]">API</button>
-          <button onClick={() => onTryClick(persona)} className="flex w-20 py-1.5 px-5 bg-white text-black text-[0.84em] rounded-full justify-center items-center cursor-pointer transition duration-200 active:scale-95 hover:bg-[#E3E3E4]">Try</button>
+        <div className="font-inter font-bold text-sm text-[#F7F7F7]">{persona.name}</div>
+        <div className="text-sm text-[#88888F] mb-2 line-clamp-2 h-10">{persona.desc}</div>
+        <div className="flex gap-2 justify-end mt-auto">
+          <button onClick={() => onApiClick(persona)} className="flex w-20 py-1.5 px-5 border-[#303136] border rounded-full text-white text-sm justify-center items-center cursor-pointer transition duration-200 active:scale-95 hover:bg-[#1F1F23]">API</button>
+          <button onClick={() => onTryClick(persona)} className="flex w-20 py-1.5 px-5 bg-white text-black text-sm rounded-full justify-center items-center cursor-pointer transition duration-200 active:scale-95 hover:bg-[#E3E3E4]">Try</button>
         </div>
       </div>
     </div>
@@ -82,7 +83,7 @@ function PersonaCard({ persona, onApiClick, onTryClick, isFavorite, onToggleFavo
 
 function PersonaList({ personas, onApiClick, onTryClick, favorites, onToggleFavorite }) {
   return (
-    <div className="mt-5 flex flex-wrap gap-2">
+    <div className="mt-5 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
       {personas.map((persona) => (
         <PersonaCard key={persona.id} persona={persona} onApiClick={onApiClick} onTryClick={onTryClick} isFavorite={favorites.includes(persona.id)} onToggleFavorite={onToggleFavorite} />
       ))}
@@ -90,66 +91,90 @@ function PersonaList({ personas, onApiClick, onTryClick, favorites, onToggleFavo
   );
 }
 
-
 // --- COMPONENTE PRINCIPAL ---
-
 function Home() {
+  const location = useLocation();
+  const [isNavbarOpen, setIsNavbarOpen] = useState(false);
   const [activeModal, setActiveModal] = useState(null);
   const [selectedPersona, setSelectedPersona] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeCategory, setActiveCategory] = useState("All");
   const [viewMode, setViewMode] = useState('all');
 
+  useEffect(() => {
+    if (location.state?.desiredView) {
+      setViewMode(location.state.desiredView);
+    }
+  }, [location.state]);
+
+  useEffect(() => {
+    const isDesktop = window.innerWidth >= 1024;
+    setIsNavbarOpen(isDesktop);
+  }, []);
+
   const [favorites, setFavorites] = useState(() => {
     const savedFavorites = localStorage.getItem('favoritePersonas');
-    if (savedFavorites) {
-      return JSON.parse(savedFavorites);
-    }
-    return [];
+    return savedFavorites ? JSON.parse(savedFavorites) : [];
   });
 
   useEffect(() => {
     localStorage.setItem('favoritePersonas', JSON.stringify(favorites));
   }, [favorites]);
 
+  const handleMobileNavClick = () => {
+    if (window.innerWidth < 1024) {
+      setIsNavbarOpen(false);
+    }
+  };
+
   const handleApiClick = (persona) => { setSelectedPersona(persona); setActiveModal("api"); };
   const handleTryClick = (persona) => { setSelectedPersona(persona); setActiveModal("try"); };
   const handleCloseModal = () => { setActiveModal(null); setSelectedPersona(null); };
-
-  const handleCategorySelect = (category) => {
-    setActiveCategory(category);
-  };
-
+  const handleCategorySelect = (category) => setActiveCategory(category);
   const handleToggleFavorite = (personaId) => {
-    setFavorites((currentFavorites) =>
-      currentFavorites.includes(personaId)
-        ? currentFavorites.filter((id) => id !== personaId)
-        : [...currentFavorites, personaId]
+    setFavorites((currents) =>
+      currents.includes(personaId)
+        ? currents.filter((id) => id !== personaId)
+        : [...currents, personaId]
     );
   };
 
   const filteredPersonas = personasData
-    .filter((persona) => {
-      return viewMode === 'favorites' ? favorites.includes(persona.id) : true;
-    })
-    .filter((persona) => {
-      return activeCategory === "All" ? true : persona.category === activeCategory;
-    })
-    .filter((persona) => {
-      return persona.name.toLowerCase().includes(searchTerm.toLowerCase());
-    });
+    .filter((p) => viewMode === 'favorites' ? favorites.includes(p.id) : true)
+    .filter((p) => activeCategory === "All" ? true : p.category === activeCategory)
+    .filter((p) => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
 
   return (
-    <>
-      <div className="bg-[#18181B] w-screen h-screen font-inter">
-        <div className="flex h-full w-[75%] ml-[15%]">
-          <PersonaNavbar viewMode={viewMode} setViewMode={setViewMode} />
-          <div className="flex flex-col gap-3 p-6 w-full">
+    <div className="bg-[#18181B] min-h-screen font-inter text-white">
+      <PersonaNavbar
+        isOpen={isNavbarOpen}
+        setIsOpen={setIsNavbarOpen}
+        viewMode={viewMode}
+        setViewMode={setViewMode}
+        handleMobileNavClick={handleMobileNavClick}
+      />
+
+      <button
+        onClick={() => setIsNavbarOpen(true)}
+        className={`fixed top-5 left-2 z-20 p-2 rounded-full hover:bg-[#1F1F22] transition-all duration-200 cursor-pointer ${isNavbarOpen ? 'opacity-0 -translate-x-16' : 'opacity-100 translate-x-0'}`}
+        aria-label="Open Menu"
+      >
+        <Menu color="#A2A2AB" size={23} />
+      </button>
+
+      <main
+        className={`transition-all duration-300 ease-in-out ${isNavbarOpen ? 'lg:ml-[260px]' : 'lg:ml-0'}`}
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col gap-5 py-6">
             <TopBar
               searchTerm={searchTerm}
               onSearchChange={(e) => setSearchTerm(e.target.value)}
               viewMode={viewMode}
             />
+            <h1 className="md:hidden font-inter font-semibold text-lg text-[#FAFAFA]">
+              {viewMode === 'favorites' ? 'Favorites' : 'Community Chaplins'}
+            </h1>
             <FilterBar
               activeCategory={activeCategory}
               onCategorySelect={handleCategorySelect}
@@ -163,10 +188,11 @@ function Home() {
             />
           </div>
         </div>
-      </div>
+      </main>
+
       {activeModal === "api" && selectedPersona && <ApiModal persona={selectedPersona} onClose={handleCloseModal} />}
       {activeModal === "try" && selectedPersona && <TryModal persona={selectedPersona} onClose={handleCloseModal} />}
-    </>
+    </div>
   );
 }
 
