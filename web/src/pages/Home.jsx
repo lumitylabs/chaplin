@@ -64,7 +64,7 @@ function FilterBar({ activeCategory, onCategorySelect }) {
 
 function PersonaCard({ persona, onApiClick, onTryClick, isFavorite, onToggleFavorite }) {
   return (
-    <div className="flex flex-col sm:flex-row gap-4 h-auto sm:h-40 w-full bg-[#202024] rounded-2xl p-4 relative items-center">
+    <div className="flex flex-col sm:flex-row gap-4 h-auto sm:h-40 w-full bg-[#202024] rounded-2xl p-4 relative items-center select-none">
       <button onClick={() => onToggleFavorite(persona.id)} className="absolute top-3.5 right-4 p-1 z-10 cursor-pointer" aria-label="Toggle Favorite">
         <Star size={15} className={`transition-colors ${isFavorite ? 'text-yellow-400' : 'text-[#9C9CA5] hover:text-[#FAFAFA]'}`} fill={isFavorite ? 'currentColor' : 'transparent'} />
       </button>
@@ -166,19 +166,22 @@ function Home() {
         className={`transition-all duration-300 ease-in-out ${isNavbarOpen ? 'lg:ml-[260px]' : 'lg:ml-0'}`}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col gap-5 py-6">
-            <TopBar
-              searchTerm={searchTerm}
-              onSearchChange={(e) => setSearchTerm(e.target.value)}
-              viewMode={viewMode}
-            />
-            <h1 className="md:hidden font-inter font-semibold text-lg text-[#FAFAFA]">
-              {viewMode === 'favorites' ? 'Favorites' : 'Community Chaplins'}
-            </h1>
-            <FilterBar
-              activeCategory={activeCategory}
-              onCategorySelect={handleCategorySelect}
-            />
+          <div className="flex flex-col py-5">
+            <div className="flex flex-col gap-5">
+              <TopBar
+                searchTerm={searchTerm}
+                onSearchChange={(e) => setSearchTerm(e.target.value)}
+                viewMode={viewMode}
+              />
+              <h1 className="md:hidden font-inter font-semibold text-lg text-[#FAFAFA]">
+                {viewMode === 'favorites' ? 'Favorites' : 'Community Chaplins'}
+              </h1>
+              <FilterBar
+                activeCategory={activeCategory}
+                onCategorySelect={handleCategorySelect}
+              />
+            </div>
+
             <PersonaList
               personas={filteredPersonas}
               onApiClick={handleApiClick}

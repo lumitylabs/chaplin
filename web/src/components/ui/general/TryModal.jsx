@@ -1,5 +1,7 @@
 import React from "react";
-import CloseIcon from "../../../assets/close_icon.svg";
+import { X } from "lucide-react";
+import { SendSolid } from 'iconoir-react';
+
 
 function TryModal({ persona, onClose }) {
   return (
@@ -8,15 +10,16 @@ function TryModal({ persona, onClose }) {
       onClick={onClose}
     >
       <div
-        className="bg-[#EFEFEF] rounded-2xl w-[700px] p-6 flex flex-col gap-6"
+        className="bg-[#26272B] rounded-2xl w-[700px] p-6 flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex justify-between items-center">
-          <h2 className="text-2xl font-bold text-[#333]">{persona.name}</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-800">
-            <img src={CloseIcon} alt="" />
+          <h2 className="text-md font-semibold text-[#E3E3E4]">{persona.name}</h2>
+          <button onClick={onClose} className="cursor-pointer pb-5">
+            <X color="#BFBCBC" size={22} />
           </button>
         </div>
+        <div className="w-full gap-0 border-t-1 border-[#303135] mt-1 mb-6"></div>
 
         {/* Chat Area */}
         <div className="flex flex-col gap-4 h-80 overflow-y-auto pr-2">
@@ -37,14 +40,14 @@ function TryModal({ persona, onClose }) {
         </div>
 
         {/* Input Area */}
-        <div className="flex items-center gap-3 p-2 bg-white rounded-lg border border-gray-300">
+        <div className="flex items-center gap-3 p-1 bg-[#37393D] rounded-full border-1 border-[#505050]">
           <input
             type="text"
-            placeholder={`Pergunte para o ${persona.name}...`}
-            className="flex-grow bg-transparent focus:outline-none text-gray-700"
+            placeholder={`Ask ${persona.name}...`}
+            className="flex-grow bg-transparent text-[#FAFAFA]  focus:outline-none pl-5 text-sm placeholder:text-[#7C7C7C] placeholder:font-medium"
           />
-          <button className="bg-[#4A4A4A] text-white px-6 py-2 rounded-lg font-semibold hover:bg-gray-700">
-            Send
+          <button className="bg-white px-3 py-3 rounded-full font-semibold hover:bg-[#E3E3E4] cursor-pointer">
+            <SendSolid color="#242424" height={15} width={15} />
           </button>
         </div>
       </div>
