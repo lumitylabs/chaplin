@@ -3,6 +3,7 @@ import buildGenerateImagePrompt from "../prompts/generateImagePrompt.js";
 import { generateText } from "../lib/aiProvider.js";
 import fetch from "node-fetch";
 import { withMiddleware } from "../lib/withMiddleware.js";
+import { withCors } from "../lib/withCors.js";
 
 const MAX_STRING = 3000;
 
@@ -95,10 +96,10 @@ async function handler(req, res) {
   }
 }
 
-export default withMiddleware(handler, {
+export default withCors(withMiddleware(handler, {
   allowedMethods: ["POST"],
   requireJson: true,
   parseJson: true,             // middleware will parse body and set req.body
   maxBodyBytes: 200 * 1024,
   rateLimit: { windowMs: 60_000, max: 20 }
-});
+}));
