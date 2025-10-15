@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import CloseIcon from "../../../assets/close_icon.svg";
-import CopyIcon from "../../../assets/copy_icon.svg";
+import { Copy, X } from "lucide-react";
 
 function ApiModal({ persona, onClose }) {
   const [copiedUrl, setCopiedUrl] = useState(false);
@@ -60,60 +59,66 @@ function ApiModal({ persona, onClose }) {
 
   return (
     <div
-      className="fixed inset-0 bg-black/30 backdrop-blur-sm flex justify-center items-center z-50"
+      className="fixed inset-0 bg-[black/30] backdrop-blur-sm flex justify-center items-center z-50"
       onClick={onClose}
     >
       <div
-        className="bg-[#EFEFEF] rounded-2xl w-[700px] p-6 flex flex-col gap-4"
+        className="bg-[#26272B] rounded-2xl w-[700px] p-6 flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex justify-between items-center">
-          <h2 className="text-2xl font-bold text-[#333]">API</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-800">
-            <img src={CloseIcon} alt="" />
+          <h2 className="text-md font-semibold text-[#E3E3E4]">API</h2>
+
+          <button onClick={onClose} className="cursor-pointer pb-5">
+            <X color="#BFBCBC" size={22} />
           </button>
+        </div>
+        <div className="w-full gap-0 border-t-1 border-[#303135] mt-1 mb-4"></div>
+
+
+        <div className="flex flex-col gap-4">
+          <div className="relative">
+            <input
+              type="text"
+              readOnly
+              value={persona.apiUrl}
+              className="bg-[#333437] w-full pl-4 pr-10 py-3.5 rounded-lg text-[#E3E3E4] text-sm font-mono"
+            />
+            <button
+              onClick={handleCopyUrl}
+              className="absolute top-1.5 right-2 p-2.5 rounded-full hover:bg-[#424344] cursor-pointer"
+              title={copiedUrl ? "Copiado!" : "Copiar URL"}
+              aria-label="Copiar URL"
+            >
+              <Copy color="#BFBCBC" size={15} />
+            </button>
+            {copiedUrl && (
+              <span className="pointer-events-none absolute top-3 right-12 z-20 rounded bg-white/90 text-gray-900 text-xs px-2 py-1 shadow">
+                Copied!
+              </span>
+            )}
+          </div>
+
+          <div className="bg-[#333437] text-white p-4 rounded-lg font-mono text-sm relative overflow-visible">
+            <button
+              onClick={handleCopyCurl}
+              className="absolute top-1.5 right-2 p-2.5 rounded-full hover:bg-[#424344] cursor-pointer"
+              title={copiedCurl ? "Copy!" : "Copy"}
+              aria-label="Copiar comando cURL"
+            >
+              <Copy color="#BFBCBC" size={15} />
+            </button>
+            {copiedCurl && (
+              <span className="pointer-events-none absolute top-3 right-12 z-20 rounded bg-white/90 text-gray-900 text-xs px-2 py-1 shadow">
+                Copied!
+              </span>
+            )}
+            <pre>
+              <code>{curlCommand}</code>
+            </pre>
+          </div>
         </div>
 
-        <div className="relative">
-          <input
-            type="text"
-            readOnly
-            value={persona.apiUrl}
-            className="bg-white w-full pl-4 pr-10 py-2 rounded-lg border border-gray-300 text-gray-700 font-mono"
-          />
-          <button
-            onClick={handleCopyUrl}
-            className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded hover:bg-gray-100 text-gray-600"
-            title={copiedUrl ? "Copiado!" : "Copiar URL"}
-            aria-label="Copiar URL"
-          >
-            <img src={CopyIcon} className="w-4 h-4" alt="Copiar" />
-          </button>
-          {copiedUrl && (
-            <span className="pointer-events-none absolute -top-7 right-2 z-20 rounded bg-gray-800 text-white text-xs px-2 py-1 shadow">
-              Copied!
-            </span>
-          )}
-        </div>
-
-        <div className="bg-[#292929] text-white p-4 rounded-lg font-mono text-sm relative overflow-visible">
-          <button
-            onClick={handleCopyCurl}
-            className="absolute top-3 right-3 text-gray-400 hover:text-white"
-            title={copiedCurl ? "Copiado!" : "Copiar comando"}
-            aria-label="Copiar comando cURL"
-          >
-            <img src={CopyIcon} className="w-4 h-4" alt="" />
-          </button>
-          {copiedCurl && (
-            <span className="pointer-events-none absolute top-3 right-12 z-20 rounded bg-white/90 text-gray-900 text-xs px-2 py-1 shadow">
-              Copied!
-            </span>
-          )}
-          <pre>
-            <code>{curlCommand}</code>
-          </pre>
-        </div>
       </div>
     </div>
   );
