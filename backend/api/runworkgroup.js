@@ -1,4 +1,5 @@
 // api/runworkgroup.js
+import { withCors } from "../lib/withCors.js";
 import { withMiddleware } from "../lib/withMiddleware.js";
 import { runWorkgroupAndIntegrate } from "../lib/workgroupEngine.js";
 
@@ -75,11 +76,11 @@ async function runworkgroupHandler(req, res) {
  *
  * Replace in production the rate limiter with a central store (Redis) and set requireAuth + authFn.
  */
-export default withMiddleware(runworkgroupHandler, {
+export default withCors(withMiddleware(runworkgroupHandler, {
   allowedMethods: ["POST"],
   requireJson: true,
   parseJson: true,
   maxBodyBytes: 300 * 1024,
   rateLimit: { windowMs: 60_000, max: 30 }, // 30 requests per minute per IP (dev default)
   requireAuth: false // set true + authFn in prod
-});
+}));

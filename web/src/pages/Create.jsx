@@ -14,6 +14,8 @@ import PlayIcon from "../assets/play_icon.svg";
 import ResponseIcon from "../assets/reponse_icon.svg";
 import CloseIcon from "../assets/close_icon.svg";
 import ExpandBox from "../components/ui/general/ExpandBox";
+import { generateWorkgroup } from "../services/apiService";
+import SpecialistSkeleton from "../components/ui/create/SpecialistSkeleton";
 
 // --- Seus sub-componentes (BasicForm, PersonaImage, etc.) permanecem os mesmos ---
 function BasicForm({ formData, setFormData }) {
@@ -92,21 +94,50 @@ function Specialist({ number, name, prompt, onOpenModal }) {
   );
 }
 
-function WorkGroup({ workgroupData, onOpenSpecialistModal }) {
+
+// Modifique as props para receber onGenerate e isGenerating
+function WorkGroup({ workgroupData, onOpenSpecialistModal, onGenerate, isGenerating }) {
   return (
     <div className="">
       <div className="min-h-80 w-100 border border-[#585858] rounded-xl">
         <div className="flex items-center justify-between p-5">
           <div className="">Workgroup</div>
-          <div className="flex gap-2 p-1 px-2 bg-[#D9D9D9] w-30 text-sm text-[#989898] rounded-full cursor-pointer">
+          {/* Botão de Geração agora é funcional */}
+          <button
+            onClick={onGenerate}
+            disabled={isGenerating} // Desabilita o botão durante a geração
+            className="flex gap-2 p-1 px-3 bg-[#E0E0E0] text-sm text-black font-semibold rounded-full cursor-pointer hover:bg-white transition-all disabled:bg-gray-500 disabled:cursor-not-allowed"
+          >
             <img src={GenerateWandIcon} alt="" />
-            AI Generate
-          </div>
+            {isGenerating ? "Generating..." : "AI Generate"}
+          </button>
         </div>
-        <div className="flex flex-col items-center justify-center gap-10 mb-10">
-          {workgroupData.map((specialist, index) => (
-            <Specialist key={specialist.id} number={index + 1} name={specialist.name} prompt={specialist.prompt} onOpenModal={() => onOpenSpecialistModal(index)} />
-          ))}
+        <div className="flex flex-col items-center justify-center gap-10 mb-10 min-h-[30rem]">
+          {isGenerating ? (
+            // Exibe 3 esqueletos durante o carregamento
+            <>
+              <SpecialistSkeleton />
+              <SpecialistSkeleton />
+              <SpecialistSkeleton />
+            </>
+          ) : workgroupData && workgroupData.length > 0 ? (
+            // Exibe os especialistas se existirem
+            workgroupData.map((specialist, index) => (
+              <Specialist
+                key={index} // Usar index como chave é ok aqui pois a lista é recriada
+                number={index + 1}
+                name={specialist.name}
+                prompt={specialist.prompt}
+                onOpenModal={() => onOpenSpecialistModal(index)}
+              />
+            ))
+          ) : (
+            // Mensagem inicial quando não há especialistas
+            <div className="text-center text-gray-500">
+              <p>Your AI specialists will appear here.</p>
+              <p className="mt-1">Click "AI Generate" to create them.</p>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -132,11 +163,17 @@ function Output({ input, output, onOpenModal }) {
   );
 }
 
-function CreateWorkGroup({ formData, onOpenModal }) {
+function CreateWorkGroup({ formData, onOpenModal, onGenerate, isGenerating }) {
   return (
     <div className="flex">
       <ProjectDescription description={formData.personaDescription} onOpenModal={() => onOpenModal({ type: "description" })} />
-      <WorkGroup workgroupData={formData.workgroup} onOpenSpecialistModal={(index) => onOpenModal({ type: "specialist", index })} />
+      {/* Passe as novas props para o WorkGroup */}
+      <WorkGroup 
+        workgroupData={formData.workgroup} 
+        onOpenSpecialistModal={(index) => onOpenModal({ type: "specialist", index })}
+        onGenerate={onGenerate}
+        isGenerating={isGenerating}
+      />
       <Output input={formData.io.input} output={formData.io.output} onOpenModal={() => onOpenModal({ type: "io_input" })} />
     </div>
   );
@@ -194,21 +231,64 @@ function Modal({ initialText, onSave, onClose }) {
 function Create() {
   const [formData, setFormData] = useState({
     name: "", category: "", tag: "", personaDescription: "",
-    workgroup: [
-      { id: 1, name: "Orc", prompt: "An Orc chieftain who is angry." },
-      { id: 2, name: "Elf", prompt: "A wise Elf loremaster." },
-    ],
+    // O workgroup começa vazio, como solicitado.
+    workgroup: [],
     io: { input: "", output: "Waiting for input..." },
   });
+
+  // Novos estados para controlar o carregamento e erros da API
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [apiError, setApiError] = useState(null);
+  
   const [showModal, setShowModal] = useState(false);
   const [editingField, setEditingField] = useState(null);
   const [isNavbarOpen, setIsNavbarOpen] = useState(false);
-  const [viewMode, setViewMode] = useState(null); // MUDANÇA: 'null' para indicar nenhuma seleção ativa
+  const [viewMode, setViewMode] = useState(null);
 
   useEffect(() => {
     const isDesktop = window.innerWidth >= 1024;
     setIsNavbarOpen(isDesktop);
   }, []);
+
+
+    const handleGenerateWorkgroup = async () => {
+    if (!formData.name || !formData.category || !formData.personaDescription) {
+      alert("Please fill in Persona Name, Category, and Description before generating.");
+      return;
+    }
+
+    setIsGenerating(true);
+    setApiError(null);
+
+    // Chama o serviço, que agora NUNCA lança um erro para o componente.
+    const result = await generateWorkgroup({
+      name: formData.name,
+      category: formData.category,
+      description: formData.personaDescription,
+    });
+    
+    // Verificamos o resultado da chamada
+    if (result.error) {
+      // Se houve um erro, atualizamos o estado de erro.
+      console.error(result.error); // Loga o erro detalhado no console.
+      
+      // A mensagem de erro agora é muito mais útil para o usuário!
+      // Ex: "ApiError: {"error":{"code":503,"message":"The model is overloaded..."}}"
+      setApiError(`Failed to generate: ${result.error}`);
+      
+      // Limpa o workgroup em caso de erro para não mostrar dados antigos.
+      setFormData(prevData => ({ ...prevData, workgroup: [] }));
+    } else {
+      // Se foi sucesso, atualizamos o workgroup com os dados recebidos.
+      setFormData(prevData => ({
+        ...prevData,
+        workgroup: result.data,
+      }));
+    }
+    
+    // Independentemente do resultado, paramos a animação de carregamento.
+    setIsGenerating(false);
+  };
 
   const handleMobileNavClick = () => {
     if (window.innerWidth < 1024) {
@@ -273,6 +353,13 @@ function Create() {
       <main className={`transition-all duration-300 ease-in-out ${isNavbarOpen ? 'lg:ml-[260px]' : 'lg:ml-0'}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="p-6 md:p-12 flex flex-col gap-5 text-[#D0D0D0]">
+            {/* O componente de erro agora mostrará uma mensagem muito mais informativa */}
+            {apiError && (
+              <div className="bg-red-900 border border-red-600 text-white px-4 py-3 rounded-md relative mb-4" role="alert">
+                <strong className="font-bold">Error: </strong>
+                <span className="block sm:inline">{apiError}</span>
+              </div>
+            )}
             <div className="flex flex-col md:flex-row justify-between gap-8">
               <div className="flex flex-col sm:flex-row gap-8 md:gap-20">
                 <BasicForm formData={formData} setFormData={setFormData} />
@@ -280,7 +367,13 @@ function Create() {
               </div>
               <SaveButton />
             </div>
-            <CreateWorkGroup formData={formData} onOpenModal={handleOpenModal} />
+             {/* Passe as novas props e o handler para o componente filho */}
+            <CreateWorkGroup 
+              formData={formData} 
+              onOpenModal={handleOpenModal}
+              onGenerate={handleGenerateWorkgroup}
+              isGenerating={isGenerating}
+            />
           </div>
         </div>
       </main>

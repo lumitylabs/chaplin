@@ -7,6 +7,7 @@ import buildCreateWorkgroupInstruction from "../prompts/createWorkgroupInstructi
 import buildEnhanceAgentPrompt from "../prompts/enhanceAgentPrompt.js";
 import buildSummarizePrevPrompt from "../prompts/summarizePreviousWorkgroup.js";
 import { generateText } from "../lib/aiProvider.js";
+import { withCors } from "../lib/withCors.js";
 
 /**
  * Limits and defaults
@@ -285,10 +286,10 @@ async function createWorkgroupHandler(req, res) {
  * - requireJson: true => enforce Content-Type
  * - rateLimit: keep a sensible dev default; replace with Redis in prod
  */
-export default withMiddleware(createWorkgroupHandler, {
+export default withCors(withMiddleware(createWorkgroupHandler, {
   allowedMethods: ["POST"],
   requireJson: true,
   parseJson: true,
   maxBodyBytes: 200 * 1024,
   rateLimit: { windowMs: 60_000, max: 30 } // 30 requests per minute per IP (dev)
-});
+}));

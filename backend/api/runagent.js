@@ -2,6 +2,7 @@
 // Updated to use withMiddleware (parsing, Content-Type check, rate limiting centralized).
 // Pure handler expects req.body already parsed by middleware.
 
+import { withCors } from "../lib/withCors.js";
 import { withMiddleware } from "../lib/withMiddleware.js";
 import { runAgentsSequentially } from "../lib/workgroupEngine.js";
 
@@ -118,10 +119,10 @@ async function runAgentHandler(req, res) {
  * - allowedMethods: POST only
  * - rateLimit: simple in-memory throttle (dev); swap with Redis in prod
  */
-export default withMiddleware(runAgentHandler, {
+export default withCors(withMiddleware(runAgentHandler, {
   allowedMethods: ["POST"],
   requireJson: true,
   parseJson: true,
   maxBodyBytes: 200 * 1024,
   rateLimit: { windowMs: 60_000, max: 30 } // 30 requests per minute per IP (dev default)
-});
+}));

@@ -17,7 +17,7 @@ export async function generateText({ prompt, maxTokens = 512, temperature = 0.7 
   if (!prompt) throw new Error("Missing prompt");
   try {
     const response = await client.models.generateContent({
-      model: process.env.GENAI_MODEL || "gemini-2.5-flash",
+      model: process.env.GENAI_MODEL || "gemini-flash-lite-latest",
       contents: prompt,
       // Many GenAI SDKs accept additional params; if yours accepts other keys, add them.
       // This example uses the minimal shape from your snippet.
