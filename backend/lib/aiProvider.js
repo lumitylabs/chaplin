@@ -1,44 +1,109 @@
 // lib/aiProvider.js
-import { GoogleGenAI } from "@google/genai";
+//
+// Multi-model manager for text generation. Tries models in priority order until one succeeds.
+// Exports:
+//   - async generateText({ prompt, maxTokens, temperature }) -> string
+//   - setModelsPriority(arrayOfKeys) // optional runtime override
+//
+// Model implementations are located under lib/models/ and must implement:
+//   - constructor(opts)
+//   - key (string) unique identifier
+//   - async generateText({ prompt, maxTokens, temperature }) -> string
+//
+// Default priority is read from process.env.MODELS_PRIORITY (comma-separated keys) or fallbacks to:
+//   ['cortensor','geminiflash','geminipro']
 
+import CortensorModel from "./models/CortensorModel.js";
+import GeminiFlashModel from "./models/GeminiFlashModel.js";
+import GeminiProModel from "./models/GeminiProModel.js";
 
-/**
- * Thin wrapper around the Google GenAI client.
- * Exposes generateText({ prompt, maxTokens, temperature })
- * and generateImagePrompt({ context })
- */
+const DEFAULT_PRIORITY = ["cortensor", "geminiflash", "geminipro"];
 
-const client = new GoogleGenAI({
-  // If your environment requires an explicit API key, add it here:
-  apiKey: process.env.GENAI_API_KEY || undefined
-});
+// registry maps keys -> class (not instance)
+const MODEL_REGISTRY = {
+  cortensor: CortensorModel,
+  // geminiflash: GeminiFlashModel,
+  // geminipro: GeminiProModel,
+};
 
-export async function generateText({ prompt, maxTokens = 512, temperature = 0.7 }) {
-  if (!prompt) throw new Error("Missing prompt");
+function buildPriorityFromEnv() {
+  const raw = process.env.MODELS_PRIORITY;
+  if (!raw) return DEFAULT_PRIORITY;
   try {
-    const response = await client.models.generateContent({
-      model: process.env.GENAI_MODEL || "gemini-flash-lite-latest",
-      contents: prompt,
-      // Many GenAI SDKs accept additional params; if yours accepts other keys, add them.
-      // This example uses the minimal shape from your snippet.
-    });
-
-    // Try common shapes (user sample used response.text)
-    if (response?.text) return response.text;
-    if (typeof response === "string") return response;
-    // some SDKs return object with output or outputs
-    if (response?.output?.text) return response.output.text;
-    if (Array.isArray(response?.outputs) && response.outputs[0]?.content) return response.outputs[0].content;
-    // fallback: stringify
-    return JSON.stringify(response);
-  } catch (err) {
-    // rethrow so caller can handle
-    throw err;
+    const arr = raw.split(",").map(s => s.trim()).filter(Boolean);
+    if (arr.length === 0) return DEFAULT_PRIORITY;
+    return arr;
+  } catch (e) {
+    return DEFAULT_PRIORITY;
   }
 }
 
-export async function generateImagePrompt({ context }) {
-  // Reuse the text generator to craft a concise image prompt
-  const prompt = `You are an expert image prompt engineer. Given this context, produce a single concise text-to-image prompt (<= 40 words) that describes the subject, mood, color palette and two detailed visual elements. Output ONLY the prompt string.\n\nContext:\n${context}`;
-  return generateText({ prompt, maxTokens: 128, temperature: 0.85 });
+let modelsPriority = buildPriorityFromEnv();
+
+// instantiate model instances (lazy)
+let modelInstances = null;
+function initModelInstances() {
+  if (modelInstances) return;
+  modelInstances = modelsPriority.map(key => {
+    const Cls = MODEL_REGISTRY[key];
+    if (!Cls) {
+      console.warn(`[aiProvider] No registered model class for key="${key}"`);
+      return null;
+    }
+    try {
+      return new Cls({ key });
+    } catch (err) {
+      console.error(`[aiProvider] Failed to instantiate model ${key}:`, err);
+      return null;
+    }
+  }).filter(Boolean);
 }
+
+// public API: override priority at runtime
+export function setModelsPriority(arr) {
+  if (!Array.isArray(arr)) throw new Error("setModelsPriority expects an array");
+  modelsPriority = arr;
+  modelInstances = null;
+  initModelInstances();
+}
+
+// primary function
+export async function generateText({ prompt, maxTokens = 512, temperature = 0.7 } = {}) {
+  if (!prompt || typeof prompt !== "string") throw new Error("prompt (string) is required");
+  initModelInstances();
+  if (!modelInstances || modelInstances.length === 0) {
+    throw new Error("No model instances available. Register models in lib/models and set MODELS_PRIORITY env var if needed.");
+  }
+
+  const errors = [];
+  for (const model of modelInstances) {
+    const key = model.key || model.constructor?.name || "unknown";
+    try {
+      const out = await model.generateText({ prompt, maxTokens, temperature });
+      if (typeof out === "string" && out.trim().length > 0) {
+        // success
+        return out;
+      } else if (typeof out === "string") {
+        // empty string — treat as error
+        errors.push({ model: key, reason: "empty response" });
+      } else {
+        // non-string
+        errors.push({ model: key, reason: "non-string response" });
+      }
+    } catch (err) {
+      errors.push({ model: key, reason: String(err && err.message ? err.message : err) });
+      // continue to next model
+    }
+  }
+
+  const agg = errors.map(e => `${e.model}: ${e.reason}`).join(" | ");
+  const message = `All models failed. Attempts: ${errors.length}. Details: ${agg}`;
+  const err = new Error(message);
+  err.details = errors;
+  throw err;
+}
+
+export default {
+  generateText,
+  setModelsPriority,
+};
