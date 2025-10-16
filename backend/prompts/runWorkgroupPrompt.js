@@ -17,12 +17,13 @@ Follow your role instructions and RETURN ONLY YOUR CONTENT (no meta or commentar
     body += "(none)\n\n";
   } else {
     previousOutputs.forEach((o, i) => {
-      body += `Agent ${i} output:\n${o}\n\n`;
+      var o_filter = o.replace("<end_of_turn>", '');
+      body += `Agent ${i} output:\n${o_filter}\n\n`;
     });
   }
 
   body += `Role instructions (below). Execute and return only your content:\n\n${agent.prompt}\n\n`;
-  body += `IMPORTANT: Return only your content (no labels, no extra JSON, unless the role explicitly asks for JSON).`;
+  body += `IMPORTANT: Return only your content (no labels, no extra JSON, unless the role explicitly asks for JSON). \n assistant:`;
 
   return header + body;
 }
@@ -41,7 +42,7 @@ into a single JSON object that strictly follows the response format specificatio
 - Produce a single JSON object that exactly matches the keys in the response format.
 - Also include a top-level key "final_message" containing a human-readable concise answer for the user.
 - Values should be strings or arrays as appropriate; keep them concise and ready-to-use.
-- RETURN ONLY THE JSON OBJECT (no explanation, no surrounding text, no code fences).`;
+- RETURN ONLY THE JSON OBJECT (no explanation, no surrounding text, no code fences). \n assistant:`;
 
   return header + outputsBlock + task;
 }

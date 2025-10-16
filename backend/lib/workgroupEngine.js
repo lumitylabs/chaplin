@@ -1,14 +1,10 @@
-// lib/workgroupEngine.js
-// Lógica compartilhada para executar workgroups (runagent + runworkgroup).
-// Usa generateText (aiProvider) e builders de prompts já existentes.
+
 
 import { generateText } from "./aiProvider.js";
 import { buildAgentExecutionPrompt } from "../prompts/runWorkgroupPrompt.js";
 import buildHardcodedIntegratorPrompt from "../prompts/integrator.js";
 
-/**
- * Normaliza nomes para comparação (case-insensitive trim)
- */
+
 function normName(name) {
   return String(name || "").trim().toLowerCase();
 }
@@ -184,7 +180,7 @@ export async function runWorkgroupAndIntegrate({ input, workgroup, workgroupResp
         finalParsed = { parse_error: "Integrator failed to produce valid JSON after attempts", raw: lastRaw };
         break;
       } else {
-        continue; // retry
+        continue;
       }
     }
 

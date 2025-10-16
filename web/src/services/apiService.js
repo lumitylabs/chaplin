@@ -53,7 +53,7 @@ export const generateWorkgroup = async ({ name, category, description }) => {
         name,
         category,
         description,
-        max_members: 4,
+        max_members: 3,
       }),
     });
 
