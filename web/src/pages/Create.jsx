@@ -46,8 +46,7 @@ function Specialist({ number, name, prompt, onOpenModal }) {
             <img src={PlayIcon} alt="" className="w-4 h-4" />
           </div>
         </div>
-        code
-        Code
+
         <div className="flex flex-col gap-2">
           <div className="text-[#989898] text-sm">Prompt</div>
           <ExpandBox
@@ -148,8 +147,7 @@ function Modal({ initialText, onSave, onClose, title = "Edit Content", subtitle 
             <img src={CloseIcon} alt="" />
           </div>
         </div>
-        code
-        Code
+
         <textarea
           value={currentText}
           onChange={(e) => setCurrentText(e.target.value)}
@@ -212,8 +210,7 @@ function Create() {
       ) {
         setIsAvatarMenuOpen(false);
       }
-      code
-      Code
+
       // Lógica para fechar o dropdown de categoria
       if (
         isCategoryOpen &&
@@ -234,8 +231,7 @@ function Create() {
       alert("Please fill in Name, Category, and Description before generating.");
       return;
     }
-    code
-    Code
+
     setIsGenerating(true);
     setApiError(null);
 
@@ -371,8 +367,7 @@ function Create() {
           })()}
         />
       )}
-      code
-      Code
+
       <PersonaNavbar
         isOpen={isNavbarOpen}
         setIsOpen={setIsNavbarOpen}
