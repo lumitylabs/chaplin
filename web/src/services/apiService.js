@@ -14,18 +14,14 @@ async function handleResponse(response) {
     return response.json();
   }
 
-  // Se a resposta não for OK, tentamos extrair uma mensagem de erro útil.
   let errorDetail = `HTTP error! Status: ${response.status} - ${response.statusText}`;
   try {
-    // O backend envia um JSON com a chave 'error' ou 'detail'.
     const errorBody = await response.json();
     errorDetail = errorBody.detail || errorBody.error || JSON.stringify(errorBody);
   } catch (e) {
-    // Se o corpo do erro não for JSON, o 'errorDetail' inicial já é suficiente.
     console.warn("Could not parse error response body as JSON.");
   }
 
-  // Lança um erro com a mensagem detalhada para ser pego pelo catch local.
   throw new Error(errorDetail);
 }
 
@@ -33,10 +29,10 @@ async function handleResponse(response) {
  * Gera um novo workgroup.
  * Retorna um objeto no formato { data, error }.
  * 'data' é o workgroup em caso de sucesso, 'error' é a mensagem de erro em caso de falha.
- * @param {object} personaData
+ * @param {object} personaData - Inclui name, category, description, e o novo responseformat
  * @returns {Promise<{data: Array | null, error: string | null}>}
  */
-export const generateWorkgroup = async ({ name, category, description }) => {
+export const generateWorkgroup = async ({ name, category, description, responseformat }) => { // <<< ADICIONADO responseformat
   if (!API_BASE_URL) {
     const errorMessage = "VITE_APP_API_BASE_URL is not defined in your .env file.";
     console.error(errorMessage);
@@ -47,7 +43,13 @@ export const generateWorkgroup = async ({ name, category, description }) => {
     const response = await fetch(`${API_BASE_URL}/createworkgroup`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, category, description, max_members: 3 }),
+      body: JSON.stringify({
+        name,
+        category,
+        description,
+        responseformat, 
+        max_members: 3, 
+      }),
     });
 
     const data = await handleResponse(response);
@@ -61,8 +63,6 @@ export const generateWorkgroup = async ({ name, category, description }) => {
 
 /**
  * Gera uma imagem de avatar para a persona.
- * Retorna um objeto { data, error }.
- * 'data' contém a imagem base64 em caso de sucesso.
  * @param {object} personaData - { name, category, description }
  * @returns {Promise<{data: { base64: string } | null, error: string | null}>}
  */
@@ -80,7 +80,6 @@ export const generateImage = async ({ name, category, description }) => {
       body: JSON.stringify({ name, category, description }),
     });
     const data = await handleResponse(response);
-    // A API retorna um objeto com a chave "base64"
     return { data, error: null };
 
   } catch (error) {
@@ -91,8 +90,6 @@ export const generateImage = async ({ name, category, description }) => {
 
 /**
  * Executa um ou mais agentes de um workgroup.
- * Retorna um objeto { data, error }.
- * 'data' contém o mapa de respostas atualizado.
  * @param {object} runData - { input, workgroup, workgroupresponse, targetAgentName }
  * @returns {Promise<{data: object | null, error: string | null}>}
  */

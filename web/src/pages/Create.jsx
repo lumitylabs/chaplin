@@ -184,7 +184,8 @@ function Create() {
     instructions: "",
     personaDescription: "",
     avatarUrl: Persona,
-    step2: { groups: [{ key: "", description: "" }] },
+    // <<< NOVO: Estado inicial pré-preenchido
+    step2: { groups: [{ key: "speech", description: "character's response to message" }] },
     workgroup: [],
     io: { input: "", output: "Waiting for input..." },
   });
@@ -224,18 +225,39 @@ function Create() {
   }, [isAvatarMenuOpen, isCategoryOpen]);
 
   /* ---------- API / ações ---------- */
+  // <<< FUNÇÃO ATUALIZADA >>>
   const handleGenerateWorkgroup = async () => {
     if (!formData.name || !formData.category || !formData.personaDescription) {
       alert("Please fill in Name, Category, and Description before generating.");
       return;
     }
+
+    // 1. Converte o array de grupos para o formato de objeto { key: description }
+    const responseFormatObject = formData.step2.groups.reduce((acc, group) => {
+      // Ignora grupos onde a chave está vazia
+      if (group.key && group.key.trim() !== "") {
+        acc[group.key.trim()] = group.description;
+      }
+      return acc;
+    }, {});
+    
+    // 2. Garante que, se o objeto estiver vazio, ele use o valor padrão
+    let finalResponseFormat = responseFormatObject;
+    if (Object.keys(responseFormatObject).length === 0) {
+      finalResponseFormat = { speech: "character's response to message" };
+    }
+
     setIsGenerating(true);
     setApiError(null);
+
+    // 3. Envia o `responseformat` na chamada da API
     const result = await generateWorkgroup({
       name: formData.name,
       category: formData.category,
       description: formData.personaDescription,
+      responseformat: finalResponseFormat,
     });
+
     if (result.error) {
       console.error(result.error);
       setApiError(`Failed to generate: ${result.error}`);
@@ -247,7 +269,6 @@ function Create() {
     setIsGenerating(false);
   };
 
-  // LÓGICA REIMPLEMENTADA
   const handleGenerateImage = async () => {
     if (!formData.name || !formData.category || !formData.personaDescription) {
       alert("Please fill in Name, Category, and Description to generate an image.");
@@ -272,7 +293,6 @@ function Create() {
     setIsGeneratingAvatar(false);
   };
 
-  // LÓGICA REIMPLEMENTADA
   const handleRunAgent = async (index, agentName) => {
     setRunningAgentIndex(index);
     setApiError(null);
@@ -376,10 +396,11 @@ function Create() {
 
   function removeStep2Group(i) {
     setFormData((prev) => {
-      const groups = prev.step2.groups.filter((_, idx) => idx !== i);
-      if (groups.length === 0) {
-        groups.push({ key: "", description: "" });
+      // Se for o último item, limpe-o em vez de remover para evitar um array vazio
+      if (prev.step2.groups.length === 1) {
+        return { ...prev, step2: { ...prev.step2, groups: [{ key: "", description: "" }] } };
       }
+      const groups = prev.step2.groups.filter((_, idx) => idx !== i);
       return { ...prev, step2: { ...prev.step2, groups } };
     });
   }
@@ -658,15 +679,13 @@ function Create() {
                       <div key={idx} className="border border-[#3A3A3A] rounded-xl p-3">
                         <div className="flex justify-between items-center mb-3">
                           <span className="text-[#8E8E8E] text-sm font-medium">Output {idx + 1}</span>
-                          {formData.step2.groups.length > 1 && (
-                            <button
-                              onClick={() => removeStep2Group(idx)}
-                              className="p-1 rounded-full hover:bg-[#2B2B2B] transition"
-                              aria-label={`Remove group ${idx + 1}`}
-                            >
-                              <Trash2 size={16} color="#A3A3A3" />
-                            </button>
-                          )}
+                          <button
+                            onClick={() => removeStep2Group(idx)}
+                            className="p-1 rounded-full hover:bg-[#2B2B2B] transition"
+                            aria-label={`Remove group ${idx + 1}`}
+                          >
+                            <Trash2 size={16} color="#A3A3A3" />
+                          </button>
                         </div>
 
                         <div className="flex flex-col items-start gap-4">
@@ -677,7 +696,7 @@ function Create() {
                                 type="text"
                                 value={grp.key}
                                 onChange={(e) => updateStep2Field(idx, "key", e.target.value.slice(0, STEP2_KEY_MAX))}
-                                placeholder="action"
+                                placeholder="name"
                                 className="w-full bg-transparent border border-[#3A3A3A] text-white rounded-lg px-3 py-2 pr-10 outline-none focus:ring-0"
                                 maxLength={STEP2_KEY_MAX}
                               />
@@ -697,7 +716,7 @@ function Create() {
                                 type="text"
                                 value={grp.description}
                                 onChange={(e) => updateStep2Field(idx, "description", e.target.value.slice(0, STEP2_DESC_MAX))}
-                                placeholder="Veja a melhor ação para o orc..."
+                                placeholder="describe the key"
                                 className="w-full bg-transparent border border-[#3A3A3A] text-white rounded-lg px-3 py-2 pr-10 outline-none focus:ring-0"
                                 maxLength={STEP2_DESC_MAX}
                               />
@@ -757,7 +776,6 @@ function Create() {
                 <div className="h-px w-full bg-[#3A3A3A]" />
 
                 <div className="p-4">
-                  {/* COMPONENTE WORKGROUP ATUALIZADO COM OS PROPS NECESSÁRIOS */}
                   <WorkGroup
                     workgroupData={formData.workgroup}
                     workgroupResponses={workgroupResponses}
