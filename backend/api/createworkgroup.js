@@ -1,292 +1,141 @@
-// api/createworkgroup.js
-// Clean handler that uses withMiddleware for parsing, rate-limiting and common checks.
-// It implements both: normal generation flow and "enhance" flow with summarization of previousWorkgroup.
-
 import { withMiddleware } from "../lib/withMiddleware.js";
 import buildCreateWorkgroupInstruction from "../prompts/createWorkgroupInstruction.js";
 import buildEnhanceAgentPrompt from "../prompts/enhanceAgentPrompt.js";
 import buildSummarizePrevPrompt from "../prompts/summarizePreviousWorkgroup.js";
-import { generateText } from "../lib/aiProvider.js";
+import { generateText, generateTextAndParseJson } from "../lib/aiProvider.js";
 import { withCors } from "../lib/withCors.js";
+import { validatePersona, validateResponseFormat, validateWorkgroup } from "../lib/validators.js"; // <<< NOVO
+import { AGENT_NAME_MAX, AGENT_PROMPT_MAX, MAX_WORKGROUP_MEMBERS, MAX_PREV } from "../lib/constants.js";
 
-/**
- * Limits and defaults
- */
-const MAX_MEMBERS = 5;
-const MAX_PREV = 5;
-const MAX_STRING = 5000;
-const MAX_FORMAT_BYTES = 2048; // Max size for responseformat object
-
-/**
- * Pure handler: assumes req.body is already parsed by middleware
- */
 async function createWorkgroupHandler(req, res) {
   try {
     const {
-      name,
-      category,
-      description,
-      max_members,
-      responseformat = null, // <<< NOVO: Recebe o formato da resposta
-      previousWorkgroup = [],
-      generateAgentName = null,
-      generateAgentIndex = null,
-      style = null,          // "enhance" optionally
-      existingPrompt = null  // optional: direct prompt text to enhance
+      name, category, description, max_members, responseformat = null,
+      previousWorkgroup = [], generateAgentName = null, generateAgentIndex = null,
+      style = null, existingPrompt = null
     } = req.body || {};
 
-    // Basic validation
-    if (!name || !category || !description) {
-      res.statusCode = 400;
-      res.setHeader("Content-Type", "application/json");
-      res.end(JSON.stringify({ error: "Missing required fields: name, category, description" }));
-      return;
-    }
-    if (typeof name !== "string" || typeof category !== "string" || typeof description !== "string") {
-      res.statusCode = 400;
-      res.setHeader("Content-Type", "application/json");
-      res.end(JSON.stringify({ error: "name/category/description must be strings" }));
-      return;
-    }
+    // <<< VALIDAÇÃO CENTRALIZADA >>>
+    validatePersona({ name, category, description });
+    validateResponseFormat(responseformat);
+    validateWorkgroup(previousWorkgroup, { name: 'previousWorkgroup', max: MAX_PREV });
+    
+    const personaName = name.trim();
+    const personaCategory = category.trim();
+    const personaDescription = description.trim();
 
-    // <<< NOVO: Validação para responseformat
-    if (responseformat) {
-      if (typeof responseformat !== 'object' || responseformat === null || Array.isArray(responseformat)) {
-        res.statusCode = 400;
-        res.setHeader("Content-Type", "application/json");
-        res.end(JSON.stringify({ error: "responseformat must be a JSON object." }));
-        return;
-      }
-      if (JSON.stringify(responseformat).length > MAX_FORMAT_BYTES) {
-        res.statusCode = 413; // Payload too large
-        res.setHeader("Content-Type", "application/json");
-        res.end(JSON.stringify({ error: `responseformat is too large (max ${MAX_FORMAT_BYTES} bytes)` }));
-        return;
-      }
-    }
-
-    // sanitize / truncate persona fields
-    const personaName = name.trim().slice(0, MAX_STRING);
-    const personaCategory = category.trim().slice(0, MAX_STRING);
-    const personaDescription = description.trim().slice(0, MAX_STRING);
-
-    // normalize maxMembers
-    let maxMembers = Number.isInteger(max_members) ? max_members : parseInt(max_members || `${MAX_MEMBERS}`, 10);
+    let maxMembers = Number.isInteger(max_members) ? max_members : parseInt(max_members || `${MAX_WORKGROUP_MEMBERS}`, 10);
     if (Number.isNaN(maxMembers) || maxMembers < 1) maxMembers = 1;
-    if (maxMembers > MAX_MEMBERS) maxMembers = MAX_MEMBERS;
+    if (maxMembers > MAX_WORKGROUP_MEMBERS) maxMembers = MAX_WORKGROUP_MEMBERS;
 
-    // previousWorkgroup validation & normalization
-    if (!Array.isArray(previousWorkgroup)) {
-      res.statusCode = 400;
-      res.setHeader("Content-Type", "application/json");
-      res.end(JSON.stringify({ error: "previousWorkgroup must be an array" }));
-      return;
-    }
-    if (previousWorkgroup.length > MAX_PREV) {
-      res.statusCode = 400;
-      res.setHeader("Content-Type", "application/json");
-      res.end(JSON.stringify({ error: `previousWorkgroup too large (max ${MAX_PREV})` }));
-      return;
-    }
-
-    const prev = previousWorkgroup.map((a, idx) => {
+    const prev = previousWorkgroup.slice(0, MAX_PREV).map((a, idx) => {
       if (!a || typeof a !== "object") return null;
-      const n = (a.name && String(a.name).trim().slice(0, 80)) || `Agent${idx}`;
-      const p = (a.prompt && String(a.prompt).trim().slice(0, MAX_STRING)) || "";
-      return { name: n, prompt: p };
+      return {
+        name: String(a.name || `Agent${idx}`).trim().slice(0, AGENT_NAME_MAX),
+        prompt: String(a.prompt || "").trim().slice(0, AGENT_PROMPT_MAX)
+      };
     }).filter(Boolean);
 
-    // validate generateAgentName/index
-    let genName = null, genIndex = null;
-    if (typeof generateAgentName !== "undefined" && generateAgentName !== null) {
-      if (typeof generateAgentName !== "string" || !generateAgentName.trim()) {
-        res.statusCode = 400;
-        res.setHeader("Content-Type", "application/json");
-        res.end(JSON.stringify({ error: "generateAgentName must be non-empty string" }));
-        return;
-      }
-      genName = generateAgentName.trim().slice(0, 80);
-    }
-    if (typeof generateAgentIndex !== "undefined" && generateAgentIndex !== null) {
-      const idx = Number(generateAgentIndex);
-      if (!Number.isFinite(idx) || idx < 0 || Math.floor(idx) !== idx) {
-        res.statusCode = 400;
-        res.setHeader("Content-Type", "application/json");
-        res.end(JSON.stringify({ error: "generateAgentIndex must be a non-negative integer" }));
-        return;
-      }
-      genIndex = idx;
-    }
-    if (genName && typeof genIndex === "number") genName = null; // prefer index if both provided
+    let genName = generateAgentName ? String(generateAgentName).trim().slice(0, AGENT_NAME_MAX) : null;
+    let genIndex = (generateAgentIndex != null && Number.isInteger(Number(generateAgentIndex)) && Number(generateAgentIndex) >= 0) ? Number(generateAgentIndex) : null;
+    if (genName && genIndex !== null) genName = null;
 
     const isEnhance = String(style || "").toLowerCase() === "enhance";
 
+    // --- LÓGICA DO 'ENHANCE' RESTAURADA ---
     if (isEnhance) {
-      // ENHANCE flow: (Lógica original mantida, pois o responseformat não se aplica aqui)
       let targetAgentName = genName;
-      if (!targetAgentName && typeof genIndex === "number") {
-        if (prev[genIndex] && prev[genIndex].name) targetAgentName = prev[genIndex].name;
+      if (!targetAgentName && genIndex !== null && prev[genIndex]) {
+        targetAgentName = prev[genIndex].name;
       }
       if (!targetAgentName) {
-        res.statusCode = 400;
-        res.setHeader("Content-Type", "application/json");
-        res.end(JSON.stringify({ error: "To enhance, provide generateAgentName or generateAgentIndex (or include agent in previousWorkgroup)." }));
-        return;
+        return res.status(400).json({ error: "To enhance, provide generateAgentName or a valid generateAgentIndex for an agent in previousWorkgroup." });
       }
 
-      const existingFromPrev = prev.find(p => p.name.toLowerCase() === targetAgentName.toLowerCase());
-      const existingText = existingFromPrev ? existingFromPrev.prompt : (typeof existingPrompt === "string" ? existingPrompt.trim().slice(0, MAX_STRING) : null);
+      const existingAgent = prev.find(p => p.name.toLowerCase() === targetAgentName.toLowerCase());
+      const existingText = existingAgent ? existingAgent.prompt : (typeof existingPrompt === "string" ? existingPrompt.trim() : null);
 
-      if (!existingText || existingText.length === 0) {
-        res.statusCode = 400;
-        res.setHeader("Content-Type", "application/json");
-        res.end(JSON.stringify({ error: "No existing prompt found to enhance. Provide it in previousWorkgroup or via existingPrompt." }));
-        return;
+      if (!existingText) {
+        return res.status(400).json({ error: "No existing prompt found to enhance." });
       }
 
-      let prevSummary = "";
+      let prevSummary = "No previous agents provided.";
       if (prev.length > 0) {
         try {
           const summarizeInstruction = buildSummarizePrevPrompt({ previousWorkgroup: prev, personaName, personaCategory });
-          const summaryText = await generateText({ prompt: summarizeInstruction, maxTokens: 250, temperature: 0.1 });
-          prevSummary = (typeof summaryText === "string" ? summaryText.trim() : String(summaryText)).slice(0, 1200);
-          if (!prevSummary) {
-            prevSummary = prev.map(p => `- ${p.name}: ${p.prompt.slice(0, 120)}`).join("\n");
-          }
+          prevSummary = await generateText({ prompt: summarizeInstruction, maxTokens: 250, temperature: 0.1 });
         } catch (err) {
-          console.error("summarization error:", err);
+          console.error("Summarization error:", err);
           prevSummary = prev.map(p => `- ${p.name}: ${p.prompt.slice(0, 120)}`).join("\n");
         }
-      } else {
-        prevSummary = "No previous agents provided.";
       }
 
       const enhanceInstruction = buildEnhanceAgentPrompt({
-        personaName,
-        personaCategory,
-        personaDescription,
-        agentName: targetAgentName,
-        existingPrompt: existingText,
-        previousWorkgroupSummary: prevSummary
+        personaName, personaCategory, personaDescription,
+        agentName: targetAgentName, existingPrompt: existingText, previousWorkgroupSummary: prevSummary
       });
 
-      let improved;
-      try {
-        improved = await generateText({ prompt: enhanceInstruction, maxTokens: 400, temperature: 0.2 });
-      } catch (err) {
-        console.error("LLM enhance error:", err);
-        res.statusCode = 500;
-        res.setHeader("Content-Type", "application/json");
-        res.end(JSON.stringify({ error: "LLM error during enhancement", detail: String(err) }));
-        return;
+      const improved = await generateText({ prompt: enhanceInstruction, maxTokens: 400, temperature: 0.2 });
+      const finalPrompt = (improved || "").trim().slice(0, AGENT_PROMPT_MAX);
+
+      if (!finalPrompt) {
+        return res.status(500).json({ error: "LLM returned empty enhancement" });
       }
 
-      const finalPrompt = String(improved || "").trim().slice(0, MAX_STRING);
-      if (!finalPrompt) {
-        res.statusCode = 500;
-        res.setHeader("Content-Type", "application/json");
-        res.end(JSON.stringify({ error: "LLM returned empty enhancement" }));
-        return;
-      }
-      
-      res.statusCode = 200;
-      res.setHeader("Content-Type", "application/json");
-      res.end(JSON.stringify({
-        workgroup: [ { name: targetAgentName, prompt: finalPrompt } ],
+      return res.status(200).json({
+        workgroup: [{ name: targetAgentName, prompt: finalPrompt }],
         raw: improved
-      }));
-      return;
+      });
     }
 
-    // NORMAL generation flow
+    // --- FLUXO DE GERAÇÃO NORMAL COM RETRY ---
     const instruction = buildCreateWorkgroupInstruction({
-      name: personaName,
-      category: personaCategory,
-      description: personaDescription,
-      maxMembers,
-      responseformat, // <<< NOVO: Passa o formato para o prompt
-      previousWorkgroup: prev,
-      generateAgentName: genName,
-      generateAgentIndex: genIndex
+      name: personaName, category: personaCategory, description: personaDescription,
+      maxMembers, responseformat, previousWorkgroup: prev,
+      generateAgentName: genName, generateAgentIndex: genIndex
     });
 
-    let llmText;
-    try {
-      llmText = await generateText({ prompt: instruction, maxTokens: 1200, temperature: 0.18 }); // Aumentado para acomodar prompts maiores
-    } catch (err) {
-      console.error("LLM generate error:", err);
-      res.statusCode = 500;
-      res.setHeader("Content-Type", "application/json");
-      res.end(JSON.stringify({ error: "LLM error", detail: String(err) }));
-      return;
-    }
+    const { parsedJson: parsedWorkgroup, rawText: lastLlmText } = await generateTextAndParseJson(
+      { prompt: instruction, maxTokens: 1500, temperature: 0.18 },
+      { expectedShape: 'array' }
+    );
 
-    // parse & normalize LLM output
-    let parsed = null;
-    try {
-      parsed = JSON.parse(llmText);
-    } catch (e) {
-      const first = llmText.indexOf("[");
-      const last = llmText.lastIndexOf("]");
-      if (first !== -1 && last !== -1 && last > first) {
-        try { parsed = JSON.parse(llmText.slice(first, last + 1)); } catch (e2) { parsed = null; }
-      }
-    }
-
-    if (!Array.isArray(parsed)) {
-      res.statusCode = 200;
-      res.setHeader("Content-Type", "application/json");
-      res.end(JSON.stringify({ error: "LLM output could not be parsed as JSON array", raw: llmText }));
-      return;
-    }
-
-    const normalized = parsed
-      .filter(i => i && typeof i === "object")
-      .map((it, idx) => {
-        const n = String(it.name || `Agent${idx}`).trim().slice(0, 80);
-        const p = String(it.prompt || "").trim().slice(0, MAX_STRING);
-        return { name: n, prompt: p };
-      })
+    const normalized = parsedWorkgroup
+      .filter(i => i && typeof i === "object" && i.name && i.prompt)
+      .map(it => ({
+        name: String(it.name).trim().slice(0, AGENT_NAME_MAX),
+        prompt: String(it.prompt).trim().slice(0, AGENT_PROMPT_MAX),
+      }))
       .filter(item => !/integrator/i.test(item.name))
-      .slice(0, maxMembers); // Mantém como segurança, mas o prompt deve garantir o número exato
+      .slice(0, maxMembers);
 
-    // single-agent requested adjustments
-    if ((genName || typeof genIndex === "number") && normalized.length > 1) {
+    if ((genName || genIndex !== null) && normalized.length > 1) {
+      let result = [];
+      let warning = undefined;
       if (genName) {
         const found = normalized.find(n => n.name.toLowerCase() === genName.toLowerCase());
-        const result = found ? [found] : [normalized[0]];
-        res.statusCode = 200;
-        res.setHeader("Content-Type", "application/json");
-        res.end(JSON.stringify({ workgroup: result, raw: llmText, warning: found ? undefined : "Requested single agent not found exactly; returning first generated." }));
-        return;
-      } else {
-        if (genIndex >= 0 && genIndex < normalized.length) {
-          res.statusCode = 200;
-          res.setHeader("Content-Type", "application/json");
-          res.end(JSON.stringify({ workgroup: [normalized[genIndex]], raw: llmText }));
-          return;
+        result = found ? [found] : [normalized[0]];
+        if (!found) warning = "Requested single agent not found exactly; returning first generated.";
+      } else { // genIndex
+        if (genIndex < normalized.length) {
+          result = [normalized[genIndex]];
         } else {
-          res.statusCode = 200;
-          res.setHeader("Content-Type", "application/json");
-          res.end(JSON.stringify({ workgroup: [normalized[0]], raw: llmText, warning: "Requested index out of range; returning first generated agent." }));
-          return;
+          result = [normalized[0]];
+          warning = "Requested index out of range; returning first generated agent.";
         }
       }
+      return res.status(200).json({ workgroup: result, raw: lastLlmText, warning });
     }
 
-    res.statusCode = 200;
-    res.setHeader("Content-Type", "application/json");
-    res.end(JSON.stringify({ workgroup: normalized, raw: llmText }));
-    return;
+    return res.status(200).json({ workgroup: normalized, raw: lastLlmText });
 
   } catch (err) {
+    if (err.name === "ValidationError") {
+      return res.status(400).json({ error: err.message });
+    }
     console.error("createworkgroup general error:", err);
     if (!res.headersSent) {
-      res.statusCode = 500;
-      res.setHeader("Content-Type", "application/json");
-      res.end(JSON.stringify({ error: "Internal server error", detail: String(err) }));
-    } else {
-      try { res.end(); } catch (e) {}
+      res.status(500).json({ error: "Internal server error", detail: err.message });
     }
   }
 }

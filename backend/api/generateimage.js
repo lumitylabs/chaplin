@@ -4,94 +4,45 @@ import { generateText } from "../lib/aiProvider.js";
 import fetch from "node-fetch";
 import { withMiddleware } from "../lib/withMiddleware.js";
 import { withCors } from "../lib/withCors.js";
-
-const MAX_STRING = 3000;
+import { validatePersona, validateWorkgroup } from "../lib/validators.js"; // <<< NOVO
 
 async function handler(req, res) {
   try {
-    // req.body is already parsed by withMiddleware (parseJson: true)
     const { name, description, category, workgroup = [] } = req.body || {};
 
-    if (!name || !description || !category) {
-      res.statusCode = 400;
-      res.setHeader("Content-Type", "application/json");
-      res.end(JSON.stringify({ error: "Missing name/description/category" }));
-      return;
-    }
+    // <<< VALIDAÇÃO CENTRALIZADA >>>
+    validatePersona({ name, description, category });
+    validateWorkgroup(workgroup);
 
-    if (!Array.isArray(workgroup)) {
-      res.statusCode = 400;
-      res.setHeader("Content-Type", "application/json");
-      res.end(JSON.stringify({ error: "workgroup must be an array" }));
-      return;
-    }
-
-    const personaName = String(name).slice(0, MAX_STRING);
-    const personaDesc = String(description).slice(0, MAX_STRING);
-    const personaCat = String(category).slice(0, MAX_STRING);
-
-    // Build image prompt via prompt builder + LLM
+    // --- Lógica de Negócios ---
     const promptForImage = buildGenerateImagePrompt({
-      name: personaName,
-      description: personaDesc,
-      category: personaCat,
+      name: name.trim(),
+      description: description.trim(),
+      category: category.trim(),
       workgroup
     });
 
-    let imagePrompt;
-    try {
-      imagePrompt = await generateText({ prompt: promptForImage, maxTokens: 200, temperature: 0.8 });
-      if (typeof imagePrompt !== "string") imagePrompt = String(imagePrompt || "");
-      imagePrompt = imagePrompt.trim();
-    } catch (err) {
-      console.error("image prompt generation error:", err);
-      res.statusCode = 500;
-      res.setHeader("Content-Type", "application/json");
-      res.end(JSON.stringify({ error: "Image prompt generation failed", detail: String(err) }));
-      return;
-    }
+    // A geração do prompt de imagem não precisa de retry de parse, pois espera uma string.
+    const imagePrompt = (await generateText({ prompt: promptForImage, maxTokens: 200, temperature: 0.8 })).trim();
 
-    // Call the external image API (the worker URL), convert to base64
     const url = process.env.IMAGE_WORKER_URL +`/?prompt=${encodeURIComponent(imagePrompt)}`;
-
-    let resp;
-    try {
-      resp = await fetch(url);
-    } catch (err) {
-      console.error("fetch to image worker failed:", err);
-      res.statusCode = 502;
-      res.setHeader("Content-Type", "application/json");
-      res.end(JSON.stringify({ error: "Image worker request failed", detail: String(err) }));
-      return;
-    }
-
-    if (!resp.ok) {
-      const txt = await resp.text().catch(() => "<no-body>");
-      res.statusCode = 502;
-      res.setHeader("Content-Type", "application/json");
-      res.end(JSON.stringify({ error: "Image API error", status: resp.status, detail: txt }));
-      return;
-    }
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error(`Image worker failed with status ${resp.status}`);
 
     const buffer = await resp.arrayBuffer();
     const base64 = Buffer.from(buffer).toString("base64");
     const mime = resp.headers.get("content-type") || "image/png";
 
-    res.statusCode = 200;
-    res.setHeader("Content-Type", "application/json");
-    res.end(JSON.stringify({
-      imagePrompt,
-      mime,
-      base64: `data:${mime};base64,${base64}`
-    }));
+    res.status(200).json({ imagePrompt, mime, base64: `data:${mime};base64,${base64}` });
+
   } catch (err) {
+    // <<< TRATAMENTO DE ERRO MELHORADO >>>
+    if (err.name === "ValidationError") {
+      return res.status(400).json({ error: err.message });
+    }
     console.error("generateimage error:", err);
     if (!res.headersSent) {
-      res.statusCode = 500;
-      res.setHeader("Content-Type", "application/json");
-      res.end(JSON.stringify({ error: "Internal server error", detail: String(err) }));
-    } else {
-      try { res.end(); } catch (e) {}
+      res.status(500).json({ error: "Internal server error", detail: err.message });
     }
   }
 }
@@ -99,7 +50,7 @@ async function handler(req, res) {
 export default withCors(withMiddleware(handler, {
   allowedMethods: ["POST"],
   requireJson: true,
-  parseJson: true,             // middleware will parse body and set req.body
+  parseJson: true,
   maxBodyBytes: 200 * 1024,
   rateLimit: { windowMs: 60_000, max: 20 }
 }));

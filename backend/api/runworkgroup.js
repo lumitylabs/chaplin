@@ -2,37 +2,31 @@
 import { withCors } from "../lib/withCors.js";
 import { withMiddleware } from "../lib/withMiddleware.js";
 import { runWorkgroupAndIntegrate } from "../lib/workgroupEngine.js";
+import { validateWorkgroup, validateResponseFormat } from "../lib/validators.js";
+import { MAX_RESPONSE_ENTRIES } from "../lib/constants.js";
 
-/**
- * Pure handler: expects req.body to be parsed (middleware.parseJson = true)
- * Focus: validates semantic inputs and calls the engine.
- */
+
 async function runworkgroupHandler(req, res) {
-  // req.body is provided by middleware
-  const { input, workgroup, workgroupresponse = {}, responseformat } = req.body || {};
-
-  if (typeof input === "undefined") {
-    res.statusCode = 400;
-    res.end(JSON.stringify({ error: "Missing input" }));
-    return;
-  }
-  if (!Array.isArray(workgroup) || workgroup.length === 0) {
-    res.statusCode = 400;
-    res.end(JSON.stringify({ error: "workgroup must be a non-empty array" }));
-    return;
-  }
-  if (typeof workgroupresponse !== "object" || workgroupresponse === null) {
-    res.statusCode = 400;
-    res.end(JSON.stringify({ error: "workgroupresponse must be an object" }));
-    return;
-  }
-  if (typeof responseformat !== "object" || responseformat === null) {
-    res.statusCode = 400;
-    res.end(JSON.stringify({ error: "responseformat must be an object" }));
-    return;
-  }
-
   try {
+    const { input, workgroup, workgroupresponse = {}, responseformat } = req.body || {};
+
+
+    if (typeof input === "undefined") {
+      throw new ValidationError("Missing required field: input");
+    }
+    if (!workgroup || workgroup.length === 0) {
+      throw new ValidationError("workgroup must be a non-empty array");
+    }
+    if (typeof workgroupresponse !== "object" || workgroupresponse === null) {
+      throw new ValidationError("workgroupresponse must be an object");
+    }
+    if (Object.keys(workgroupresponse).length > MAX_RESPONSE_ENTRIES) {
+      throw new ValidationError(`workgroupresponse too large (max ${MAX_RESPONSE_ENTRIES} entries)`);
+    }
+
+    validateWorkgroup(workgroup);
+    validateResponseFormat(responseformat);
+    
     const result = await runWorkgroupAndIntegrate({
       input,
       workgroup,
@@ -47,9 +41,8 @@ async function runworkgroupHandler(req, res) {
       }
     });
 
-    res.statusCode = 200;
-    res.setHeader("Content-Type", "application/json");
-    res.end(JSON.stringify({
+    // Envia a resposta de sucesso
+    return res.status(200).json({
       perAgent: result.perAgent,
       generated: result.generated,
       updatedWorkgroupResponse: result.updatedWorkgroupResponse,
@@ -57,30 +50,25 @@ async function runworkgroupHandler(req, res) {
       validation: result.validation,
       attempts: result.attempts,
       lastRaw: result.lastRaw
-    }));
+    });
+
   } catch (err) {
+
+    if (err.name === "ValidationError") {
+      return res.status(400).json({ error: err.message });
+    }
     console.error("runworkgroup handler error:", err);
-    res.statusCode = 500;
-    res.setHeader("Content-Type", "application/json");
-    res.end(JSON.stringify({ error: "Internal server error", detail: String(err) }));
+    if (!res.headersSent) {
+      return res.status(500).json({ error: "Internal server error", detail: err.message });
+    }
   }
 }
 
-/**
- * Export default wrapped handler.
- * Options:
- *  - parseJson true => middleware will parse body and set req.body
- *  - requireJson true => middleware ensures Content-Type: application/json
- *  - allowedMethods restricts to POST
- *  - rateLimit { windowMs, max } : simple in-memory rate limit
- *
- * Replace in production the rate limiter with a central store (Redis) and set requireAuth + authFn.
- */
 export default withCors(withMiddleware(runworkgroupHandler, {
   allowedMethods: ["POST"],
   requireJson: true,
   parseJson: true,
   maxBodyBytes: 300 * 1024,
-  rateLimit: { windowMs: 60_000, max: 30 }, // 30 requests per minute per IP (dev default)
-  requireAuth: false // set true + authFn in prod
+  rateLimit: { windowMs: 60_000, max: 30 },
+  requireAuth: false
 }));
