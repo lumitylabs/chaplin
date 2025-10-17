@@ -111,6 +111,26 @@
   /* Opacidade total para feedback claro durante o arraste */
 }
 
+/* ---- Estilização da Barra de Rolagem do menu dropdown de Category "Create" ---- */
+
+/* 1. O TRILHO (fundo da barra) */
+.category-dropdown-scrollbar .simplebar-track.simplebar-vertical {
+  background: transparent !important;
+  /* Garante que não haja fundo */
+  width: 8px;
+  /* Largura da área de interação */
+}
+
+/* 2. A BARRA DE ROLAGEM (o indicador que se move) */
+.category-dropdown-scrollbar .simplebar-scrollbar::before {
+  /* Cor sólida e opacidade total */
+  background-color: #3F3F46 !important;
+  opacity: 1 !important;
+
+  /* Garante que não herde transições ou estilos indesejados de outras regras */
+  transition: none !important;
+}
+
 html,
 body,
 #root {
