@@ -4,8 +4,6 @@ import React, { useRef, useState, useEffect } from "react";
 import { Menu, Scan, WandSparkles, ChevronDown, Plus, Trash2, PenLine, Play, Loader2 } from "lucide-react";
 // Componentes e Assets existentes
 import PersonaNavbar from "../components/ui/general/PersonaNavbar";
-import InputBox from "../components/ui/general/InputBox";
-import GenerateWandIcon from "../assets/generate_wand_icon.svg";
 import Persona from "../assets/persona.png";
 import PublicIcon from "../assets/public_icon.svg";
 import LockOpenIcon from "../assets/open_lock_icon.svg";
@@ -30,14 +28,14 @@ const CATEGORY_OPTIONS = [
 
 /* ------------------ Subcomponentes ------------------ */
 function Specialist({
-    number,
-    name,
-    prompt,
-    response,
-    isRunning,
-    onRun,
-    onOpenModal,
-    onOpenResponseModal
+  number,
+  name,
+  prompt,
+  response,
+  isRunning,
+  onRun,
+  onOpenModal,
+  onOpenResponseModal
 }) {
   const hasResponse = !!response;
 
@@ -74,11 +72,10 @@ function Specialist({
       <button
         onClick={hasResponse ? onOpenResponseModal : undefined}
         disabled={!hasResponse}
-        className={`w-full h-10 rounded-b-xl flex items-center justify-end gap-3 px-4 transition-colors ${
-          hasResponse
-            ? "bg-white text-black font-semibold cursor-pointer hover:bg-gray-200"
-            : "bg-[#2B2B2B] text-[#B0B0B0] cursor-default"
-        }`}
+        className={`w-full h-10 rounded-b-xl flex items-center justify-end gap-3 px-4 transition-colors ${hasResponse
+          ? "bg-white text-black font-semibold cursor-pointer hover:bg-gray-200"
+          : "bg-[#2B2B2B] text-[#B0B0B0] cursor-default"
+          }`}
       >
         Response
         <img src={OutputIcon} alt="Output" />
@@ -267,10 +264,10 @@ function Create() {
     });
 
     if (result.error) {
-        console.error(result.error);
-        setApiError(`Failed to generate image: ${result.error}`);
+      console.error(result.error);
+      setApiError(`Failed to generate image: ${result.error}`);
     } else {
-        setFormData(prev => ({ ...prev, avatarUrl: result.data.base64 }));
+      setFormData(prev => ({ ...prev, avatarUrl: result.data.base64 }));
     }
     setIsGeneratingAvatar(false);
   };
@@ -279,7 +276,7 @@ function Create() {
   const handleRunAgent = async (index, agentName) => {
     setRunningAgentIndex(index);
     setApiError(null);
-    
+
     const newResponses = { ...workgroupResponses };
     delete newResponses[agentName];
     setWorkgroupResponses(newResponses);
@@ -287,17 +284,17 @@ function Create() {
     const input = formData.io.input || "Please proceed with your task.";
 
     const result = await runAgent({
-        input,
-        workgroup: formData.workgroup,
-        workgroupresponse: newResponses,
-        targetAgentName: agentName
+      input,
+      workgroup: formData.workgroup,
+      workgroupresponse: newResponses,
+      targetAgentName: agentName
     });
 
     if (result.error) {
-        console.error(result.error);
-        setApiError(`Failed to run agent ${agentName}: ${result.error}`);
+      console.error(result.error);
+      setApiError(`Failed to run agent ${agentName}: ${result.error}`);
     } else {
-        setWorkgroupResponses(result.data);
+      setWorkgroupResponses(result.data);
     }
 
     setRunningAgentIndex(null);
@@ -359,8 +356,8 @@ function Create() {
     if (type === "description") return formData.personaDescription;
     if (type === "specialist") return formData.workgroup[index]?.prompt || "";
     if (type === "specialist_response") {
-        const agentName = formData.workgroup[index]?.name;
-        return workgroupResponses[agentName] || "No response generated yet.";
+      const agentName = formData.workgroup[index]?.name;
+      return workgroupResponses[agentName] || "No response generated yet.";
     }
     if (type === "io_input") return formData.io.input;
     if (type === "step2_key") return formData.step2.groups[index]?.key || "";
@@ -442,9 +439,8 @@ function Create() {
 
       <button
         onClick={() => setIsNavbarOpen(true)}
-        className={`fixed top-5 left-5 z-20 p-2 rounded-full hover:bg-[#1F1F22] transition-all duration-200 cursor-pointer ${
-          isNavbarOpen ? "opacity-0 -translate-x-16" : "opacity-100 translate-x-0"
-        }`}
+        className={`fixed top-5 left-5 z-20 p-2 rounded-full hover:bg-[#1F1F22] transition-all duration-200 cursor-pointer ${isNavbarOpen ? "opacity-0 -translate-x-16" : "opacity-100 translate-x-0"
+          }`}
         aria-label="Open Menu"
       >
         <Menu color="#A2A2AB" size={23} />
@@ -462,7 +458,7 @@ function Create() {
           <div className="flex flex-col gap-4 max-w-xl">
             {/* NAME */}
             <div>
-              <label className="text-sm text-[#A3A3A3]">Name</label>
+              <label className="text-sm text-[#FAFAFA]">Name</label>
               <div className="mt-2">
                 <input
                   type="text"
@@ -480,7 +476,7 @@ function Create() {
 
             {/* CATEGORY */}
             <div>
-              <label className="text-sm text-[#A3A3A3]">Category</label>
+              <label className="text-sm text-[#FAFAFA]">Category</label>
               <div className="mt-2 relative pb-3" ref={categoryRef}>
                 <button
                   onClick={toggleCategory}
@@ -518,7 +514,7 @@ function Create() {
 
             {/* INSTRUCTIONS */}
             <div>
-              <label className="text-sm text-[#A3A3A3]">Instructions</label>
+              <label className="text-sm text-[#FAFAFA]">Instructions</label>
               <div className="mt-2">
                 <textarea
                   value={formData.instructions}
@@ -536,7 +532,7 @@ function Create() {
 
             {/* VISIBILITY */}
             <div>
-              <label className="text-sm text-[#A3A3A3]">Visibility</label>
+              <label className="text-sm text-[#FAFAFA]">Visibility</label>
               <div className="flex items-center gap-2 border border-[#3A3A3A] p-2.5 rounded-lg mt-2 text-sm text-gray-300 w-fit bg-transparent">
                 <img src={PublicIcon} alt="" className="w-4 h-4" />
                 Public
@@ -554,7 +550,7 @@ function Create() {
               <div className="border border-[#3A3A3A] rounded-xl">
                 <div className="p-4">
                   <div className="flex items-center justify-between">
-                    <div className="text-[#D0D0D0] font-semibold py-[5px]">Input Data</div>
+                    <div className="text-[#FAFAFA] font-medium text-sm py-[5px]">Input Data</div>
                   </div>
                 </div>
 
@@ -587,10 +583,10 @@ function Create() {
                     <label className="text-xs text-[#A3A3A3]">Avatar</label>
                     <div className="relative w-36 h-36">
                       <img src={formData.avatarUrl} alt="persona" className="w-full h-full object-cover rounded-2xl border border-[#3A3A3A]" />
-                      
+
                       {isGeneratingAvatar && (
                         <div className="absolute inset-0 bg-black/60 flex items-center justify-center rounded-2xl">
-                            <Loader2 className="w-8 h-8 text-white animate-spin" />
+                          <Loader2 className="w-8 h-8 text-white animate-spin" />
                         </div>
                       )}
 
@@ -609,15 +605,15 @@ function Create() {
                       {isAvatarMenuOpen && (
                         <div
                           ref={avatarMenuRef}
-                          className="absolute bottom-12 right-0 z-50 w-48 bg-[#202024] rounded-lg p-1 shadow-lg"
+                          className="absolute bottom-4 left-36.5 z-50 w-51 bg-[#202024] rounded-lg p-1 shadow-lg"
                         >
                           <button
                             onClick={handleGenerateImage}
                             disabled={isGeneratingAvatar}
-                            className="flex justify-between items-center gap-2 w-full text-left px-3 py-2.5 rounded-lg text-sm hover:bg-[#2E2E31] transition cursor-pointer disabled:opacity-50"
+                            className="flex justify-between items-center gap-2 w-full text-left px-3 py-2.5 rounded-lg text-sm hover:bg-[#2E2E31] transition cursor-pointer"
                           >
-                            {isGeneratingAvatar ? "Generating..." : "Generate Image"}
-                            <WandSparkles size={14} />
+                            {isGeneratingAvatar ? "Generating..." : "Generate image"}
+                            <WandSparkles size={14} color="#D9D3D3" />
                           </button>
                         </div>
                       )}
@@ -636,7 +632,7 @@ function Create() {
               <div className="border border-[#3A3A3A] rounded-xl">
                 <div className="p-4">
                   <div className="flex items-center justify-between">
-                    <div className="text-[#D0D0D0] font-semibold flex items-center gap-3">
+                    <div className="text-[#FAFAFA] font-medium text-sm flex items-center gap-3">
                       <span>Output Format</span>
                     </div>
 
@@ -661,7 +657,7 @@ function Create() {
                     {formData.step2.groups.map((grp, idx) => (
                       <div key={idx} className="border border-[#3A3A3A] rounded-xl p-3">
                         <div className="flex justify-between items-center mb-3">
-                          <span className="text-white text-sm font-semibold">Output {idx + 1}</span>
+                          <span className="text-[#8E8E8E] text-sm font-medium">Output {idx + 1}</span>
                           {formData.step2.groups.length > 1 && (
                             <button
                               onClick={() => removeStep2Group(idx)}
@@ -735,23 +731,23 @@ function Create() {
               <div className="border border-[#3A3A3A] rounded-xl">
                 <div className="p-4">
                   <div className="flex items-center justify-between">
-                    <div className="text-[#D0D0D0] font-semibold">Workgroup</div>
+                    <div className="text-[#FAFAFA] text-sm font-medium">Workgroup</div>
                     <div className="flex gap-3">
                       <button
                         onClick={handleGenerateWorkgroup}
                         disabled={isGenerating}
-                        className="flex items-center gap-2 px-3 py-1.5 bg-transparent border border-[#3A3A3A] text-sm text-[#D0D0D0] font-semibold rounded-full cursor-pointer hover:bg-[#1F1F22] transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                        className="flex items-center gap-2 px-3 py-1.5 bg-transparent border border-[#3A3A3A] text-sm text-[#D9D3D3] font-semibold rounded-full cursor-pointer hover:bg-[#1F1F22] transition duration-200 active:scale-95"
                         title="AI Generate"
                       >
-                        <img src={GenerateWandIcon} alt="" className="w-4 h-4" />
+                        <WandSparkles size={14} color="#D9D3D3" />
                         {isGenerating ? "Generating..." : "AI Generate"}
                       </button>
                       <button
                         onClick={handleRunWorkgroup}
-                        className="flex items-center gap-2 px-3 py-1.5 bg-white text-black text-sm font-semibold rounded-full cursor-pointer hover:brightness-95 transition-all"
+                        className="flex items-center gap-2 px-3 py-1.5 bg-[#202024] text-[##D9D9D9] text-sm font-semibold rounded-full cursor-pointer hover:bg-[#3B3B42] transition duration-200 active:scale-95"
                         title="Run Workgroup"
                       >
-                        <Play size={14} />
+                        <Play size={10} fill="#D9D9D9" />
                         Run
                       </button>
                     </div>
