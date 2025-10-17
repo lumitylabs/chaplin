@@ -4,7 +4,6 @@ import { Menu, Scan, WandSparkles, ChevronDown, Plus, Trash2, PenLine, Play } fr
 // Componentes e Assets existentes
 import PersonaNavbar from "../components/ui/general/PersonaNavbar";
 import InputBox from "../components/ui/general/InputBox";
-import EditIcon from "../assets/edit_icon.svg";
 import GenerateWandIcon from "../assets/generate_wand_icon.svg";
 import Persona from "../assets/persona.png";
 import PublicIcon from "../assets/public_icon.svg";
@@ -17,7 +16,7 @@ import ExpandBox from "../components/ui/general/ExpandBox";
 import { generateWorkgroup } from "../services/apiService";
 import SpecialistSkeleton from "../components/ui/create/SpecialistSkeleton";
 /* ------------------ constantes ------------------ */
-const NAME_MAX = 20;
+const NAME_MAX = 25;
 const INSTR_MAX = 200;
 const STEP2_KEY_MAX = 15;
 const STEP2_DESC_MAX = 100;
@@ -389,7 +388,7 @@ function Create() {
           </div>
 
           {/* ---------- Principal form (Name, Category, Instructions, Visibility) ---------- */}
-          <div className="flex flex-col gap-4 max-w-2xl">
+          <div className="flex flex-col gap-4 max-w-xl">
             {/* NAME */}
             <div>
               <label className="text-sm text-[#A3A3A3]">Name</label>
@@ -399,7 +398,7 @@ function Create() {
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value.slice(0, NAME_MAX) })}
                   placeholder="e.g. Charles Chaplin"
-                  className="w-full bg-transparent border border-[#3A3A3A] text-white rounded-lg px-4 py-2 outline-none focus:ring-0"
+                  className="w-full text-sm bg-transparent border border-[#3A3A3A] text-white rounded-xl px-4 py-4 outline-none focus:ring-1 focus:ring-[#FAFAFA]"
                   maxLength={NAME_MAX}
                 />
                 <div className="w-full flex justify-end mt-1">
@@ -414,7 +413,7 @@ function Create() {
               <div className="mt-2 relative pb-3" ref={categoryRef}>
                 <button
                   onClick={toggleCategory}
-                  className={`w-full flex items-center justify-between bg-transparent border border-[#3A3A3A] rounded-lg px-4 py-2 text-left outline-none focus:ring-0 ${formData.category ? "text-white" : "text-[#A3A3A3]"
+                  className={`w-full flex items-center justify-between bg-transparent border border-[#3A3A3A] rounded-xl text-sm  px-4 py-4  text-left outline-none focus:ring-1 focus:ring-[#FAFAFA] ${formData.category ? "text-white" : "text-[#A3A3A3]"
                     }`}
                   aria-haspopup="listbox"
                   aria-expanded={isCategoryOpen}
@@ -453,8 +452,8 @@ function Create() {
                 <textarea
                   value={formData.instructions}
                   onChange={(e) => setFormData({ ...formData, instructions: e.target.value.slice(0, INSTR_MAX) })}
-                  placeholder="Peça uma missão e o local da quest..."
-                  className="w-full bg-transparent border border-[#3A3A3A] text-white rounded-lg px-4 py-2 outline-none resize-none focus:ring-0"
+                  placeholder="How to use this Chaplin?"
+                  className="w-full bg-transparent border border-[#3A3A3A] text-white text-sm rounded-xl px-4 py-4 outline-none resize-none focus:ring-1 focus:ring-[#FAFAFA]"
                   rows={4}
                   maxLength={INSTR_MAX}
                 />
