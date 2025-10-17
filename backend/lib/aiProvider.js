@@ -17,13 +17,14 @@ import CortensorModel from "./models/CortensorModel.js";
 import GeminiFlashModel from "./models/GeminiFlashModel.js";
 import GeminiProModel from "./models/GeminiProModel.js";
 
-const DEFAULT_PRIORITY = ["cortensor", "geminiflash", "geminipro"];
+const DEFAULT_PRIORITY = ["geminiflash", "geminipro", "cortensor"];
 
 // registry maps keys -> class (not instance)
 const MODEL_REGISTRY = {
+
   cortensor: CortensorModel,
-  // geminiflash: GeminiFlashModel,
-  // geminipro: GeminiProModel,
+  geminiflash: GeminiFlashModel,
+  geminipro: GeminiProModel,
 };
 
 function buildPriorityFromEnv() {
