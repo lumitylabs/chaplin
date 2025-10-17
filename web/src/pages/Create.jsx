@@ -543,7 +543,7 @@ function Create() {
                 <textarea
                   value={formData.instructions}
                   onChange={(e) => setFormData({ ...formData, instructions: e.target.value.slice(0, INSTR_MAX) })}
-                  placeholder="How to use this Chaplin?"
+                  placeholder="How this Chaplin works?"
                   className="w-full bg-transparent border border-[#3A3A3A] text-white text-sm rounded-xl px-4 py-4 outline-none resize-none focus:ring-1 focus:ring-[#FAFAFA]"
                   rows={4}
                   maxLength={INSTR_MAX}
