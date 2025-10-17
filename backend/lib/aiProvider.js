@@ -1,27 +1,14 @@
 // lib/aiProvider.js
-//
-// Multi-model manager for text generation. Tries models in priority order until one succeeds.
-// Exports:
-//   - async generateText({ prompt, maxTokens, temperature }) -> string
-//   - setModelsPriority(arrayOfKeys) // optional runtime override
-//
-// Model implementations are located under lib/models/ and must implement:
-//   - constructor(opts)
-//   - key (string) unique identifier
-//   - async generateText({ prompt, maxTokens, temperature }) -> string
-//
-// Default priority is read from process.env.MODELS_PRIORITY (comma-separated keys) or fallbacks to:
-//   ['cortensor','geminiflash','geminipro']
+// Multi-model manager for text generation with retry logic.
 
 import CortensorModel from "./models/CortensorModel.js";
 import GeminiFlashModel from "./models/GeminiFlashModel.js";
 import GeminiProModel from "./models/GeminiProModel.js";
+import { LLM_MAX_ATTEMPTS } from "./constants.js"; // <<< IMPORTAÇÃO CORRIGIDA
 
 const DEFAULT_PRIORITY = ["geminiflash", "geminipro", "cortensor"];
 
-// registry maps keys -> class (not instance)
 const MODEL_REGISTRY = {
-
   cortensor: CortensorModel,
   geminiflash: GeminiFlashModel,
   geminipro: GeminiProModel,
@@ -30,81 +17,94 @@ const MODEL_REGISTRY = {
 function buildPriorityFromEnv() {
   const raw = process.env.MODELS_PRIORITY;
   if (!raw) return DEFAULT_PRIORITY;
-  try {
-    const arr = raw.split(",").map(s => s.trim()).filter(Boolean);
-    if (arr.length === 0) return DEFAULT_PRIORITY;
-    return arr;
-  } catch (e) {
-    return DEFAULT_PRIORITY;
-  }
+  const arr = raw.split(",").map(s => s.trim()).filter(Boolean);
+  return arr.length > 0 ? arr : DEFAULT_PRIORITY;
 }
+
+
 
 let modelsPriority = buildPriorityFromEnv();
-
-// instantiate model instances (lazy)
 let modelInstances = null;
+
+
 function initModelInstances() {
-  if (modelInstances) return;
-  modelInstances = modelsPriority.map(key => {
-    const Cls = MODEL_REGISTRY[key];
-    if (!Cls) {
-      console.warn(`[aiProvider] No registered model class for key="${key}"`);
-      return null;
-    }
-    try {
-      return new Cls({ key });
-    } catch (err) {
-      console.error(`[aiProvider] Failed to instantiate model ${key}:`, err);
-      return null;
-    }
-  }).filter(Boolean);
+    if (modelInstances) return;
+    modelInstances = modelsPriority.map(key => {
+      const Cls = MODEL_REGISTRY[key];
+      if (!Cls) {
+        console.warn(`[aiProvider] No registered model class for key="${key}"`);
+        return null;
+      }
+      try {
+        return new Cls({ key });
+      } catch (err) {
+        console.error(`[aiProvider] Failed to instantiate model ${key}:`, err);
+        return null;
+      }
+    }).filter(Boolean);
 }
 
-// public API: override priority at runtime
-export function setModelsPriority(arr) {
-  if (!Array.isArray(arr)) throw new Error("setModelsPriority expects an array");
-  modelsPriority = arr;
-  modelInstances = null;
-  initModelInstances();
-}
 
-// primary function
 export async function generateText({ prompt, maxTokens = 512, temperature = 0.7 } = {}) {
   if (!prompt || typeof prompt !== "string") throw new Error("prompt (string) is required");
   initModelInstances();
   if (!modelInstances || modelInstances.length === 0) {
-    throw new Error("No model instances available. Register models in lib/models and set MODELS_PRIORITY env var if needed.");
+    throw new Error("No model instances available.");
   }
 
   const errors = [];
   for (const model of modelInstances) {
-    const key = model.key || model.constructor?.name || "unknown";
+    const key = model.key || "unknown";
     try {
       const out = await model.generateText({ prompt, maxTokens, temperature });
-      if (typeof out === "string" && out.trim().length > 0) {
-        // success
-        return out;
-      } else if (typeof out === "string") {
-        // empty string — treat as error
-        errors.push({ model: key, reason: "empty response" });
-      } else {
-        // non-string
-        errors.push({ model: key, reason: "non-string response" });
-      }
+      if (typeof out === "string" && out.trim().length > 0) return out;
+      errors.push({ model: key, reason: "empty response" });
     } catch (err) {
-      errors.push({ model: key, reason: String(err && err.message ? err.message : err) });
-      // continue to next model
+      errors.push({ model: key, reason: err.message || String(err) });
     }
   }
 
   const agg = errors.map(e => `${e.model}: ${e.reason}`).join(" | ");
-  const message = `All models failed. Attempts: ${errors.length}. Details: ${agg}`;
-  const err = new Error(message);
-  err.details = errors;
-  throw err;
+  throw new Error(`All models failed. Details: ${agg}`);
 }
 
-export default {
-  generateText,
-  setModelsPriority,
-};
+
+export async function generateTextAndParseJson(
+  { prompt, maxTokens, temperature },
+  { maxAttempts = LLM_MAX_ATTEMPTS, expectedShape = 'array' } = {} // <<< USA A CONSTANTE CORRETA
+) {
+  let lastError = null;
+  let lastRawText = "";
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      console.log(`Attempt ${attempt} of ${maxAttempts} to generate and parse JSON.`);
+      const llmText = await generateText({ prompt, maxTokens, temperature });
+      lastRawText = llmText;
+
+      let parsed = null;
+      try {
+        parsed = JSON.parse(llmText);
+      } catch (e) {
+        const first = llmText.indexOf(expectedShape === 'array' ? '[' : '{');
+        const last = llmText.lastIndexOf(expectedShape === 'array' ? ']' : '}');
+        if (first !== -1 && last > first) {
+          parsed = JSON.parse(llmText.slice(first, last + 1));
+        } else {
+          throw new Error("Could not find valid JSON markers in the response.");
+        }
+      }
+
+      const isCorrectShape = expectedShape === 'array' ? Array.isArray(parsed) : (typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed));
+      if (isCorrectShape) {
+        return { parsedJson: parsed, rawText: lastRawText };
+      } else {
+        throw new Error(`Parsed content is not the expected shape ('${expectedShape}').`);
+      }
+    } catch (error) {
+      lastError = error;
+      console.warn(`Attempt ${attempt} failed: ${error.message}`);
+    }
+  }
+  throw new Error(`LLM failed to produce valid JSON after ${maxAttempts} attempts. Last error: ${lastError.message}`);
+}
