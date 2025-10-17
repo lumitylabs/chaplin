@@ -15,6 +15,7 @@ import { withCors } from "../lib/withCors.js";
 const MAX_MEMBERS = 5;
 const MAX_PREV = 5;
 const MAX_STRING = 5000;
+const MAX_FORMAT_BYTES = 2048; // Max size for responseformat object
 
 /**
  * Pure handler: assumes req.body is already parsed by middleware
@@ -26,6 +27,7 @@ async function createWorkgroupHandler(req, res) {
       category,
       description,
       max_members,
+      responseformat = null, // <<< NOVO: Recebe o formato da resposta
       previousWorkgroup = [],
       generateAgentName = null,
       generateAgentIndex = null,
@@ -45,6 +47,22 @@ async function createWorkgroupHandler(req, res) {
       res.setHeader("Content-Type", "application/json");
       res.end(JSON.stringify({ error: "name/category/description must be strings" }));
       return;
+    }
+
+    // <<< NOVO: Validação para responseformat
+    if (responseformat) {
+      if (typeof responseformat !== 'object' || responseformat === null || Array.isArray(responseformat)) {
+        res.statusCode = 400;
+        res.setHeader("Content-Type", "application/json");
+        res.end(JSON.stringify({ error: "responseformat must be a JSON object." }));
+        return;
+      }
+      if (JSON.stringify(responseformat).length > MAX_FORMAT_BYTES) {
+        res.statusCode = 413; // Payload too large
+        res.setHeader("Content-Type", "application/json");
+        res.end(JSON.stringify({ error: `responseformat is too large (max ${MAX_FORMAT_BYTES} bytes)` }));
+        return;
+      }
     }
 
     // sanitize / truncate persona fields
@@ -104,7 +122,7 @@ async function createWorkgroupHandler(req, res) {
     const isEnhance = String(style || "").toLowerCase() === "enhance";
 
     if (isEnhance) {
-      // ENHANCE flow: find the target and the existing prompt text
+      // ENHANCE flow: (Lógica original mantida, pois o responseformat não se aplica aqui)
       let targetAgentName = genName;
       if (!targetAgentName && typeof genIndex === "number") {
         if (prev[genIndex] && prev[genIndex].name) targetAgentName = prev[genIndex].name;
@@ -116,7 +134,6 @@ async function createWorkgroupHandler(req, res) {
         return;
       }
 
-      // existing text priority: previousWorkgroup match -> existingPrompt field
       const existingFromPrev = prev.find(p => p.name.toLowerCase() === targetAgentName.toLowerCase());
       const existingText = existingFromPrev ? existingFromPrev.prompt : (typeof existingPrompt === "string" ? existingPrompt.trim().slice(0, MAX_STRING) : null);
 
@@ -127,7 +144,6 @@ async function createWorkgroupHandler(req, res) {
         return;
       }
 
-      // Summarize previousWorkgroup with summarizer prompt (preferred over simple truncation)
       let prevSummary = "";
       if (prev.length > 0) {
         try {
@@ -135,7 +151,6 @@ async function createWorkgroupHandler(req, res) {
           const summaryText = await generateText({ prompt: summarizeInstruction, maxTokens: 250, temperature: 0.1 });
           prevSummary = (typeof summaryText === "string" ? summaryText.trim() : String(summaryText)).slice(0, 1200);
           if (!prevSummary) {
-            // fallback: manual short summary
             prevSummary = prev.map(p => `- ${p.name}: ${p.prompt.slice(0, 120)}`).join("\n");
           }
         } catch (err) {
@@ -146,7 +161,6 @@ async function createWorkgroupHandler(req, res) {
         prevSummary = "No previous agents provided.";
       }
 
-      // Build enhancement instruction and call LLM
       const enhanceInstruction = buildEnhanceAgentPrompt({
         personaName,
         personaCategory,
@@ -174,14 +188,11 @@ async function createWorkgroupHandler(req, res) {
         res.end(JSON.stringify({ error: "LLM returned empty enhancement" }));
         return;
       }
-
-      // Return single enhanced agent
+      
       res.statusCode = 200;
       res.setHeader("Content-Type", "application/json");
       res.end(JSON.stringify({
-        workgroup: [
-          { name: targetAgentName, prompt: finalPrompt }
-        ],
+        workgroup: [ { name: targetAgentName, prompt: finalPrompt } ],
         raw: improved
       }));
       return;
@@ -193,6 +204,7 @@ async function createWorkgroupHandler(req, res) {
       category: personaCategory,
       description: personaDescription,
       maxMembers,
+      responseformat, // <<< NOVO: Passa o formato para o prompt
       previousWorkgroup: prev,
       generateAgentName: genName,
       generateAgentIndex: genIndex
@@ -200,7 +212,7 @@ async function createWorkgroupHandler(req, res) {
 
     let llmText;
     try {
-      llmText = await generateText({ prompt: instruction, maxTokens: 800, temperature: 0.18 });
+      llmText = await generateText({ prompt: instruction, maxTokens: 1200, temperature: 0.18 }); // Aumentado para acomodar prompts maiores
     } catch (err) {
       console.error("LLM generate error:", err);
       res.statusCode = 500;
@@ -236,7 +248,7 @@ async function createWorkgroupHandler(req, res) {
         return { name: n, prompt: p };
       })
       .filter(item => !/integrator/i.test(item.name))
-      .slice(0, maxMembers);
+      .slice(0, maxMembers); // Mantém como segurança, mas o prompt deve garantir o número exato
 
     // single-agent requested adjustments
     if ((genName || typeof genIndex === "number") && normalized.length > 1) {
@@ -262,7 +274,6 @@ async function createWorkgroupHandler(req, res) {
       }
     }
 
-    // Return generated workgroup array
     res.statusCode = 200;
     res.setHeader("Content-Type", "application/json");
     res.end(JSON.stringify({ workgroup: normalized, raw: llmText }));
@@ -280,16 +291,10 @@ async function createWorkgroupHandler(req, res) {
   }
 }
 
-/**
- * Export wrapped handler using withMiddleware
- * - parseJson: true => middleware will parse body into req.body
- * - requireJson: true => enforce Content-Type
- * - rateLimit: keep a sensible dev default; replace with Redis in prod
- */
 export default withCors(withMiddleware(createWorkgroupHandler, {
   allowedMethods: ["POST"],
   requireJson: true,
   parseJson: true,
   maxBodyBytes: 200 * 1024,
-  rateLimit: { windowMs: 60_000, max: 30 } // 30 requests per minute per IP (dev)
+  rateLimit: { windowMs: 60_000, max: 30 }
 }));

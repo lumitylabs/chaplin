@@ -161,7 +161,7 @@ async checkSessionHealth(sessionId) {
   await this._initProviderAndSigner();
   const taskData = JSON.stringify({data:promptText.prompt});
   
-  const llmParams = [512, 70, 100, 40, 100, 0, 0];
+  const llmParams = [1024, 70, 100, 40, 100, 0, 0];
 
   console.log(`[CortensorModel] Submitting task for session ${sessionId}...`);
 
@@ -212,7 +212,7 @@ async checkSessionHealth(sessionId) {
     const { taskId } = await this.submitTask(sessionId, prompt);
 
     let attempts = 0;
-    const maxAttempts = 20; // ~200 segundos
+    const maxAttempts = 50; // ~200 segundos
     const pollInterval = 10000; // 10 segundos
 
     console.log(`[CortensorModel] Polling for the first available result of Task ID ${taskId}...`);
