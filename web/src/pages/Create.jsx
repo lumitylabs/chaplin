@@ -184,7 +184,7 @@ function Create() {
     personaDescription: "",
     avatarUrl: Persona,
     // <<< NOVO: Estado inicial pré-preenchido
-    step2: { groups: [{ key: "speech", description: "character's response to message" }] },
+    step2: { groups: [{ key: "speech", description: "Character's response to message" }] },
     workgroup: [],
     io: { input: "", output: "Waiting for input..." },
   });
