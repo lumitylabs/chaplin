@@ -1,11 +1,10 @@
 // src/pages/Create.jsx
 
 import React, { useRef, useState, useEffect } from "react";
-import { Menu, Scan, WandSparkles, ChevronDown, Plus, Trash2, PenLine, Play, Loader2 } from "lucide-react";
+import { Menu, Scan, WandSparkles, Globe, ChevronDown, Plus, Trash2, PenLine, Play, Loader2 } from "lucide-react";
 // Componentes e Assets existentes
 import PersonaNavbar from "../components/ui/general/PersonaNavbar";
 import Persona from "../assets/persona.png";
-import PublicIcon from "../assets/public_icon.svg";
 import LockOpenIcon from "../assets/open_lock_icon.svg";
 import OutputIcon from "../assets/output_icon.svg";
 import PlayIcon from "../assets/play_icon.svg";
@@ -185,7 +184,7 @@ function Create() {
     personaDescription: "",
     avatarUrl: Persona,
     // <<< NOVO: Estado inicial pré-preenchido
-    step2: { groups: [{ key: "speech", description: "character's response to message" }] },
+    step2: { groups: [{ key: "speech", description: "Character's response to message" }] },
     workgroup: [],
     io: { input: "", output: "Waiting for input..." },
   });
@@ -240,7 +239,7 @@ function Create() {
       }
       return acc;
     }, {});
-    
+
     // 2. Garante que, se o objeto estiver vazio, ele use o valor padrão
     let finalResponseFormat = responseFormatObject;
     if (Object.keys(responseFormatObject).length === 0) {
@@ -501,7 +500,7 @@ function Create() {
               <div className="mt-2 relative pb-3" ref={categoryRef}>
                 <button
                   onClick={toggleCategory}
-                  className={`w-full flex items-center justify-between bg-transparent border border-[#3A3A3A] rounded-xl text-sm  px-4 py-4  text-left outline-none focus:ring-1 focus:ring-[#FAFAFA] ${formData.category ? "text-white" : "text-[#A3A3A3]"
+                  className={`w-full flex items-center justify-between bg-transparent border border-[#3A3A3A] rounded-xl text-sm  px-4 py-4 text-left focus:ring-1 focus:ring-[#FAFAFA] cursor-pointer ${formData.category ? "text-white" : "text-[#A3A3A3]"
                     }`}
                   aria-haspopup="listbox"
                   aria-expanded={isCategoryOpen}
@@ -554,10 +553,10 @@ function Create() {
             {/* VISIBILITY */}
             <div>
               <label className="text-sm text-[#FAFAFA]">Visibility</label>
-              <div className="flex items-center gap-2 border border-[#3A3A3A] p-2.5 rounded-lg mt-2 text-sm text-gray-300 w-fit bg-transparent">
-                <img src={PublicIcon} alt="" className="w-4 h-4" />
+              <button className="flex items-center gap-1.5 border border-[#3A3A3A] p-2.5 px-3 rounded-lg mt-2 text-sm text-[#FAFAFA] w-fit bg-transparent cursor-pointer">
+                <Globe color="#FAFAFA" size={16} />
                 Public
-              </div>
+              </button>
             </div>
           </div>
 
@@ -571,22 +570,22 @@ function Create() {
               <div className="border border-[#3A3A3A] rounded-xl">
                 <div className="p-4">
                   <div className="flex items-center justify-between">
-                    <div className="text-[#FAFAFA] font-medium text-sm py-[5px]">Input Data</div>
+                    <div className="text-[#FAFAFA] font-medium text-sm">Input Data</div>
                   </div>
                 </div>
 
                 <div className="h-px w-full bg-[#3A3A3A]" />
 
-                <div className="p-4">
+                <div className="p-4 mt-2">
                   <div className="flex flex-col gap-3 mb-4">
-                    <label className="text-xs text-[#A3A3A3]">Chaplin Description</label>
+                    <label className="text-xs text-white">Chaplin Description</label>
                     <div className="relative">
                       <input
                         type="text"
                         value={formData.personaDescription}
                         onChange={(e) => setFormData({ ...formData, personaDescription: e.target.value.slice(0, INSTR_MAX) })}
-                        placeholder="Enter persona description"
-                        className="w-full bg-transparent border border-[#3A3A3A] text-white rounded-lg px-4 py-2 pr-10 outline-none focus:ring-0"
+                        placeholder="Describe your Chaplin"
+                        className="w-full bg-transparent border border-[#3A3A3A] text-white text-sm rounded-xl px-4 py-4 pr-10 outline-none focus:ring-1 focus:ring-[#fafafa]"
                         maxLength={INSTR_MAX}
                       />
                       <button
@@ -601,7 +600,7 @@ function Create() {
 
                   {/* --- ÁREA DO AVATAR ATUALIZADA --- */}
                   <div className="flex flex-col gap-2">
-                    <label className="text-xs text-[#A3A3A3]">Avatar</label>
+                    <label className="text-xs text-white">Avatar</label>
                     <div className="relative w-36 h-36">
                       <img src={formData.avatarUrl} alt="persona" className="w-full h-full object-cover rounded-2xl border border-[#3A3A3A]" />
 
@@ -690,14 +689,14 @@ function Create() {
 
                         <div className="flex flex-col items-start gap-4">
                           <div className="w-full">
-                            <label className="text-xs text-[#A3A3A3]">key</label>
+                            <label className="text-xs text-white">key</label>
                             <div className="relative mt-1">
                               <input
                                 type="text"
                                 value={grp.key}
                                 onChange={(e) => updateStep2Field(idx, "key", e.target.value.slice(0, STEP2_KEY_MAX))}
-                                placeholder="name"
-                                className="w-full bg-transparent border border-[#3A3A3A] text-white rounded-lg px-3 py-2 pr-10 outline-none focus:ring-0"
+                                placeholder="Name"
+                                className="w-full bg-transparent border border-[#3A3A3A] text-white rounded-xl px-3 py-3.5 pr-10 outline-none text-sm focus:ring-1 focus:ring-[#FAFAFA]"
                                 maxLength={STEP2_KEY_MAX}
                               />
                               <button
@@ -710,14 +709,14 @@ function Create() {
                             </div>
                           </div>
                           <div className="w-full">
-                            <label className="text-xs text-[#A3A3A3]">description</label>
+                            <label className="text-xs text-white">description</label>
                             <div className="relative mt-1">
                               <input
                                 type="text"
                                 value={grp.description}
                                 onChange={(e) => updateStep2Field(idx, "description", e.target.value.slice(0, STEP2_DESC_MAX))}
-                                placeholder="describe the key"
-                                className="w-full bg-transparent border border-[#3A3A3A] text-white rounded-lg px-3 py-2 pr-10 outline-none focus:ring-0"
+                                placeholder="Describe the key"
+                                className="w-full bg-transparent border border-[#3A3A3A] text-white text-sm rounded-xl px-3 py-3.5 pr-10 outline-none focus:ring-1 focus:ring-[#FAFAFA]"
                                 maxLength={STEP2_DESC_MAX}
                               />
                               <button
