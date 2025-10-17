@@ -4,68 +4,123 @@ export default function buildCreateWorkgroupInstruction({
   category,
   description,
   maxMembers = 5,
+  responseformat = null,
   previousWorkgroup = [],
   generateAgentName = null,
   generateAgentIndex = null
 }) {
-  // brief context summary for previousWorkgroup
   const prevSummary = (previousWorkgroup || []).map((a, i) => {
     const n = a.name ? a.name.trim() : `Agent${i}`;
     const p = typeof a.prompt === "string" ? a.prompt.replace(/\s+/g, " ").slice(0, 300) : "";
     return `- ${n}: ${p}`;
   }).join("\n") || "No previous agents provided.";
 
-  // Mode: single agent generation or full (missing ones)
+  let responseFormatContext = "";
+  if (responseformat && typeof responseformat === 'object' && Object.keys(responseformat).length > 0) {
+    responseFormatContext = `
+A NOTE ON THE ULTIMATE GOAL:
+Eventually, a final process will need to generate a JSON object with this structure. This structure is provided to you ONLY as a **guide to the types of context** that need to be developed.
+
+\`\`\`json
+${JSON.stringify(responseformat, null, 2)}
+\`\`\`
+
+**Crucially, your workgroup's job is NOT to fill this JSON.** Your job is to create agents that generate the **underlying insights, ideas, and foundational context** that would make filling this JSON easy for a separate process.
+`;
+  }
+
   let modeInstruction = "";
   if (generateAgentName) {
     modeInstruction = `
 MODE: Generate ONLY ONE agent with the exact role name "${generateAgentName}".
 - Output MUST be a JSON ARRAY with a single object: [{ "name": "ExactlyThisName", "prompt": "..." }].
-- Do NOT include other agents, do NOT include an Integrator.
-- Ensure the role is coherent with the existing team and persona context.
 `;
   } else if (typeof generateAgentIndex === "number") {
     modeInstruction = `
-MODE: Generate ONLY ONE agent to occupy position index ${generateAgentIndex} (0-based) in the team ordering.
+MODE: Generate ONLY ONE agent to occupy position index ${generateAgentIndex} (0-based) in the team.
 - Output MUST be a JSON ARRAY with a single object: [{ "name": "RoleName", "prompt": "..." }].
-- Do NOT include other agents or an Integrator.
-- The generated prompt must be appropriate to the persona and consistent with previous agents.
 `;
   } else {
     modeInstruction = `
-MODE: Generate the missing agents (in order) that are not present in the provided previousWorkgroup.
-- Output MUST be a JSON ARRAY of objects, each object exactly: { "name": "ShortRoleName", "prompt": "English prompt with System: preface ..." }.
-- The array length must be <= ${maxMembers}.
-- Do NOT include Integrator or any non-agent wrapper. Return only the array.
+MODE: Generate a full workgroup.
+- You MUST create EXACTLY ${maxMembers} agents. Not more, not less.
+- The output MUST be a JSON ARRAY containing EXACTLY ${maxMembers} objects.
 `;
   }
 
   const instruction = `
-You are a prompt-engineering assistant. Use the persona context and the existing team context to produce agent role prompts.
+You are an expert strategist who designs teams of AI agents. Your primary mission is to create a workgroup whose collective purpose is to produce a comprehensive **"Creative Brief"** or **"Strategic Document"**. They generate insights, not final answers.
 
-STRICT OUTPUT RULES (do not break them):
-1) Output EXACTLY a JSON ARRAY and NOTHING ELSE.
-2) Each item must be an object with EXACTLY these keys: "name" (string), "prompt" (string).
-3) Prompts MUST be in ENGLISH and the "prompt" value MUST include a "System:" preface clarifying that agents run SEQUENTIALLY and will receive outputs from previous agents. Example start: "System: You are part of a sequential workgroup..."
-4) DO NOT include any "Integrator" agent. Integrator is handled separately.
-5) Max number of agents returned must be <= ${maxMembers}.
+**CORE PHILOSOPHY: DEVELOP INSIGHT, DO NOT PRODUCE THE FINAL DELIVERABLE.**
+The workgroup you are designing is a research and development team, not a production line. They create the foundational material *from which* the final content will be derived.
 
-Persona context:
-- name: "${name}"
-- category: "${category}"
-- description: "${description}"
+**STRICT OUTPUT RULES:**
+1.  Output MUST be a valid JSON ARRAY. No other text.
+2.  Each object must have exactly two keys: "name" (string) and "prompt" (string).
+3.  All prompts MUST be in ENGLISH and start with "System:".
+4.  You MUST NOT create an "Integrator," "Assembler," or "Final Output" agent. The workgroup's purpose is exclusively context generation.
+5.  ${generateAgentName || typeof generateAgentIndex === 'number' ? 'You must generate only ONE agent as specified.' : `You MUST generate EXACTLY ${maxMembers} agents.`}
 
-Existing team (previousWorkgroup):
+---
+**INPUT FOR THIS TASK:**
+
+**Persona/Task Context:**
+- Name: "${name}"
+- Category: "${category}"
+- Description: "${description}"
+
+${responseFormatContext}
+**Existing Team (if any):**
 ${prevSummary}
+
+---
+**YOUR TASK:**
 
 ${modeInstruction}
 
-Additional instructions for composing each agent prompt:
-- Make prompts actionable and explicit: describe role responsibility, expected output format (plain text unless otherwise stated), tone, any constraints (length, style).
-- Keep each prompt focused (one agent per object); avoid duplication across roles.
-- Make sure each prompt tells the agent to "Return only their content (no meta or commentary)".
+**MANUAL OF STYLE FOR AGENT PROMPTS (CRUCIAL):**
 
-Now output only the JSON array as specified.
+You must construct each agent's prompt to be detailed and robust. Follow this anatomy for every agent you create:
+
+**The Anatomy of a High-Quality Agent Prompt:**
+1.  **Role & Goal:** Start by assigning a specific, expert role. Clearly state the agent's primary objective in one sentence.
+2.  **Input Context:** Explicitly state what information the agent will receive from the previous steps.
+3.  **Task Breakdown:** Provide a clear, numbered list of actions the agent must take. This removes ambiguity.
+4.  **Output Constraints:** Define the exact format and nature of the output (e.g., "a markdown list," "three paragraphs," "a JSON object"). Crucially, specify what to *avoid* (e.g., "Do not offer solutions," "Do not write the final ad copy").
+
+**HIGH-QUALITY EXAMPLES TO EMULATE:**
+
+---
+**Example for a Narrative Task (e.g., RPG NPC):**
+*Agent Name:* "Conflict Brainstormer"
+*Generated Prompt:*
+"System: You are a master storyteller and conflict designer. Your goal is to establish the core tensions that make a character compelling.
+
+You will receive the foundational lore and backstory for a character from the previous agent.
+
+Your tasks are:
+1.  Deeply analyze the provided lore to understand the character's core motivations and vulnerabilities.
+2.  Brainstorm three distinct and compelling conflicts based on this analysis: one internal conflict (a struggle with self), one local external conflict (a problem with a nearby person or group), and one overarching external conflict (a threat to their world or way of life).
+3.  For each of the three conflicts, write a single paragraph describing the nature of the conflict and how it specifically challenges the character's core values.
+
+Output your response as a markdown-formatted list with three bullet points. Do not write solutions to these conflicts. Focus only on defining them richly. Return only the list."
+---
+**Example for a Business Task (e.g., Marketing):**
+*Agent Name:* "Audience Pain Point Analyst"
+*Generated Prompt:*
+"System: You are a senior market research analyst specializing in consumer psychology. Your objective is to identify the deep-seated problems that our product can solve for the target audience.
+
+You will receive a document from the previous agent detailing the brand's essence and the target audience demographics.
+
+Your tasks are:
+1.  Analyze the provided audience information to build a mental model of their daily life, aspirations, and frustrations.
+2.  Identify and articulate three primary 'pain points' this audience experiences that are relevant to our brand. Frame one as a practical/logistical problem, one as an emotional/psychological problem, and one as a financial/resource problem.
+3.  For each pain point, articulate the problem in a single, clear sentence. Then, in a second sentence, re-frame it as a 'How Might We...' question to inspire solutions in the next step.
+
+Output your response as a numbered list. Focus strictly on defining the problems, not on mentioning our product or its features. Return only the list."
+---
+
+Now, applying this high standard of prompt design, generate the JSON array for the workgroup.
 `;
 
   return instruction;
