@@ -2,6 +2,10 @@
 
 import React, { useRef, useState, useEffect } from "react";
 import { Menu, Scan, WandSparkles, Globe, ChevronDown, Plus, Trash2, PenLine, Play, Loader2 } from "lucide-react";
+// <<< NOVO: Importações do SimpleBar >>>
+import SimpleBar from 'simplebar-react';
+import 'simplebar-react/dist/simplebar.min.css';
+
 // Componentes e Assets existentes
 import PersonaNavbar from "../components/ui/general/PersonaNavbar";
 import Persona from "../assets/persona.png";
@@ -14,10 +18,10 @@ import ExpandBox from "../components/ui/general/ExpandBox";
 import { generateWorkgroup, generateImage, runAgent } from "../services/apiService";
 import SpecialistSkeleton from "../components/ui/create/SpecialistSkeleton";
 
-/* ------------------ constantes ------------------ */
+/* ------------------ Constantes ------------------ */
 const NAME_MAX = 25;
 const INSTR_MAX = 200;
-const STEP2_KEY_MAX = 15;
+const STEP2_KEY_MAX = 25;
 const STEP2_DESC_MAX = 100;
 const MAX_STEP2_GROUPS = 5;
 const CATEGORY_OPTIONS = [
@@ -112,8 +116,8 @@ function WorkGroup({
             />
           ))
         ) : (
-          <div className="text-center text-gray-500 py-10">
-            <p>Your AI specialists will appear here.</p>
+          <div className="text-center py-10 text-[#797A86] text-sm font-regular leading-none">
+            <p>Your <span className="font-bold">AI specialists</span> will appear here.</p>
             <p className="mt-1">Click "AI Generate" to create them.</p>
           </div>
         )}
@@ -183,7 +187,6 @@ function Create() {
     instructions: "",
     personaDescription: "",
     avatarUrl: Persona,
-    // <<< NOVO: Estado inicial pré-preenchido
     step2: { groups: [{ key: "speech", description: "Character's response to message" }] },
     workgroup: [],
     io: { input: "", output: "Waiting for input..." },
@@ -224,23 +227,19 @@ function Create() {
   }, [isAvatarMenuOpen, isCategoryOpen]);
 
   /* ---------- API / ações ---------- */
-  // <<< FUNÇÃO ATUALIZADA >>>
   const handleGenerateWorkgroup = async () => {
     if (!formData.name || !formData.category || !formData.personaDescription) {
       alert("Please fill in Name, Category, and Description before generating.");
       return;
     }
 
-    // 1. Converte o array de grupos para o formato de objeto { key: description }
     const responseFormatObject = formData.step2.groups.reduce((acc, group) => {
-      // Ignora grupos onde a chave está vazia
       if (group.key && group.key.trim() !== "") {
         acc[group.key.trim()] = group.description;
       }
       return acc;
     }, {});
 
-    // 2. Garante que, se o objeto estiver vazio, ele use o valor padrão
     let finalResponseFormat = responseFormatObject;
     if (Object.keys(responseFormatObject).length === 0) {
       finalResponseFormat = { speech: "character's response to message" };
@@ -249,7 +248,6 @@ function Create() {
     setIsGenerating(true);
     setApiError(null);
 
-    // 3. Envia o `responseformat` na chamada da API
     const result = await generateWorkgroup({
       name: formData.name,
       category: formData.category,
@@ -395,7 +393,6 @@ function Create() {
 
   function removeStep2Group(i) {
     setFormData((prev) => {
-      // Se for o último item, limpe-o em vez de remover para evitar um array vazio
       if (prev.step2.groups.length === 1) {
         return { ...prev, step2: { ...prev.step2, groups: [{ key: "", description: "" }] } };
       }
@@ -489,7 +486,7 @@ function Create() {
                   maxLength={NAME_MAX}
                 />
                 <div className="w-full flex justify-end mt-1">
-                  <div className="text-xs text-[#8C8C8C]">{formData.name.length}/{NAME_MAX}</div>
+                  <div className="text-xs text-[#8C8C8C] select-none">{formData.name.length}/{NAME_MAX}</div>
                 </div>
               </div>
             </div>
@@ -511,23 +508,30 @@ function Create() {
                   <ChevronDown size={18} className={`${isCategoryOpen ? "rotate-180" : "rotate-0"} transition-transform`} />
                 </button>
 
+                {/* <<< ÁREA DO DROPDOWN MODIFICADA COM SimpleBar >>> */}
                 {isCategoryOpen && (
-                  <ul
+                  <div
                     ref={categoryMenuRef}
-                    className="absolute z-50 mt-2 w-full bg-[#1F1F22] border border-[#333] rounded-lg shadow-lg max-h-60 overflow-auto"
-                    role="listbox"
+                    className="absolute z-50 mt-2 w-full bg-[#202024] rounded-lg shadow-lg overflow-hidden"
                   >
-                    {CATEGORY_OPTIONS.map((opt) => (
-                      <li key={opt}>
-                        <button
-                          className="w-full text-left px-3 py-2 hover:bg-[#2B2B2B] focus:bg-[#2B2B2B] transition"
-                          onClick={() => selectCategory(opt)}
-                        >
-                          {opt}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
+                    <SimpleBar className="category-dropdown-scrollbar" style={{ maxHeight: '15rem' }}> {/* 15rem = max-h-60 */}
+                      <ul
+                        className="p-1 pr-2.5"
+                        role="listbox"
+                      >
+                        {CATEGORY_OPTIONS.map((opt) => (
+                          <li key={opt}>
+                            <button
+                              className="w-full text-left px-3 py-3 rounded-lg hover:bg-[#2C2C30] text-white focus:bg-[#2B2B2B] transition cursor-pointer text-sm"
+                              onClick={() => selectCategory(opt)}
+                            >
+                              {opt}
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    </SimpleBar>
+                  </div>
                 )}
               </div>
             </div>
@@ -539,13 +543,13 @@ function Create() {
                 <textarea
                   value={formData.instructions}
                   onChange={(e) => setFormData({ ...formData, instructions: e.target.value.slice(0, INSTR_MAX) })}
-                  placeholder="How to use this Chaplin?"
+                  placeholder="How this Chaplin works?"
                   className="w-full bg-transparent border border-[#3A3A3A] text-white text-sm rounded-xl px-4 py-4 outline-none resize-none focus:ring-1 focus:ring-[#FAFAFA]"
                   rows={4}
                   maxLength={INSTR_MAX}
                 />
                 <div className="w-full flex justify-end mt-1">
-                  <div className="text-xs text-[#8C8C8C]">{formData.instructions.length}/{INSTR_MAX}</div>
+                  <div className="text-xs text-[#8C8C8C] select-none">{formData.instructions.length}/{INSTR_MAX}</div>
                 </div>
               </div>
             </div>
@@ -565,10 +569,10 @@ function Create() {
             {/* ---------------- Step 1: Input Data ---------------- */}
             <div>
               <div className="mb-3">
-                <div className="text-4xl font-semibold text-[#2E2E31]">Step 1</div>
+                <div className="text-4xl font-semibold text-[#2E2E31] select-none">Step 1</div>
               </div>
               <div className="border border-[#3A3A3A] rounded-xl">
-                <div className="p-4">
+                <div className="px-4 py-5">
                   <div className="flex items-center justify-between">
                     <div className="text-[#FAFAFA] font-medium text-sm">Input Data</div>
                   </div>
@@ -590,7 +594,7 @@ function Create() {
                       />
                       <button
                         onClick={() => handleOpenModal({ type: "description" })}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-[#2B2B2B] transition-colors cursor-pointer"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg hover:bg-[#2B2B2B] transition duration-200 active:scale-95 cursor-pointer"
                         aria-label="Expand description"
                       >
                         <Scan size={16} color="#A3A3A3" />
@@ -601,8 +605,8 @@ function Create() {
                   {/* --- ÁREA DO AVATAR ATUALIZADA --- */}
                   <div className="flex flex-col gap-2">
                     <label className="text-xs text-white">Avatar</label>
-                    <div className="relative w-36 h-36">
-                      <img src={formData.avatarUrl} alt="persona" className="w-full h-full object-cover rounded-2xl border border-[#3A3A3A]" />
+                    <div className="relative w-37 h-42">
+                      <img src={formData.avatarUrl} alt="persona" className="w-full h-full object-cover rounded-3xl select-none" />
 
                       {isGeneratingAvatar && (
                         <div className="absolute inset-0 bg-black/60 flex items-center justify-center rounded-2xl">
@@ -614,7 +618,7 @@ function Create() {
                         <button
                           ref={avatarButtonRef}
                           onClick={() => setIsAvatarMenuOpen(prev => !prev)}
-                          className="bg-[#202024] p-3 shadow-md rounded-full transition-colors cursor-pointer"
+                          className="bg-[#26272B] p-3 shadow-md rounded-full transition-colors cursor-pointer"
                           aria-label="Avatar options"
                           aria-expanded={isAvatarMenuOpen}
                         >
@@ -625,12 +629,12 @@ function Create() {
                       {isAvatarMenuOpen && (
                         <div
                           ref={avatarMenuRef}
-                          className="absolute bottom-4 left-36.5 z-50 w-51 bg-[#202024] rounded-lg p-1 shadow-lg"
+                          className="absolute bottom-4 left-37.5 z-50 w-56 bg-[#202024] rounded-lg p-1 shadow-lg"
                         >
                           <button
                             onClick={handleGenerateImage}
                             disabled={isGeneratingAvatar}
-                            className="flex justify-between items-center gap-2 w-full text-left px-3 py-2.5 rounded-lg text-sm hover:bg-[#2E2E31] transition cursor-pointer"
+                            className="flex justify-between items-center gap-2 w-full text-left px-3 py-2.5 rounded-lg text-sm hover:bg-[#2C2C30] transition cursor-pointer"
                           >
                             {isGeneratingAvatar ? "Generating..." : "Generate image"}
                             <WandSparkles size={14} color="#D9D3D3" />
@@ -647,10 +651,10 @@ function Create() {
             {/* ---------------- Step 2: Output Format ---------------- */}
             <div>
               <div className="mb-3 flex items-center justify-between">
-                <div className="text-4xl font-semibold text-[#2E2E31]">Step 2</div>
+                <div className="text-4xl font-semibold text-[#2E2E31] select-none">Step 2</div>
               </div>
               <div className="border border-[#3A3A3A] rounded-xl">
-                <div className="p-4">
+                <div className="px-4 py-3">
                   <div className="flex items-center justify-between">
                     <div className="text-[#FAFAFA] font-medium text-sm flex items-center gap-3">
                       <span>Output Format</span>
@@ -659,7 +663,7 @@ function Create() {
                     <div>
                       <button
                         onClick={addStep2Group}
-                        className="p-2 rounded-full hover:bg-[#2B2B2B] transition cursor-pointer"
+                        className="p-2 rounded-full hover:bg-[#2C2C30] transition duration-200 active:scale-95 cursor-pointer"
                         aria-label="Add key/description"
                         title="Add key/description"
                         disabled={formData.step2.groups.length >= MAX_STEP2_GROUPS}
@@ -677,10 +681,10 @@ function Create() {
                     {formData.step2.groups.map((grp, idx) => (
                       <div key={idx} className="border border-[#3A3A3A] rounded-xl p-3">
                         <div className="flex justify-between items-center mb-3">
-                          <span className="text-[#8E8E8E] text-sm font-medium">Output {idx + 1}</span>
+                          <span className="text-[#797A86] text-sm font-regular">Output {idx + 1}</span>
                           <button
                             onClick={() => removeStep2Group(idx)}
-                            className="p-1 rounded-full hover:bg-[#2B2B2B] transition"
+                            className="p-2 rounded-full hover:bg-[#2C2C30] transition duration-200 active:scale-95 cursor-pointer"
                             aria-label={`Remove group ${idx + 1}`}
                           >
                             <Trash2 size={16} color="#A3A3A3" />
@@ -701,7 +705,7 @@ function Create() {
                               />
                               <button
                                 onClick={() => handleOpenModal({ type: "step2_key", index: idx })}
-                                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-[#2B2B2B] transition-colors cursor-pointer"
+                                className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg hover:bg-[#2B2B2B] transition duration-200 active:scale-95 cursor-pointer"
                                 aria-label={`Expand key ${idx + 1}`}
                               >
                                 <Scan size={16} color="#A3A3A3" />
@@ -721,7 +725,7 @@ function Create() {
                               />
                               <button
                                 onClick={() => handleOpenModal({ type: "step2_description", index: idx })}
-                                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-[#2B2B2B] transition-colors cursor-pointer"
+                                className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg hover:bg-[#2B2B2B] transition duration-200 active:scale-95 cursor-pointer"
                                 aria-label={`Expand description ${idx + 1}`}
                               >
                                 <Scan size={16} color="#A3A3A3" />
@@ -744,17 +748,17 @@ function Create() {
             {/* ---------------- Step 3: Workgroup ---------------- */}
             <div>
               <div className="mb-3">
-                <div className="text-4xl font-semibold text-[#2E2E31]">Step 3</div>
+                <div className="text-4xl font-semibold text-[#2E2E31] select-none">Step 3</div>
               </div>
               <div className="border border-[#3A3A3A] rounded-xl">
-                <div className="p-4">
+                <div className="px-4 py-[13px]">
                   <div className="flex items-center justify-between">
                     <div className="text-[#FAFAFA] text-sm font-medium">Workgroup</div>
                     <div className="flex gap-3">
                       <button
                         onClick={handleGenerateWorkgroup}
                         disabled={isGenerating}
-                        className="flex items-center gap-2 px-3 py-1.5 bg-transparent border border-[#3A3A3A] text-sm text-[#D9D3D3] font-semibold rounded-full cursor-pointer hover:bg-[#1F1F22] transition duration-200 active:scale-95"
+                        className="flex items-center gap-2 px-3 py-1.5 bg-transparent border border-[#3A3A3A] text-sm text-[#D9D3D3] font-semibold rounded-full cursor-pointer hover:bg-[#1F1F22] transition duration-200 active:scale-95 select-none"
                         title="AI Generate"
                       >
                         <WandSparkles size={14} color="#D9D3D3" />
@@ -762,7 +766,7 @@ function Create() {
                       </button>
                       <button
                         onClick={handleRunWorkgroup}
-                        className="flex items-center gap-2 px-3 py-1.5 bg-[#202024] text-[##D9D9D9] text-sm font-semibold rounded-full cursor-pointer hover:bg-[#3B3B42] transition duration-200 active:scale-95"
+                        className="flex items-center gap-2 px-3 py-1.5 bg-[#202024] text-[##D9D9D9] text-sm font-semibold rounded-full cursor-pointer hover:bg-[#3B3B42] transition duration-200 active:scale-95 select-none"
                         title="Run Workgroup"
                       >
                         <Play size={10} fill="#D9D9D9" />
