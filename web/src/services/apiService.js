@@ -26,6 +26,33 @@ async function handleResponse(response) {
 }
 
 /**
+ * << NOVO >>
+ * Busca a lista simplificada de todos os Chaplins públicos.
+ * Retorna um objeto no formato { data, error }.
+ * @returns {Promise<{data: object | null, error: string | null}>}
+ */
+export const getChaplins = async () => {
+  if (!API_BASE_URL) {
+    const errorMessage = "VITE_APP_API_BASE_URL is not defined in your .env file.";
+    console.error(errorMessage);
+    return { data: null, error: errorMessage };
+  }
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/chaplins`, {
+      method: 'GET',
+    });
+    const data = await handleResponse(response);
+    return { data, error: null };
+  } catch (error) {
+    console.error("Failed to fetch chaplins in service:", error);
+    return { data: null, error: error.message };
+  }
+};
+
+
+
+/**
  * Gera um novo workgroup.
  * Retorna um objeto no formato { data, error }.
  * 'data' é o workgroup em caso de sucesso, 'error' é a mensagem de erro em caso de falha.

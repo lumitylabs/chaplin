@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Copy, X } from "lucide-react";
+const API_BASE_URL = import.meta.env.VITE_APP_API_BASE_URL;
 
 function ApiModal({ persona, onClose }) {
   const [copiedUrl, setCopiedUrl] = useState(false);
@@ -14,20 +15,12 @@ function ApiModal({ persona, onClose }) {
     };
   }, []);
 
-  const curlCommand = `curl '${persona.apiUrl}' \\
-  -H 'x-persona-api-key: $PERSONA_API_KEY' \\
+const curlCommand = `curl '${API_BASE_URL+'/usechaplin'}' \\
   -H 'Content-Type: application/json' \\
   -X POST \\
   -d '{
-    "contents": [
-      {
-        "parts": [
-          {
-            "text": "Explain how AI works in a few words"
-          }
-        ]
-      }
-    ]
+    "chaplin_id": "${persona.id}",
+    "input": "Your message to the Chaplin goes here."
   }'`;
 
   const copy = async (value) => {
@@ -81,7 +74,7 @@ function ApiModal({ persona, onClose }) {
             <input
               type="text"
               readOnly
-              value={persona.apiUrl}
+              value={API_BASE_URL+"/usechaplin"}
               className="bg-[#333437] w-full pl-4 pr-10 py-3.5 rounded-lg text-[#E3E3E4] text-sm font-mono"
             />
             <button

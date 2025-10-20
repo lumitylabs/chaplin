@@ -1,12 +1,137 @@
-
+// lib/workgroupEngine.js
 
 import { generateText } from "./aiProvider.js";
 import { buildAgentExecutionPrompt } from "../prompts/runWorkgroupPrompt.js";
 import buildHardcodedIntegratorPrompt from "../prompts/integrator.js";
 
-
 function normName(name) {
   return String(name || "").trim().toLowerCase();
+}
+
+
+// ==================================================================
+// === VERSÕES COM STREAMING (para o endpoint /usechaplin) =========
+// ==================================================================
+
+/**
+ * [STREAMING] Executa agentes sequencialmente, produzindo (yielding) o status em cada passo.
+ * É uma função geradora assíncrona.
+ * @returns {AsyncGenerator<object, {finalMap: object, finalPerAgent: Array}, void>}
+ */
+export async function* runAgentsSequentiallyStream({ input, workgroup, workgroupResponseMap = {}, options = {} }) {
+  const { maxTokens = 800, temperature = 0.7 } = options;
+  
+  const normalizedMap = {};
+  Object.keys(workgroupResponseMap).forEach(k => {
+    normalizedMap[normName(k)] = workgroupResponseMap[k];
+  });
+
+  const updatedMap = { ...workgroupResponseMap };
+  const perAgent = [];
+
+  for (const agent of workgroup) {
+    const agentNorm = normName(agent.name);
+    
+    if (normalizedMap[agentNorm]) {
+      const output = normalizedMap[agentNorm];
+      const result = { name: agent.name, output, source: "prefilled" };
+      perAgent.push(result);
+      yield { type: 'agent_result', data: result };
+      continue;
+    }
+
+    yield { type: 'agent_start', data: { name: agent.name }};
+
+    const agentPrompt = buildAgentExecutionPrompt({
+      agent, input, previousOutputs: perAgent.map(p => p.output)
+    });
+
+    const output = await generateText({ prompt: agentPrompt, maxTokens, temperature });
+
+    const result = { name: agent.name, output, source: "generated" };
+    updatedMap[agent.name] = output;
+    normalizedMap[agentNorm] = output;
+    perAgent.push(result);
+    
+    yield { type: 'agent_result', data: result };
+  }
+
+  return { finalMap: updatedMap, finalPerAgent: perAgent };
+}
+
+/**
+ * [STREAMING] Executa o workgroup completo com streaming e, em seguida, o integrador.
+ * Consome o gerador `runAgentsSequentiallyStream` e envia chunks através de um callback.
+ */
+export async function runWorkgroupAndIntegrateStream({ input, workgroup, workgroupResponseMap = {}, responseformat, options = {}, onChunk }) {
+  const {
+    maxTokens = 800, temperature = 0.7,
+    integratorMaxAttempts = 3, integratorMaxTokens = 900, integratorTemperature = 0.5
+  } = options;
+
+  const agentStream = runAgentsSequentiallyStream({ input, workgroup, workgroupResponseMap, options: { maxTokens, temperature } });
+  
+  let finalPerAgent = [];
+  let finalUpdatedMap = {};
+
+  for await (const chunk of agentStream) {
+    onChunk(chunk); // Envia o chunk (agent_start, agent_result) para a resposta
+    if (chunk.type === 'agent_result') {
+      finalPerAgent.push(chunk.data);
+      if (chunk.data.source === 'generated') {
+        finalUpdatedMap[chunk.data.name] = chunk.data.output;
+      }
+    }
+  }
+  
+  onChunk({ type: 'integrator_start' });
+
+  const outputsInOrder = finalPerAgent.map(p => p.output);
+  const requiredKeys = Object.keys(responseformat || {}).sort();
+
+  let attempt = 0, lastRaw = null, finalParsed = null, validation = null;
+  
+  while (attempt < integratorMaxAttempts) {
+    attempt++;
+    const integratorPrompt = buildHardcodedIntegratorPrompt({ responseformat, outputs: outputsInOrder, workgroup });
+    const finalRaw = await generateText({ prompt: integratorPrompt, maxTokens: integratorMaxTokens, temperature: integratorTemperature });
+    lastRaw = finalRaw;
+    
+    let parsed = null;
+    try {
+      parsed = JSON.parse(finalRaw);
+    } catch (err) {
+      const firstBrace = finalRaw.indexOf("{");
+      const lastBrace = finalRaw.lastIndexOf("}");
+      if (firstBrace !== -1 && lastBrace > firstBrace) {
+        try { parsed = JSON.parse(finalRaw.slice(firstBrace, lastBrace + 1)); } catch (e) {}
+      }
+    }
+
+    if (!parsed || typeof parsed !== "object") {
+      validation = { parse_error: "Integrator output not parseable as JSON" };
+      continue;
+    }
+
+    const parsedKeys = Object.keys(parsed).sort();
+    const missing = requiredKeys.filter(k => !parsedKeys.includes(k));
+    const extras = parsedKeys.filter(k => !requiredKeys.includes(k));
+
+    if (missing.length === 0 && extras.length === 0) {
+      finalParsed = parsed;
+      validation = { success: true, attempts: attempt };
+      break;
+    } else {
+      validation = { missing_keys: missing, extra_keys: extras };
+    }
+  }
+  
+  const finalResult = {
+    final: finalParsed || { parse_error: "Integrator failed after all attempts", raw: lastRaw },
+    validation,
+    attempts: attempt,
+  };
+  onChunk({ type: 'integrator_result', data: finalResult });
 }
 
 /**

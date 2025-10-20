@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom"; // Importar useLocation
+import { useLocation } from "react-router-dom";
 import { Search, Star, Menu } from 'lucide-react';
+import { getChaplins } from "../services/apiService"; // <<< Importar a nova função
 
 // --- COMPONENTES E ASSETS ---
 import PersonaNavbar from "../components/ui/general/PersonaNavbar";
@@ -63,15 +64,19 @@ function FilterBar({ activeCategory, onCategorySelect }) {
 }
 
 function PersonaCard({ persona, onApiClick, onTryClick, isFavorite, onToggleFavorite }) {
+  // Ajuste para usar a imagem do placeholder se não houver uma definida
+  const imageUrl = persona.imagebase64 || PersonaPlaceholder;
+  
   return (
     <div className="flex flex-col sm:flex-row gap-4 h-auto sm:h-40 w-full bg-[#202024] rounded-2xl p-4 relative items-center select-none">
       <button onClick={() => onToggleFavorite(persona.id)} className="absolute top-3.5 right-4 p-1 z-10 cursor-pointer" aria-label="Toggle Favorite">
         <Star size={15} className={`transition-colors ${isFavorite ? 'text-yellow-400' : 'text-[#9C9CA5] hover:text-[#FAFAFA]'}`} fill={isFavorite ? 'currentColor' : 'transparent'} />
       </button>
-      <img src={persona.image} className="w-24 h-32 object-cover rounded-2xl flex-shrink-0" alt={persona.name} />
+      <img src={imageUrl} className="w-24 h-32 object-cover rounded-2xl flex-shrink-0" alt={persona.name} />
       <div className="flex flex-col gap-1 h-full w-full">
         <div className="font-inter font-bold text-sm text-[#F7F7F7]">{persona.name}</div>
-        <div className="text-sm text-[#88888F] mb-2 line-clamp-2 h-10">{persona.desc}</div>
+        {/* Usando 'instructions' como descrição, conforme a estrutura de dados */}
+        <div className="text-sm text-[#88888F] mb-2 line-clamp-2 h-10">{persona.instructions}</div>
         <div className="flex gap-2 justify-end mt-auto">
           <button onClick={() => onApiClick(persona)} className="flex w-20 py-1.5 px-5 border-[#303136] border rounded-full text-white text-sm justify-center items-center cursor-pointer transition duration-200 active:scale-95 hover:bg-[#1F1F23]">API</button>
           <button onClick={() => onTryClick(persona)} className="flex w-20 py-1.5 px-5 bg-white text-black text-sm rounded-full justify-center items-center cursor-pointer transition duration-200 active:scale-95 hover:bg-[#E3E3E4]">Try</button>
@@ -91,7 +96,33 @@ function PersonaList({ personas, onApiClick, onTryClick, favorites, onToggleFavo
   );
 }
 
-// --- COMPONENTE PRINCIPAL ---
+// Componente para exibir o esqueleto de carregamento
+function CardSkeleton() {
+  return (
+    
+    <div className="flex flex-col sm:flex-row gap-4 h-auto sm:h-40 w-full bg-[#202024] rounded-2xl p-4 relative items-center select-none">
+      <button className="absolute top-3.5 right-4 p-1 z-10 cursor-pointer" aria-label="Toggle Favorite">
+        
+      </button>
+      <div className="w-24 h-32 object-cover rounded-2xl flex-shrink-0 animate-pulse bg-gray-400" />
+      <div className="flex flex-col gap-1 h-full w-full">
+        <div className="font-inter font-bold text-sm text-[#F7F7F7] w-40 h-[14px] animate-pulse bg-gray-400"></div>
+        {/* Usando 'instructions' como descrição, conforme a estrutura de dados */}
+        <div className="">
+          <div className="text-sm text-[#88888F] mb-1 line-clamp-2 w-60 h-[14px] animate-pulse bg-gray-400"></div>
+        <div className="text-sm text-[#88888F] mb-2 line-clamp-2 w-60 h-[14px] animate-pulse bg-gray-400"></div>
+        </div>
+        <div className="flex gap-2 justify-end mt-auto">
+          <button  className="flex w-20 py-1.5 px-5 border-[#303136] border rounded-full text-white text-sm justify-center items-center cursor-pointer transition duration-200 active:scale-95 hover:bg-[#1F1F23]">API</button>
+          <button className="flex w-20 py-1.5 px-5 bg-white text-black text-sm rounded-full justify-center items-center cursor-pointer transition duration-200 active:scale-95 hover:bg-[#E3E3E4]">Try</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+// --- COMPONENTE PRINCIPAL (Atualizado) ---
 function Home() {
   const location = useLocation();
   const [isNavbarOpen, setIsNavbarOpen] = useState(false);
@@ -100,6 +131,11 @@ function Home() {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeCategory, setActiveCategory] = useState("All");
   const [viewMode, setViewMode] = useState('all');
+
+  // <<< NOVOS ESTADOS PARA DADOS DA API >>>
+  const [allPersonas, setAllPersonas] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     if (location.state?.desiredView) {
@@ -111,6 +147,31 @@ function Home() {
     const isDesktop = window.innerWidth >= 1024;
     setIsNavbarOpen(isDesktop);
   }, []);
+  
+  // <<< NOVO: EFEITO PARA BUSCAR OS DADOS DA API >>>
+  useEffect(() => {
+    async function fetchChaplins() {
+      setIsLoading(true);
+      setError(null);
+      const result = await getChaplins();
+
+      if (result.error) {
+        setError(result.error);
+        setAllPersonas([]);
+      } else {
+        // Transforma o objeto do Firebase em um array que o React pode mapear
+        const personasArray = Object.keys(result.data).map(key => ({
+          id: key, // O ID do chaplin é a chave do objeto
+          ...result.data[key]
+        }));
+        setAllPersonas(personasArray);
+      }
+      setIsLoading(false);
+    }
+
+    fetchChaplins();
+  }, []); // Executa apenas uma vez, quando o componente é montado
+
 
   const [favorites, setFavorites] = useState(() => {
     const savedFavorites = localStorage.getItem('favoritePersonas');
@@ -121,74 +182,50 @@ function Home() {
     localStorage.setItem('favoritePersonas', JSON.stringify(favorites));
   }, [favorites]);
 
-  const handleMobileNavClick = () => {
-    if (window.innerWidth < 1024) {
-      setIsNavbarOpen(false);
-    }
-  };
-
+  const handleMobileNavClick = () => { if (window.innerWidth < 1024) setIsNavbarOpen(false); };
   const handleApiClick = (persona) => { setSelectedPersona(persona); setActiveModal("api"); };
   const handleTryClick = (persona) => { setSelectedPersona(persona); setActiveModal("try"); };
   const handleCloseModal = () => { setActiveModal(null); setSelectedPersona(null); };
   const handleCategorySelect = (category) => setActiveCategory(category);
   const handleToggleFavorite = (personaId) => {
-    setFavorites((currents) =>
-      currents.includes(personaId)
-        ? currents.filter((id) => id !== personaId)
-        : [...currents, personaId]
-    );
+    setFavorites((currents) => currents.includes(personaId) ? currents.filter((id) => id !== personaId) : [...currents, personaId]);
   };
 
-  const filteredPersonas = personasData
+  const filteredPersonas = allPersonas
     .filter((p) => viewMode === 'favorites' ? favorites.includes(p.id) : true)
     .filter((p) => activeCategory === "All" ? true : p.category === activeCategory)
     .filter((p) => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
 
   return (
     <div className="bg-[#18181B] min-h-screen font-inter text-white">
-      <PersonaNavbar
-        isOpen={isNavbarOpen}
-        setIsOpen={setIsNavbarOpen}
-        viewMode={viewMode}
-        setViewMode={setViewMode}
-        handleMobileNavClick={handleMobileNavClick}
-      />
-
-      <button
-        onClick={() => setIsNavbarOpen(true)}
-        className={`fixed top-5 left-2 z-20 p-2 rounded-full hover:bg-[#1F1F22] transition-all duration-200 cursor-pointer ${isNavbarOpen ? 'opacity-0 -translate-x-16' : 'opacity-100 translate-x-0'}`}
-        aria-label="Open Menu"
-      >
+      <PersonaNavbar isOpen={isNavbarOpen} setIsOpen={setIsNavbarOpen} viewMode={viewMode} setViewMode={setViewMode} handleMobileNavClick={handleMobileNavClick} />
+      <button onClick={() => setIsNavbarOpen(true)} className={`fixed top-5 left-2 z-20 p-2 rounded-full hover:bg-[#1F1F22] ...`}>
         <Menu color="#A2A2AB" size={23} />
       </button>
 
-      <main
-        className={`transition-all duration-300 ease-in-out ${isNavbarOpen ? 'lg:ml-[260px]' : 'lg:ml-0'}`}
-      >
+      <main className={`transition-all duration-300 ease-in-out ${isNavbarOpen ? 'lg:ml-[260px]' : 'lg:ml-0'}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col py-5">
             <div className="flex flex-col gap-5">
-              <TopBar
-                searchTerm={searchTerm}
-                onSearchChange={(e) => setSearchTerm(e.target.value)}
-                viewMode={viewMode}
-              />
-              <h1 className="md:hidden font-inter font-semibold text-lg text-[#FAFAFA]">
-                {viewMode === 'favorites' ? 'Favorites' : 'Community Chaplins'}
-              </h1>
-              <FilterBar
-                activeCategory={activeCategory}
-                onCategorySelect={handleCategorySelect}
-              />
+              <TopBar searchTerm={searchTerm} onSearchChange={(e) => setSearchTerm(e.target.value)} viewMode={viewMode} />
+              <h1 className="md:hidden font-inter font-semibold text-lg text-[#FAFAFA]">{viewMode === 'favorites' ? 'Favorites' : 'Community Chaplins'}</h1>
+              <FilterBar activeCategory={activeCategory} onCategorySelect={handleCategorySelect} />
             </div>
 
-            <PersonaList
-              personas={filteredPersonas}
-              onApiClick={handleApiClick}
-              onTryClick={handleTryClick}
-              favorites={favorites}
-              onToggleFavorite={handleToggleFavorite}
-            />
+            {/* <<< LÓGICA DE RENDERIZAÇÃO CONDICIONAL >>> */}
+            <div className="flex flex-col gap-5">
+              {isLoading ? (
+                // Exibe 3 esqueletos enquanto carrega
+                <div className="mt-5 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"> <CardSkeleton /> <CardSkeleton /> <CardSkeleton /> </div>
+              ) : error ? (
+                // Exibe uma mensagem de erro se a API falhar
+                <div className="col-span-full text-center text-red-400 py-10">{`Error: ${error}`}</div>
+              ) : (
+                // Renderiza a lista de personas quando os dados estiverem prontos
+                <PersonaList personas={filteredPersonas} onApiClick={handleApiClick} onTryClick={handleTryClick} favorites={favorites} onToggleFavorite={handleToggleFavorite} />
+              )}
+            </div>
+            
           </div>
         </div>
       </main>
