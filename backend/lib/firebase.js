@@ -1,8 +1,5 @@
 // lib/firebase.js
 import admin from 'firebase-admin';
-
-
-
 try {
 
   if (!admin.apps.length) {
@@ -11,7 +8,7 @@ try {
 
       databaseURL: process.env.FIREBASE_DATABASE_URL 
     });
-    console.log("Firebase Admin SDK initialized successfully.");
+
   }
 } catch (error) {
   console.error('Firebase Admin Initialization Error:', error.message);

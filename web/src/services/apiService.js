@@ -2,13 +2,6 @@
 
 const API_BASE_URL = import.meta.env.VITE_APP_API_BASE_URL;
 
-/**
- * Lida com a resposta da API, tratando erros de rede e HTTP.
- * Esta função agora lança um erro com uma mensagem detalhada,
- * que será capturado dentro da função de chamada (ex: generateWorkgroup).
- * @param {Response} response - O objeto de resposta do fetch.
- * @returns {Promise<any>} O corpo da resposta em JSON.
- */
 async function handleResponse(response) {
   if (response.ok) {
     return response.json();
@@ -25,12 +18,31 @@ async function handleResponse(response) {
   throw new Error(errorDetail);
 }
 
-/**
- * << NOVO >>
- * Busca a lista simplificada de todos os Chaplins públicos.
- * Retorna um objeto no formato { data, error }.
- * @returns {Promise<{data: object | null, error: string | null}>}
- */
+export const createChaplin = async (chaplinData) => {
+  if (!API_BASE_URL) {
+    const errorMessage = "VITE_APP_API_BASE_URL is not defined in your .env file.";
+    console.error(errorMessage);
+    return { data: null, error: errorMessage };
+  }
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/createchaplin`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(chaplinData),
+    });
+
+    const data = await handleResponse(response);
+    return { data, error: null };
+
+  } catch (error) {
+    console.error("Failed to create chaplin in service:", error);
+    return { data: null, error: error.message };
+  }
+};
+
+
+
 export const getChaplins = async () => {
   if (!API_BASE_URL) {
     const errorMessage = "VITE_APP_API_BASE_URL is not defined in your .env file.";
@@ -51,14 +63,6 @@ export const getChaplins = async () => {
 };
 
 
-
-/**
- * Gera um novo workgroup.
- * Retorna um objeto no formato { data, error }.
- * 'data' é o workgroup em caso de sucesso, 'error' é a mensagem de erro em caso de falha.
- * @param {object} personaData - Inclui name, category, description, e o novo responseformat
- * @returns {Promise<{data: Array | null, error: string | null}>}
- */
 export const generateWorkgroup = async ({ name, category, description, responseformat }) => { // <<< ADICIONADO responseformat
   if (!API_BASE_URL) {
     const errorMessage = "VITE_APP_API_BASE_URL is not defined in your .env file.";
@@ -88,11 +92,6 @@ export const generateWorkgroup = async ({ name, category, description, responsef
   }
 };
 
-/**
- * Gera uma imagem de avatar para a persona.
- * @param {object} personaData - { name, category, description }
- * @returns {Promise<{data: { base64: string } | null, error: string | null}>}
- */
 export const generateImage = async ({ name, category, description }) => {
   if (!API_BASE_URL) {
     const errorMessage = "VITE_APP_API_BASE_URL is not defined in your .env file.";
@@ -115,11 +114,6 @@ export const generateImage = async ({ name, category, description }) => {
   }
 };
 
-/**
- * Executa um ou mais agentes de um workgroup.
- * @param {object} runData - { input, workgroup, workgroupresponse, targetAgentName }
- * @returns {Promise<{data: object | null, error: string | null}>}
- */
 export const runAgent = async ({ input, workgroup, workgroupresponse, targetAgentName }) => {
   if (!API_BASE_URL) {
     const errorMessage = "VITE_APP_API_BASE_URL is not defined in your .env file.";

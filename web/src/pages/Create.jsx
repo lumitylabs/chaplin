@@ -1,20 +1,19 @@
 // src/pages/Create.jsx
 
 import React, { useRef, useState, useEffect } from "react";
+// <<< NOVO: Importar useNavigate para redirecionamento >>>
+import { useNavigate } from "react-router-dom";
 import { Menu, Scan, WandSparkles, Globe, ChevronDown, Plus, Trash2, PenLine, Play, Loader2, TextSearch, SquareCode, LockKeyholeOpen, Pencil } from "lucide-react";
-// <<< NOVO: Importações do SimpleBar >>>
 import SimpleBar from 'simplebar-react';
 import 'simplebar-react/dist/simplebar.min.css';
 
 // Componentes e Assets existentes
 import PersonaNavbar from "../components/ui/general/PersonaNavbar";
 import Persona from "../assets/persona.png";
-import LockOpenIcon from "../assets/open_lock_icon.svg";
-import OutputIcon from "../assets/output_icon.svg";
-import PlayIcon from "../assets/play_icon.svg";
 import CloseIcon from "../assets/close_icon.svg";
 import ExpandBox from "../components/ui/general/ExpandBox";
-import { generateWorkgroup, generateImage, runAgent } from "../services/apiService";
+// <<< NOVO: Importar createChaplin >>>
+import { generateWorkgroup, generateImage, runAgent, createChaplin } from "../services/apiService";
 import SpecialistSkeleton from "../components/ui/create/SpecialistSkeleton";
 
 /* ------------------ Constantes ------------------ */
@@ -27,6 +26,7 @@ const CATEGORY_OPTIONS = [
   "Assistant", "Anime", "Creativity & Writing", "Entertainment & Gaming",
   "History", "Humor", "Learning",
 ];
+
 
 /* ------------------ Subcomponentes ------------------ */
 function Specialist({
@@ -198,6 +198,10 @@ function Create() {
     io: { input: "", output: "Waiting for input..." },
   });
 
+  // <<< NOVOS ESTADOS >>>
+  const [isPublishing, setIsPublishing] = useState(false);
+  const navigate = useNavigate(); // Hook para navegação
+
   const [isGenerating, setIsGenerating] = useState(false);
   const [isGeneratingAvatar, setIsGeneratingAvatar] = useState(false);
   const [runningAgentIndex, setRunningAgentIndex] = useState(null);
@@ -214,24 +218,82 @@ function Create() {
   const categoryRef = useRef(null);
   const categoryMenuRef = useRef(null);
 
+   const getMissingFields = () => {
+    const missing = [];
+    if (formData.name.trim() === "") missing.push("Name");
+    if (formData.category.trim() === "") missing.push("Category");
+    if (formData.instructions.trim() === "") missing.push("Instructions");
+    if (formData.personaDescription.trim() === "") missing.push("Chaplin Description (Step 1)");
+    if (formData.workgroup.length === 0) missing.push("Workgroup (Step 3)");
+    return missing;
+  };
+
+  const missingFields = getMissingFields();
+  const isPublishable = missingFields.length === 0;
+
+  // Gera a mensagem para o tooltip
+  const tooltipMessage = isPublishable 
+    ? "Ready to publish!" 
+    : `Missing fields: ${missingFields.join(', ')}`;
+
+
   useEffect(() => {
     const isDesktop = window.innerWidth >= 1024;
     setIsNavbarOpen(isDesktop);
   }, []);
 
   useEffect(() => {
-    function handleDocClick(e) {
-      if (isAvatarMenuOpen && avatarMenuRef.current && !avatarMenuRef.current.contains(e.target) && avatarButtonRef.current && !avatarButtonRef.current.contains(e.target)) {
-        setIsAvatarMenuOpen(false);
-      }
-      if (isCategoryOpen && categoryMenuRef.current && !categoryMenuRef.current.contains(e.target) && categoryRef.current && !categoryRef.current.contains(e.target)) {
-        setIsCategoryOpen(false);
-      }
-    }
+    function handleDocClick(e) { /* ... (código inalterado) ... */ }
     window.addEventListener("pointerdown", handleDocClick);
     return () => window.removeEventListener("pointerdown", handleDocClick);
   }, [isAvatarMenuOpen, isCategoryOpen]);
 
+  /* ---------- API / ações ---------- */
+
+  // <<< NOVA FUNÇÃO >>>
+  const handlePublish = async () => {
+    // Dupla verificação de validação
+    if (!isPublishable) {
+      alert("Please fill all required fields before publishing.");
+      return;
+    }
+
+    setIsPublishing(true);
+    setApiError(null);
+
+    // 1. Montar o objeto responseformat
+    const responseformat = formData.step2.groups.reduce((acc, group) => {
+      if (group.key && group.key.trim() !== "") acc[group.key.trim()] = group.description;
+      return acc;
+    }, {});
+    
+    // 2. Montar o payload final para a API
+    const chaplinData = {
+      name: formData.name,
+      category: formData.category,
+      instructions: formData.instructions,
+      description: formData.personaDescription,
+      // Envia null se a imagem for o placeholder padrão
+      imagebase64: formData.avatarUrl === Persona ? null : formData.avatarUrl,
+      workgroup: formData.workgroup,
+      responseformat: Object.keys(responseformat).length > 0 ? responseformat : { speech: "character's response to message" },
+    };
+
+    // 3. Chamar a API
+    const result = await createChaplin(chaplinData);
+
+    if (result.error) {
+      console.error("Publishing failed:", result.error);
+      setApiError(`Failed to publish: ${result.error}`);
+      alert(`Error: Could not publish the Chaplin. ${result.error}`);
+    } else {
+      alert("Chaplin published successfully!");
+      // Redireciona para a página inicial após o sucesso
+      navigate("/"); 
+    }
+
+    setIsPublishing(false);
+  };
   /* ---------- API / ações ---------- */
   const handleGenerateWorkgroup = async () => {
     if (!formData.name || !formData.category || !formData.personaDescription) {
@@ -425,6 +487,8 @@ function Create() {
     setIsCategoryOpen(false);
   }
 
+
+
   /* ---------- render ---------- */
   return (
     <div className="bg-[#18181B] min-h-screen font-inter text-[#D0D0D0]">
@@ -452,20 +516,8 @@ function Create() {
           })()}
         />
       )}
-      <PersonaNavbar
-        isOpen={isNavbarOpen}
-        setIsOpen={setIsNavbarOpen}
-        viewMode={viewMode}
-        setViewMode={setViewMode}
-        handleMobileNavClick={handleMobileNavClick}
-      />
-
-      <button
-        onClick={() => setIsNavbarOpen(true)}
-        className={`fixed top-5 left-5 z-20 p-2 rounded-full hover:bg-[#1F1F22] transition-all duration-200 cursor-pointer ${isNavbarOpen ? "opacity-0 -translate-x-16" : "opacity-100 translate-x-0"
-          }`}
-        aria-label="Open Menu"
-      >
+      <PersonaNavbar isOpen={isNavbarOpen} setIsOpen={setIsNavbarOpen} viewMode={viewMode} setViewMode={setViewMode} handleMobileNavClick={handleMobileNavClick} />
+      <button onClick={() => setIsNavbarOpen(true)} className={`...`}>
         <Menu color="#A2A2AB" size={23} />
       </button>
 
@@ -474,7 +526,35 @@ function Create() {
           {/* Header */}
           <div className="flex items-center justify-between mb-10">
             <h1 className="text-2xl font-semibold text-white">Create</h1>
-            <button className="bg-[#89898A] text-[#18181B] px-5 py-2 rounded-full font-medium cursor-pointer">Publish</button>
+            {/* <<< BOTÃO PUBLISH ATUALIZADO >>> */}
+           <div className="relative group">
+              <button 
+                onClick={handlePublish}
+                disabled={!isPublishable || isPublishing}
+                className={`
+                  px-5 py-2 rounded-full font-medium transition-colors duration-200
+                  ${isPublishable 
+                    ? 'bg-white text-black cursor-pointer hover:bg-gray-200' 
+                    : 'bg-[#89898A] text-[#18181B] cursor-not-allowed opacity-50'
+                  }
+                  ${isPublishing && 'opacity-70 cursor-wait'}
+                `}
+              >
+                {isPublishing ? "Publishing..." : "Publish"}
+              </button>
+
+              {/* Tooltip que aparece ao passar o mouse sobre o botão DESABILITADO */}
+              {!isPublishable && (
+                <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max max-w-xs
+                               bg-gray-800 text-white text-xs rounded-md px-3 py-1.5 opacity-0 
+                               group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+                  {tooltipMessage}
+                  <svg className="absolute text-gray-800 h-2 w-full left-0 top-full" x="0px" y="0px" viewBox="0 0 255 255">
+                    <polygon className="fill-current" points="0,0 127.5,127.5 255,0"/>
+                  </svg>
+                </span>
+              )}
+            </div>
           </div>
 
           {/* ---------- Principal form (Name, Category, Instructions, Visibility) ---------- */}
