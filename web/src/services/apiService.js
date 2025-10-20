@@ -42,6 +42,7 @@ export const createChaplin = async (chaplinData) => {
 };
 
 
+
 export const getChaplins = async () => {
   if (!API_BASE_URL) {
     const errorMessage = "VITE_APP_API_BASE_URL is not defined in your .env file.";

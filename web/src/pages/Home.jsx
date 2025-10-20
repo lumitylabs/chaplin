@@ -65,7 +65,7 @@ function FilterBar({ activeCategory, onCategorySelect }) {
 
 function PersonaCard({ persona, onApiClick, onTryClick, isFavorite, onToggleFavorite }) {
   // Ajuste para usar a imagem do placeholder se não houver uma definida
-  const imageUrl = persona.imagebase64 || PersonaPlaceholder;
+  const imageUrl = persona.imagebase64 || OrcImage;
   
   return (
     <div className="flex flex-col sm:flex-row gap-4 h-auto sm:h-40 w-full bg-[#202024] rounded-2xl p-4 relative items-center select-none">
