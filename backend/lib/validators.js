@@ -2,7 +2,7 @@
 // Funções de validação reutilizáveis para os endpoints da API.
 
 import { 
-  NAME_MAX, DESCRIPTION_MAX, CATEGORY_OPTIONS, RESPONSE_KEY_MAX, RESPONSE_DESC_MAX, 
+  NAME_MAX, DESCRIPTION_MAX, INSTRUCTION_MAX, CATEGORY_OPTIONS, RESPONSE_KEY_MAX, RESPONSE_DESC_MAX, 
   MAX_RESPONSE_PAIRS, MAX_WORKGROUP_MEMBERS, MAX_PREV 
 } from "./constants.js";
 
@@ -16,14 +16,15 @@ class ValidationError extends Error {
 
 /**
  * Valida os campos principais da persona.
- * @param {{name: string, category: string, description: string}} personaData
+ * @param {{name: string, category: string, description: string, instruction:string}} personaData
  * @throws {ValidationError} Se a validação falhar.
  */
-export function validatePersona({ name, category, description }) {
-  if (!name || !category || !description) throw new ValidationError("Missing required fields: name, category, description");
-  if (typeof name !== "string" || typeof category !== "string" || typeof description !== "string") throw new ValidationError("name/category/description must be strings");
+export function validatePersona({ name, category, description, instruction }) {
+  if (!name || !category || !description || !instruction) throw new ValidationError("Missing required fields: name, category, description, instruction");
+  if (typeof name !== "string" || typeof category !== "string" || typeof description !== "string" || typeof instruction !== "string") throw new ValidationError("name/category/description/instruction must be strings");
   if (name.length > NAME_MAX) throw new ValidationError(`Field 'name' exceeds the maximum length of ${NAME_MAX} characters.`);
   if (description.length > DESCRIPTION_MAX) throw new ValidationError(`Field 'description' exceeds the maximum length of ${DESCRIPTION_MAX} characters.`);
+  if (instruction.length > INSTRUCTION_MAX) throw new ValidationError(`Field 'instruction' exceeds the maximum length of ${INSTRUCTION_MAX} characters.`);
   if (!CATEGORY_OPTIONS.includes(category)) throw new ValidationError(`Invalid 'category'. Must be one of: ${CATEGORY_OPTIONS.join(", ")}`);
 }
 

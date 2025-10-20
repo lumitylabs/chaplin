@@ -63,7 +63,7 @@ export const getChaplins = async () => {
 };
 
 
-export const generateWorkgroup = async ({ name, category, description, responseformat }) => { // <<< ADICIONADO responseformat
+export const generateWorkgroup = async ({ name, category, description, instruction, responseformat }) => { // <<< ADICIONADO responseformat
   if (!API_BASE_URL) {
     const errorMessage = "VITE_APP_API_BASE_URL is not defined in your .env file.";
     console.error(errorMessage);
@@ -78,6 +78,7 @@ export const generateWorkgroup = async ({ name, category, description, responsef
         name,
         category,
         description,
+        instruction,
         responseformat, 
         max_members: 3, 
       }),

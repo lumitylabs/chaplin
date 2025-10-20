@@ -296,8 +296,8 @@ function Create() {
   };
   /* ---------- API / ações ---------- */
   const handleGenerateWorkgroup = async () => {
-    if (!formData.name || !formData.category || !formData.personaDescription) {
-      alert("Please fill in Name, Category, and Description before generating.");
+    if (!formData.name || !formData.category || !formData.instructions || !formData.personaDescription) {
+      alert("Please fill in Name, Category, Description and Instructions before generating.");
       return;
     }
 
@@ -320,6 +320,7 @@ function Create() {
       name: formData.name,
       category: formData.category,
       description: formData.personaDescription,
+      instruction: formData.instructions,
       responseformat: finalResponseFormat,
     });
 

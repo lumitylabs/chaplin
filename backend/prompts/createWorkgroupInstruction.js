@@ -2,6 +2,7 @@
 export default function buildCreateWorkgroupInstruction({
   name,
   category,
+  instruction,
   description,
   maxMembers = 5,
   responseformat = null,
@@ -48,7 +49,7 @@ MODE: Generate a full workgroup.
 `;
   }
 
-  const instruction = `
+  const prompt = `
 You are an expert strategist who designs teams of AI agents. Your primary mission is to create a workgroup whose collective purpose is to produce a comprehensive **"Creative Brief"** or **"Strategic Document"**. They generate insights, not final answers.
 
 **CORE PHILOSOPHY: DEVELOP INSIGHT, DO NOT PRODUCE THE FINAL DELIVERABLE.**
@@ -68,6 +69,7 @@ The workgroup you are designing is a research and development team, not a produc
 - Name: "${name}"
 - Category: "${category}"
 - Description: "${description}"
+- How it works: "${instruction}"
 
 ${responseFormatContext}
 **Existing Team (if any):**
@@ -83,10 +85,12 @@ ${modeInstruction}
 You must construct each agent's prompt to be detailed and robust. Follow this anatomy for every agent you create:
 
 **The Anatomy of a High-Quality Agent Prompt:**
-1.  **Role & Goal:** Start by assigning a specific, expert role. Clearly state the agent's primary objective in one sentence.
-2.  **Input Context:** Explicitly state what information the agent will receive from the previous steps.
-3.  **Task Breakdown:** Provide a clear, numbered list of actions the agent must take. This removes ambiguity.
-4.  **Output Constraints:** Define the exact format and nature of the output (e.g., "a markdown list," "three paragraphs," "a JSON object"). Crucially, specify what to *avoid* (e.g., "Do not offer solutions," "Do not write the final ad copy").
+1.  **Understand what will be necessary to create:** Before starting, examine the "How it works" section to understand how users will interact with this agent group, what inputs they'll provide, and what output they expect, then review the "description" to understand the main agent's personality, approach, behavior, thinking process, and success metrics—since no additional context beyond these two sections and the user input will be available, identify what information will be missing and determine which agents must work together sequentially to generate all necessary context for accurate task completion.
+2.  **Know the inputs it will receive:** The first agent receives only the user input, so when building it you must specify exactly how to work with the input he will be receiving and what outputs it should generate, while subsequent agents will receive cumulative information from all previous agents in the sequence.
+3.  **Role & Goal:** Start by assigning a specific, expert role. Clearly state the agent's primary objective in one sentence.
+4.  **Input Context:** Explicitly state what information the agent will receive from the previous steps.
+5.  **Task Breakdown:** Provide a clear, numbered list of actions the agent must take. This removes ambiguity.
+6.  **Output Constraints:** Define the exact format and nature of the output (e.g., "text", "a markdown list," "three paragraphs," "a JSON object"). Crucially, specify what to *avoid* (e.g., "Do not offer solutions," "Do not write the final ad copy").
 
 **HIGH-QUALITY EXAMPLES TO EMULATE:**
 
@@ -123,5 +127,5 @@ Output your response as a numbered list. Focus strictly on defining the problems
 Now, applying this high standard of prompt design, generate the JSON array for the workgroup.
 `;
 
-  return instruction;
+  return prompt;
 }
