@@ -5,7 +5,10 @@ import Avatar from "../../../assets/Avatar.png"; // Certifique-se que o caminho 
 import SimpleBar from "simplebar-react";
 import 'simplebar-react/dist/simplebar.min.css';
 
+import ChaplinImage from "../../../assets/persona.png";
+
 function TryModal({ persona, onClose }) {
+  var image = persona.imagebase64 || ChaplinImage;
   return (
     <div
       className="fixed inset-0 bg-black/30 backdrop-blur-sm flex justify-center items-center z-50"
@@ -57,7 +60,7 @@ function TryModal({ persona, onClose }) {
 
               {/* Mensagem da Chaplin */}
               <div className="flex justify-start items-start gap-3">
-                <img src={persona.imagebase64} alt={persona.name} className="w-10 h-10 rounded-full" />
+                <img src={image} alt={persona.name} className="w-10 h-10 rounded-full" />
                 <div className="flex flex-col items-start w-full">
                   <p className="text-sm font-semibold text-[#E3E3E4] mb-1">{persona.name}</p>
                   <div className="table w-full max-w-lg rounded-xl overflow-hidden">
