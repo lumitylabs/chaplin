@@ -1,7 +1,7 @@
 // src/pages/Create.jsx
 
 import React, { useRef, useState, useEffect } from "react";
-import { Menu, Scan, WandSparkles, Globe, ChevronDown, Plus, Trash2, PenLine, Play, Loader2 } from "lucide-react";
+import { Menu, Scan, WandSparkles, Globe, ChevronDown, Plus, Trash2, PenLine, Play, Loader2, TextSearch, SquareCode, LockKeyholeOpen, Pencil } from "lucide-react";
 // <<< NOVO: Importações do SimpleBar >>>
 import SimpleBar from 'simplebar-react';
 import 'simplebar-react/dist/simplebar.min.css';
@@ -12,7 +12,6 @@ import Persona from "../assets/persona.png";
 import LockOpenIcon from "../assets/open_lock_icon.svg";
 import OutputIcon from "../assets/output_icon.svg";
 import PlayIcon from "../assets/play_icon.svg";
-import ResponseIcon from "../assets/reponse_icon.svg";
 import CloseIcon from "../assets/close_icon.svg";
 import ExpandBox from "../components/ui/general/ExpandBox";
 import { generateWorkgroup, generateImage, runAgent } from "../services/apiService";
@@ -31,7 +30,6 @@ const CATEGORY_OPTIONS = [
 
 /* ------------------ Subcomponentes ------------------ */
 function Specialist({
-  number,
   name,
   prompt,
   response,
@@ -41,32 +39,40 @@ function Specialist({
   onOpenResponseModal
 }) {
   const hasResponse = !!response;
-
+  /* ------------------ CARD SPECIALIST ------------------ */
   return (
     <div className="w-full border border-[#3A3A3A] rounded-xl font-inter text-sm flex flex-col justify-between">
       <div className="flex flex-col gap-3 p-4">
-        <div className="flex justify-between">
+        <div className="flex justify-between items-center">
           <div className="flex flex-row gap-2">
-            <div className="text-[#6E6E6E]">{number}</div>
-            <div className="font-semibold">{name}</div>
+            <div className="font-semibold text-white">{name}</div>
           </div>
-          <div className="flex gap-2 items-center">
-            <img src={LockOpenIcon} alt="Public" className="w-4 h-4" />
+          <div className="flex justify-center items-center">
+            <button className="p-2 rounded-full hover:bg-[#2C2C30] transition duration-200 active:scale-95 cursor-pointer">
+              <Pencil alt="Edit Name Agent" size={16} color="#9E9EA0" />
+            </button>
+
+            <button className="p-2 rounded-full hover:bg-[#2C2C30] transition duration-200 active:scale-95 cursor-pointer">
+              <LockKeyholeOpen alt="Open/Lock Agent" size={16} color="#9E9EA0" />
+            </button>
+
             <button onClick={onRun} disabled={isRunning} className="disabled:cursor-not-allowed p-1">
               {isRunning ? (
                 <Loader2 size={16} className="animate-spin text-gray-400" />
               ) : (
-                <img src={PlayIcon} alt="Run Agent" className="w-4 h-4" />
+                <button className="p-2 rounded-full hover:bg-[#2C2C30] transition duration-200 active:scale-95 cursor-pointer">
+                  <Play alt="Run Agent" size={15} color="#9E9EA0" />
+                </button>
               )}
             </button>
           </div>
         </div>
         <div className="flex flex-col gap-2">
-          <div className="text-[#989898] text-sm">Prompt</div>
+          <label className="text-[#83828B] text-xs">Prompt</label>
           <ExpandBox
             size={"100%"}
             value={prompt}
-            placeholder="Specialist prompt..."
+            placeholder="Specialist Prompt"
             onOpenModal={onOpenModal}
           />
         </div>
@@ -75,13 +81,13 @@ function Specialist({
       <button
         onClick={hasResponse ? onOpenResponseModal : undefined}
         disabled={!hasResponse}
-        className={`w-full h-10 rounded-b-xl flex items-center justify-end gap-3 px-4 transition-colors ${hasResponse
-          ? "bg-white text-black font-semibold cursor-pointer hover:bg-gray-200"
-          : "bg-[#2B2B2B] text-[#B0B0B0] cursor-default"
+        className={`w-full h-10 rounded-b-[10px] text-[#D9D9D9] flex items-center justify-end gap-3 px-4 transition duration-200 ${hasResponse
+          ? "bg-[#3B3B42] font-semibold cursor-pointer"
+          : "bg-[#202024] cursor-default"
           }`}
       >
         Response
-        <img src={OutputIcon} alt="Output" />
+        <TextSearch size={14} color="#9E9EA0" />
       </button>
     </div>
   );
@@ -105,7 +111,6 @@ function WorkGroup({
           workgroupData.map((specialist, index) => (
             <Specialist
               key={index}
-              number={index + 1}
               name={specialist.name}
               prompt={specialist.prompt}
               response={workgroupResponses[specialist.name]}
@@ -150,17 +155,18 @@ function Modal({ initialText, onSave, onClose, title = "Edit Content", subtitle,
   }
 
   return (
+    /* ------------------ Modal Expansivo Edit Prompt - Step 3 ------------------ */
     <div className="bg-black/30 w-screen h-screen fixed z-40 top-0 left-0 backdrop-blur-sm flex items-center justify-center" onClick={handleClickOutside}>
       <div ref={modalRef} className="w-[45rem] max-h-[80vh] bg-[#2D2D2D] rounded-3xl border border-[#6C6C6C] p-8 flex flex-col">
         <div className="flex justify-between items-start">
           <div className="flex gap-3 items-start">
-            <img src={ResponseIcon} alt="" />
+            <SquareCode />
             <div className="flex flex-col">
               <div className="text-sm font-semibold text-white">{title}</div>
               {subtitle && <div className="text-sm text-[#747474]">{subtitle}</div>}
             </div>
           </div>
-          <div className="cursor-pointer" onClick={handleAttemptClose}><img src={CloseIcon} alt="" /></div>
+          <div className="cursor-pointer" onClick={handleAttemptClose}><X /></div>
         </div>
         <textarea
           value={currentText}
@@ -766,7 +772,7 @@ function Create() {
                       </button>
                       <button
                         onClick={handleRunWorkgroup}
-                        className="flex items-center gap-2 px-3 py-1.5 bg-[#202024] text-[##D9D9D9] text-sm font-semibold rounded-full cursor-pointer hover:bg-[#3B3B42] transition duration-200 active:scale-95 select-none"
+                        className="flex items-center gap-2 px-3 py-1.5 bg-[#202024] text-[#D9D9D9] text-sm font-semibold rounded-full cursor-pointer hover:bg-[#3B3B42] transition duration-200 active:scale-95 select-none"
                         title="Run Workgroup"
                       >
                         <Play size={10} fill="#D9D9D9" />
