@@ -26,7 +26,7 @@ function TryModal({ persona, onClose }) {
 
           {/* Persona Message */}
           <div className="flex justify-start items-start gap-3">
-            <img src={persona.image} alt={persona.name} className="w-10 h-10 rounded-full" />
+            <img src={persona.imagebase64} alt={persona.name} className="w-10 h-10 rounded-full" />
             <div className="flex flex-col items-start">
               <p className="text-sm font-semibold text-[#E3E3E4] mb-1">{persona.name}</p>
               <div className="bg-[#35373B] rounded-xl p-3 max-w-md">
