@@ -71,8 +71,8 @@ function TryModal({ persona, onClose }) {
                           dialogue_test
                         </p>
                       </div>
-                      {/* Célula do Conteúdo com a borda vertical */}
-                      <div className="table-cell p-3 pl-4 border-l border-[#353535] align-middle">
+                      {/* Célula do Conteúdo com a borda vertical específica */}
+                      <div className="table-cell p-3 pl-4 border-l border-l-[#353535] align-middle">
                         <p className="text-sm text-[#C1C1C2]">
                           How are you? Time is money friend... How are Time is money friend...How are you? Time is money friend... How are Time is money friend...How are you? Time is money friend... How are Time is money friend...How are you? Time is money friend... How are Time is money friend...
                         </p>
@@ -81,16 +81,14 @@ function TryModal({ persona, onClose }) {
 
                     {/* Linha 2: Action */}
                     <div className="table-row bg-[#2A2A2A]">
-                      {/* Célula da Tag com borda superior */}
-                      <div className="table-cell p-3 w-0 whitespace-nowrap align-middle border-t border-[#303135]">
+                      {/* Célula da Tag com borda superior específica */}
+                      <div className="table-cell p-3 w-0 whitespace-nowrap align-middle border-t border-t-[#303135]">
                         <p className="font-mono text-center text-xs px-2 py-1 bg-[#363636] rounded-full">
                           action
                         </p>
                       </div>
-                      {/* ===== INÍCIO DA ALTERAÇÃO ===== */}
-                      {/* Célula do Conteúdo com borda vertical E superior, e cor da borda UNIFICADA */}
-                      <div className="table-cell p-3 pl-4 border-l border-[#353535] align-middle border-t">
-                        {/* ===== FIM DA ALTERAÇÃO ===== */}
+                      {/* Célula do Conteúdo com bordas vertical e superior específicas */}
+                      <div className="table-cell p-3 pl-4 border-l border-l-[#353535] align-middle border-t border-t-[#303135]">
                         <p className="text-sm text-[#C1C1C2]">
                           Walk (10,10)
                         </p>
