@@ -1,7 +1,7 @@
 import React from "react";
 import { Wrench, X } from "lucide-react";
 import { SendSolid } from 'iconoir-react';
-import Avatar from "../../../assets/Avatar.png";
+import Avatar from "../../../assets/Avatar.png"; // Certifique-se que o caminho para o Avatar está correto
 import SimpleBar from "simplebar-react";
 import 'simplebar-react/dist/simplebar.min.css';
 
@@ -12,7 +12,7 @@ function TryModal({ persona, onClose }) {
       onClick={onClose}
     >
       <div
-        className="bg-[#26272B] rounded-2xl w-[750px] h-[500px] p-6 flex flex-col" // <-- MUDANÇA: Removido justify-between para controle manual do layout
+        className="bg-[#26272B] rounded-2xl w-[750px] h-[500px] p-6 flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Cabeçalho do Modal */}
@@ -33,7 +33,7 @@ function TryModal({ persona, onClose }) {
 
               {/* Mensagem de Instruções */}
               <div className="flex justify-start items-start gap-3 pt-5">
-                <div className="flex items-center justify-center w-10 h-10 rounded-full bg-black drop-shadow-md">
+                <div className="flex items-center justify-center w-10 h-10 rounded-full bg-linear-to-r from-[#0A0A0A] to-[#2B2B2B] drop-shadow-md">
                   <Wrench color="#B3B3B3" size={21} />
                 </div>
                 <div className="flex flex-col items-start">
@@ -49,7 +49,7 @@ function TryModal({ persona, onClose }) {
                 <div className="flex flex-col items-end">
                   <p className="text-sm font-semibold text-[#E3E3E4] mb-1">user</p>
                   <div className="bg-[#35373B] rounded-xl p-3 max-w-md">
-                    <p className="text-sm text-[#C1C1C2]">Hello, Goblin?</p>
+                    <p className="text-sm text-[#C1C1C2]">Hello?</p>
                   </div>
                 </div>
                 <img src={Avatar} alt={"user"} className="w-10 h-10 rounded-full" />
@@ -58,14 +58,47 @@ function TryModal({ persona, onClose }) {
               {/* Mensagem da Chaplin */}
               <div className="flex justify-start items-start gap-3">
                 <img src={persona.imagebase64} alt={persona.name} className="w-10 h-10 rounded-full" />
-                <div className="flex flex-col items-start">
+                <div className="flex flex-col items-start w-full">
                   <p className="text-sm font-semibold text-[#E3E3E4] mb-1">{persona.name}</p>
-                  <div className="flex bg-[#35373B] rounded-xl p-3 max-w-md">
-                    <p className="font-regular bg-[#4B4D50] rounded-full">
-                      speech
-                    </p>
-                    <p className="text-sm text-[#C1C1C2]">How are you? Time is money friend...</p>
+
+                  <div className="table w-full max-w-lg rounded-xl overflow-hidden">
+
+                    {/* Linha 1: Dialogue */}
+                    <div className="table-row bg-[#1B1B1B]">
+                      {/* Célula da Tag */}
+                      <div className="table-cell p-3 w-0 whitespace-nowrap align-middle">
+                        <p className="font-mono text-center text-xs px-2 py-1 bg-[#363636] rounded-full">
+                          dialogue_test
+                        </p>
+                      </div>
+                      {/* Célula do Conteúdo com a borda vertical */}
+                      <div className="table-cell p-3 pl-4 border-l border-[#353535] align-middle">
+                        <p className="text-sm text-[#C1C1C2]">
+                          How are you? Time is money friend... How are Time is money friend...How are you? Time is money friend... How are Time is money friend...How are you? Time is money friend... How are Time is money friend...How are you? Time is money friend... How are Time is money friend...
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Linha 2: Action */}
+                    <div className="table-row bg-[#2A2A2A]">
+                      {/* Célula da Tag com borda superior */}
+                      <div className="table-cell p-3 w-0 whitespace-nowrap align-middle border-t border-[#303135]">
+                        <p className="font-mono text-center text-xs px-2 py-1 bg-[#363636] rounded-full">
+                          action
+                        </p>
+                      </div>
+                      {/* ===== INÍCIO DA ALTERAÇÃO ===== */}
+                      {/* Célula do Conteúdo com borda vertical E superior, e cor da borda UNIFICADA */}
+                      <div className="table-cell p-3 pl-4 border-l border-[#353535] align-middle border-t">
+                        {/* ===== FIM DA ALTERAÇÃO ===== */}
+                        <p className="text-sm text-[#C1C1C2]">
+                          Walk (10,10)
+                        </p>
+                      </div>
+                    </div>
+
                   </div>
+
                 </div>
               </div>
             </div>
@@ -77,7 +110,7 @@ function TryModal({ persona, onClose }) {
           <input
             type="text"
             placeholder={`Ask ${persona.name}...`}
-            className="flex-grow bg-transparent text-[#FAFAFA] focus:outline-none pl-5 text-sm placeholder:text-[#7C7C7C] placeholder:font-medium"
+            className="flex-grow bg-transparent text-[#FAFAFA] focus-outline-none pl-5 text-sm placeholder:text-[#7C7C7C] placeholder:font-medium"
           />
           <button className="bg-white px-3 py-3 rounded-full font-semibold hover:bg-[#E3E3E4] cursor-pointer">
             <SendSolid color="#242424" height={15} width={15} />

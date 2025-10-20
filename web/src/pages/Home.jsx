@@ -66,7 +66,7 @@ function FilterBar({ activeCategory, onCategorySelect }) {
 function PersonaCard({ persona, onApiClick, onTryClick, isFavorite, onToggleFavorite }) {
   // Ajuste para usar a imagem do placeholder se não houver uma definida
   const imageUrl = persona.imagebase64 || OrcImage;
-  
+
   return (
     <div className="flex flex-col sm:flex-row gap-4 h-auto sm:h-40 w-full bg-[#202024] rounded-2xl p-4 relative items-center select-none">
       <button onClick={() => onToggleFavorite(persona.id)} className="absolute top-3.5 right-4 p-1 z-10 cursor-pointer" aria-label="Toggle Favorite">
@@ -99,10 +99,10 @@ function PersonaList({ personas, onApiClick, onTryClick, favorites, onToggleFavo
 // Componente para exibir o esqueleto de carregamento
 function CardSkeleton() {
   return (
-    
+
     <div className="flex flex-col sm:flex-row gap-4 h-auto sm:h-40 w-full bg-[#202024] rounded-2xl p-4 relative items-center select-none">
       <button className="absolute top-3.5 right-4 p-1 z-10 cursor-pointer" aria-label="Toggle Favorite">
-        
+
       </button>
       <div className="w-24 h-32 object-cover rounded-2xl flex-shrink-0 animate-pulse bg-gray-400" />
       <div className="flex flex-col gap-1 h-full w-full">
@@ -110,10 +110,10 @@ function CardSkeleton() {
         {/* Usando 'instructions' como descrição, conforme a estrutura de dados */}
         <div className="">
           <div className="text-sm text-[#88888F] mb-1 line-clamp-2 w-60 h-[14px] animate-pulse bg-gray-400"></div>
-        <div className="text-sm text-[#88888F] mb-2 line-clamp-2 w-60 h-[14px] animate-pulse bg-gray-400"></div>
+          <div className="text-sm text-[#88888F] mb-2 line-clamp-2 w-60 h-[14px] animate-pulse bg-gray-400"></div>
         </div>
         <div className="flex gap-2 justify-end mt-auto">
-          <button  className="flex w-20 py-1.5 px-5 border-[#303136] border rounded-full text-white text-sm justify-center items-center cursor-pointer transition duration-200 active:scale-95 hover:bg-[#1F1F23]">API</button>
+          <button className="flex w-20 py-1.5 px-5 border-[#303136] border rounded-full text-white text-sm justify-center items-center cursor-pointer transition duration-200 active:scale-95 hover:bg-[#1F1F23]">API</button>
           <button className="flex w-20 py-1.5 px-5 bg-white text-black text-sm rounded-full justify-center items-center cursor-pointer transition duration-200 active:scale-95 hover:bg-[#E3E3E4]">Try</button>
         </div>
       </div>
@@ -147,7 +147,7 @@ function Home() {
     const isDesktop = window.innerWidth >= 1024;
     setIsNavbarOpen(isDesktop);
   }, []);
-  
+
   // <<< NOVO: EFEITO PARA BUSCAR OS DADOS DA API >>>
   useEffect(() => {
     async function fetchChaplins() {
@@ -199,7 +199,7 @@ function Home() {
   return (
     <div className="bg-[#18181B] min-h-screen font-inter text-white">
       <PersonaNavbar isOpen={isNavbarOpen} setIsOpen={setIsNavbarOpen} viewMode={viewMode} setViewMode={setViewMode} handleMobileNavClick={handleMobileNavClick} />
-      <button onClick={() => setIsNavbarOpen(true)} className={`fixed top-5 left-2 z-20 p-2 rounded-full hover:bg-[#1F1F22] ...`}>
+      <button onClick={() => setIsNavbarOpen(true)} className={`fixed top-5 left-2 z-20 p-2 rounded-full cursor-pointer hover:bg-[#1F1F22] ...`}>
         <Menu color="#A2A2AB" size={23} />
       </button>
 
@@ -225,7 +225,7 @@ function Home() {
                 <PersonaList personas={filteredPersonas} onApiClick={handleApiClick} onTryClick={handleTryClick} favorites={favorites} onToggleFavorite={handleToggleFavorite} />
               )}
             </div>
-            
+
           </div>
         </div>
       </main>
