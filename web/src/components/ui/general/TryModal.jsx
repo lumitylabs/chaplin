@@ -33,12 +33,12 @@ function TryModal({ persona, onClose }) {
 
               {/* Mensagem de Instruções */}
               <div className="flex justify-start items-start gap-3 pt-5">
-                <div className="flex items-center justify-center w-10 h-10 rounded-full bg-linear-to-r from-[#0A0A0A] to-[#2B2B2B] drop-shadow-md">
+                <div className="flex flex-shrink-0 items-center justify-center w-10 h-10 rounded-full bg-linear-to-r from-[#0A0A0A] to-[#2B2B2B] drop-shadow-lg">
                   <Wrench color="#B3B3B3" size={21} />
                 </div>
                 <div className="flex flex-col items-start">
                   <p className="text-sm font-semibold text-[#E3E3E4] mb-1">Instructions</p>
-                  <div className="flex flex-col gap-1 bg-linear-to-r from-[#1B1B1B] to-[#2B2B2B] rounded-xl p-4 max-w-xl drop-shadow-md">
+                  <div className="flex flex-col gap-1 bg-linear-to-r from-[#1B1B1B] to-[#2B2B2B] rounded-xl p-4 max-w-xl drop-shadow-lg">
                     <p className="text-justify text-sm text-[#BDBBBE]">Esse personagem você precisa digitar uma frase grande de um tema ou conteudo que você gosta, ele vai pegar esse tema ou conteudo escolhido e vai escrever para você 3 piadas com esse conteudo escolhido</p>
                   </div>
                 </div>
@@ -60,59 +60,52 @@ function TryModal({ persona, onClose }) {
                 <img src={persona.imagebase64} alt={persona.name} className="w-10 h-10 rounded-full" />
                 <div className="flex flex-col items-start w-full">
                   <p className="text-sm font-semibold text-[#E3E3E4] mb-1">{persona.name}</p>
-
                   <div className="table w-full max-w-lg rounded-xl overflow-hidden">
-
                     {/* Linha 1: Dialogue */}
                     <div className="table-row bg-[#1B1B1B]">
-                      {/* Célula da Tag */}
                       <div className="table-cell p-3 w-0 whitespace-nowrap align-middle">
                         <p className="font-mono text-center text-xs px-2 py-1 bg-[#363636] rounded-full">
                           dialogue_test
                         </p>
                       </div>
-                      {/* Célula do Conteúdo com a borda vertical específica */}
                       <div className="table-cell p-3 pl-4 border-l border-l-[#353535] align-middle">
                         <p className="text-sm text-[#C1C1C2]">
                           How are you? Time is money friend... How are Time is money friend...How are you? Time is money friend... How are Time is money friend...How are you? Time is money friend... How are Time is money friend...How are you? Time is money friend... How are Time is money friend...
                         </p>
                       </div>
                     </div>
-
                     {/* Linha 2: Action */}
                     <div className="table-row bg-[#2A2A2A]">
-                      {/* Célula da Tag com borda superior específica */}
                       <div className="table-cell p-3 w-0 whitespace-nowrap align-middle border-t border-t-[#303135]">
                         <p className="font-mono text-center text-xs px-2 py-1 bg-[#363636] rounded-full">
                           action
                         </p>
                       </div>
-                      {/* Célula do Conteúdo com bordas vertical e superior específicas */}
                       <div className="table-cell p-3 pl-4 border-l border-l-[#353535] align-middle border-t border-t-[#303135]">
                         <p className="text-sm text-[#C1C1C2]">
                           Walk (10,10)
                         </p>
                       </div>
                     </div>
-
                   </div>
-
                 </div>
               </div>
             </div>
           </SimpleBar>
         </div>
 
-        {/* Área de Input (não cresce) */}
-        <div className="flex-shrink-0 flex items-center gap-3 bg-[#37393D] rounded-full border-1 border-[#505050] p-1">
-          <input
-            type="text"
-            placeholder={`Ask ${persona.name}...`}
-            className="flex-grow bg-transparent text-[#FAFAFA] focus-outline-none pl-5 text-sm placeholder:text-[#7C7C7C] placeholder:font-medium"
-          />
-          <button className="bg-white px-3 py-3 rounded-full font-semibold hover:bg-[#E3E3E4] cursor-pointer">
-            <SendSolid color="#242424" height={15} width={15} />
-          </button>
+        {/* --- ÁREA DE INPUT CORRIGIDA --- */}
+        <div className="flex-shrink-0 mt-4">
+          <div className="relative flex items-center">
+            <input
+              type="text"
+              placeholder={`Ask ${persona.name}...`}
+              className="w-full bg-[#37393D] text-[#FAFAFA] text-sm placeholder:text-[#7C7C7C] placeholder:font-medium placeholder:tracking-tight rounded-full py-3 pl-5 pr-14 border border-[#505050] focus:outline-none focus:ring focus:ring-[#C7C7C7] transition-all duration-200"
+            />
+            <button className="absolute right-1.5 top-1/2 -translate-y-1/2 bg-white p-2.5 rounded-full font-semibold hover:bg-[#E3E3E4] cursor-pointer">
+              <SendSolid color="#242424" height={15} width={15} />
+            </button>
+          </div>
         </div>
       </div>
     </div>
