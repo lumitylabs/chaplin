@@ -173,9 +173,9 @@ function Create() {
   const isPublishable = missingFields.length === 0;
 
   const tooltipMessage = (
-    <div>
-      <span className="font-bold">Missing required fields:</span>
-      <ul className="list-disc list-inside text-left">
+    <div className="text-sm">
+      <span className="font-semibold text-xs text-[#FAFAFA]">Missing required fields:</span>
+      <ul className="list-disc list-inside text-xs text-left text-[#D0D0D0] mt-2 space-y-1">
         {missingFields.map(field => (
           <li key={field}>{field}</li>
         ))}
@@ -497,14 +497,14 @@ function Create() {
                 onClick={handlePublish}
                 disabled={!isPublishable || isPublishing}
                 className={`px-5 py-2 rounded-full font-medium transition-colors duration-200 ${isPublishable
-                    ? 'bg-white text-black cursor-pointer hover:bg-gray-200'
-                    : 'bg-[#89898A] text-[#18181B] cursor-not-allowed opacity-50'
+                  ? 'bg-white text-black cursor-pointer hover:bg-gray-200'
+                  : 'bg-[#89898A] text-[#18181B] cursor-not-allowed opacity-50'
                   } ${isPublishing && 'opacity-70 cursor-wait'}`}
               >
                 {isPublishing ? "Publishing..." : "Publish"}
               </button>
               {!isPublishable && (
-                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-max max-w-xs bg-[#26272B] text-[#FAFAFA] text-sm rounded-md px-4 py-3 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 border border-[#303136] shadow-lg">
+                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-max max-w-xs bg-[#26272B] rounded-lg p-3 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 border border-[#303136] shadow-lg">
                   {tooltipMessage}
                   <svg
                     className="absolute text-[#26272B] h-2 w-full left-0 bottom-full"
@@ -618,7 +618,7 @@ function Create() {
                       </div>
                       {isAvatarMenuOpen && (
                         <div ref={avatarMenuRef} className="absolute bottom-4 left-37.5 z-50 w-56 bg-[#202024] rounded-lg p-1 shadow-lg">
-                          <button onClick={handleGenerateImage} disabled={isGeneratingAvatar} className="flex justify-between items-center gap-2 w-full text-left px-3 py-2.5 rounded-lg text-sm hover:bg-[#2C30] transition cursor-pointer">
+                          <button onClick={handleGenerateImage} disabled={isGeneratingAvatar} className="flex justify-between items-center gap-2 w-full text-left px-3 py-2.5 rounded-lg text-sm hover:bg-[#2C2C30] transition cursor-pointer">
                             {isGeneratingAvatar ? "Generating..." : "Generate image"}
                             <WandSparkles size={14} color="#D9D3D3" />
                           </button>
@@ -636,7 +636,7 @@ function Create() {
                 <div className="px-4 py-3">
                   <div className="flex items-center justify-between">
                     <div className="text-[#FAFAFA] font-medium text-sm flex items-center gap-3"><span>Output Format</span></div>
-                    <div><button onClick={addStep2Group} className="p-2 rounded-full hover:bg-[#2C30] transition duration-200 active:scale-95 cursor-pointer" aria-label="Add key/description" title="Add key/description" disabled={formData.step2.groups.length >= MAX_STEP2_GROUPS}><Plus size={20} /></button></div>
+                    <div><button onClick={addStep2Group} className="p-2 rounded-full hover:bg-[#2C2C30] transition duration-200 active:scale-95 cursor-pointer" aria-label="Add key/description" title="Add key/description" disabled={formData.step2.groups.length >= MAX_STEP2_GROUPS}><Plus size={20} /></button></div>
                   </div>
                 </div>
                 <div className="h-px w-full bg-[#3A3A3A]" />
@@ -646,7 +646,7 @@ function Create() {
                       <div key={idx} className="border border-[#3A3A3A] rounded-xl p-3">
                         <div className="flex justify-between items-center mb-3">
                           <span className="text-[#797A86] text-sm font-regular">Output {idx + 1}</span>
-                          <button onClick={() => removeStep2Group(idx)} className="p-2 rounded-full hover:bg-[#2C30] transition duration-200 active:scale-95 cursor-pointer" aria-label={`Remove group ${idx + 1}`}><Trash2 size={16} color="#A3A3A3" /></button>
+                          <button onClick={() => removeStep2Group(idx)} className="p-2 rounded-full hover:bg-[#2C2C30] transition duration-200 active:scale-95 cursor-pointer" aria-label={`Remove group ${idx + 1}`}><Trash2 size={16} color="#A3A3A3" /></button>
                         </div>
                         <div className="flex flex-col items-start gap-4">
                           <div className="flex flex-col w-full gap-2">
@@ -689,7 +689,7 @@ function Create() {
                         <WandSparkles size={14} color="#D9D3D3" />
                         {isGenerating ? "Generating..." : "AI Generate"}
                       </button>
-                      <button onClick={handleRunWorkgroup} className="flex items-center gap-2 px-3 py-1.5 bg-[#202024] text-[#D9D9D9] text-sm font-semibold rounded-full cursor-pointer hover:bg-[#3B42] transition duration-200 active:scale-95 select-none" title="Run Workgroup">
+                      <button onClick={handleRunWorkgroup} className="flex items-center gap-2 px-3 py-1.5 bg-[#202024] text-[#D9D9D9] text-sm font-semibold rounded-full cursor-pointer hover:bg-[#3B3B42] transition duration-200 active:scale-95 select-none" title="Run Workgroup">
                         <Play size={10} fill="#D9D9D9" />
                         Run
                       </button>
