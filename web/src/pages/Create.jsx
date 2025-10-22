@@ -476,11 +476,11 @@ function Create() {
       </button>
 
       <main className={`transition-all duration-300 ease-in-out ${isNavbarOpen ? "lg:ml-[260px]" : "lg:ml-0"}`}>
-        <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 py-10">
+        <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 lg:py-7 py-5">
 
           {/* O botão de menu foi removido daqui */}
-          <div className="flex flex-wrap items-center justify-between gap-y-4 mb-10">
-            <h1 className="text-2xl font-semibold text-white w-full lg:w-auto order-last lg:order-first">
+          <div className="flex flex-wrap items-center justify-between gap-y-4 mb-5">
+            <h1 className="font-inter font-semibold text-xl text-[#FAFAFA] w-full lg:w-auto order-last lg:order-first">
               Create
             </h1>
 
