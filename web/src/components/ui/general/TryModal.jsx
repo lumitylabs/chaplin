@@ -15,12 +15,12 @@ function ResultsTable({ data }) {
     const errorMessage = data?.error || data?.raw || "An unknown error occurred.";
     return <div className="text-sm text-red-400 p-3 bg-[#1B1B1B] rounded-xl">{String(errorMessage)}</div>;
   }
-  
+
   return (
     <div className="table w-full max-w-lg rounded-xl overflow-hidden border border-[#303135]">
       {Object.entries(data).map(([key, value], index) => (
-        <div 
-          key={key} 
+        <div
+          key={key}
           className={`table-row ${index % 2 === 0 ? 'bg-[#2A2A2A]' : 'bg-[#1B1B1B]'}`}
         >
           <div className="table-cell p-3 w-0 whitespace-nowrap align-middle">
@@ -63,6 +63,20 @@ function TryModal({ persona, onClose }) {
   const simpleBarRef = useRef(null);
   const streamControllerRef = useRef(null);
 
+  // Efeito para fechar o modal com a tecla ESC
+  useEffect(() => {
+    const handleEsc = (event) => {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleEsc);
+
+    return () => {
+      window.removeEventListener('keydown', handleEsc);
+    };
+  }, [onClose]); // Adiciona onClose como dependência
+
   useEffect(() => {
     if (simpleBarRef.current) {
       const scrollElement = simpleBarRef.current.getScrollElement();
@@ -86,7 +100,7 @@ function TryModal({ persona, onClose }) {
       type: 'user',
       text: userInput.trim(),
     };
-    
+
     const newChaplinMessage = {
       id: `chaplin-${Date.now()}`,
       type: 'chaplin',
@@ -104,11 +118,11 @@ function TryModal({ persona, onClose }) {
       {
         onData: (chunk) => {
           console.log('Received chunk:', chunk); // Debug
-          setMessages(prevMessages => 
+          setMessages(prevMessages =>
             prevMessages.map(msg => {
               if (msg.id === newChaplinMessage.id) {
                 const updatedMsg = { ...msg };
-                
+
                 if (chunk.type === 'start') {
                   updatedMsg.statusText = 'Processing your request...';
                 } else if (chunk.type === 'agent_start') {
@@ -128,7 +142,7 @@ function TryModal({ persona, onClose }) {
                   updatedMsg.content = { Error: chunk.data?.message || 'Unknown error' };
                   updatedMsg.statusText = '';
                 }
-                
+
                 return updatedMsg;
               }
               return msg;
@@ -137,10 +151,10 @@ function TryModal({ persona, onClose }) {
         },
         onError: (error) => {
           console.error('Stream error:', error);
-          setMessages(prevMessages => 
-            prevMessages.map(msg => 
-              msg.id === newChaplinMessage.id 
-                ? { ...msg, status: 'complete', content: { Error: error.message }, statusText: '' } 
+          setMessages(prevMessages =>
+            prevMessages.map(msg =>
+              msg.id === newChaplinMessage.id
+                ? { ...msg, status: 'complete', content: { Error: error.message }, statusText: '' }
                 : msg
             )
           );
@@ -180,8 +194,8 @@ function TryModal({ persona, onClose }) {
                   </div>
                 </div>
               </div>
-              
-              {messages.map((msg) => 
+
+              {messages.map((msg) =>
                 msg.type === 'user' ? (
                   <div key={msg.id} className="flex justify-end items-start gap-3">
                     <div className="flex flex-col items-end">
@@ -209,12 +223,12 @@ function TryModal({ persona, onClose }) {
               onChange={(e) => setUserInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
               disabled={isProcessing}
-              className="w-full bg-[#37393D] text-[#FAFAFA] text-sm placeholder:text-[#7C7C7C] rounded-full py-3 pl-5 pr-14 border border-[#505050] focus:outline-none focus:ring-2 focus:ring-[#C7C7C7] transition-all duration-200 disabled:opacity-50"
+              className="w-full bg-[#37393D] text-[#FAFAFA] text-sm placeholder:text-[#7C7C7C] rounded-full py-3 pl-5 pr-14 border border-[#505050] focus:outline-none focus:ring-1 focus:ring-[#C7C7C7] transition-all duration-200 disabled:opacity-50"
             />
-            <button 
+            <button
               onClick={handleSendMessage}
               disabled={isProcessing || !userInput.trim()}
-              className="absolute right-1.5 top-1/2 -translate-y-1/2 bg-white p-2.5 rounded-full font-semibold hover:bg-[#E3E3E4] cursor-pointer disabled:bg-gray-400 disabled:cursor-not-allowed"
+              className="absolute right-1.5 top-1/2 -translate-y-1/2 bg-white p-2.5 rounded-full font-semibold hover:bg-[#E3E3E4] transition-all duration-200 cursor-pointer disabled:bg-gray-400 disabled:cursor-not-allowed"
             >
               <SendSolid color="#242424" height={15} width={15} />
             </button>
