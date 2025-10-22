@@ -1,21 +1,52 @@
 import React, { useRef, useState, useEffect } from "react";
-import { X, SquareCode } from "lucide-react";
+import { X, SquareCode, WandSparkles, Pencil, TextSearch } from "lucide-react";
 
-// Supondo que você tenha um componente StatusBar semelhante a este.
-// Se não tiver, você pode remover a linha ou criar um componente simples.
-function StatusBar({ text, maxLength }) {
-    if (maxLength === null || maxLength === undefined) {
-        return null; // Não renderiza nada se não houver limite de caracteres
-    }
+// Componente para o menu dropdown de IA
+function AiGenerateMenu() {
+    const [isOpen, setIsOpen] = useState(false);
+    const menuRef = useRef(null);
 
-    const currentLength = text?.length || 0;
-    const isOverLimit = currentLength > maxLength;
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (menuRef.current && !menuRef.current.contains(event.target)) {
+                setIsOpen(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
 
     return (
-        <div className="text-right text-sm mt-2">
-            <span className={isOverLimit ? 'text-red-500' : 'text-gray-400'}>
-                {currentLength}/{maxLength}
-            </span>
+        <div className="relative" ref={menuRef}>
+            <button
+                onClick={() => setIsOpen(!isOpen)}
+                className="flex items-center gap-1.5 text-xs text-white border border-[#6C6C6C] bg-[#37393D] rounded-full px-3 py-1 hover:bg-white/10 transition-colors"
+            >
+                <WandSparkles size={12} />
+                AI Generate
+            </button>
+            {isOpen && (
+                <div className="absolute top-full right-0 mt-2 w-48 bg-[#2D2D2D] border border-[#6C6C6C] rounded-lg shadow-xl z-20 p-1">
+                    <button
+                        onClick={() => {
+                            console.log("New Prompt clicked!");
+                            setIsOpen(false);
+                        }}
+                        className="w-full text-left flex justify-between items-center px-3 py-2 text-sm text-white rounded-md hover:bg-[#37393D]"
+                    >
+                        New Prompt <WandSparkles size={14} />
+                    </button>
+                    <button
+                        onClick={() => {
+                            console.log("Enhance Text clicked!");
+                            setIsOpen(false);
+                        }}
+                        className="w-full text-left flex justify-between items-center px-3 py-2 text-sm text-white rounded-md hover:bg-[#37393D]"
+                    >
+                        Enhance Text <WandSparkles size={14} />
+                    </button>
+                </div>
+            )}
         </div>
     );
 }
@@ -27,7 +58,6 @@ function CreateModal({
     onSave,
     config,
 }) {
-    // Desestruturação das configurações do modal com valores padrão
     const {
         initialText = "",
         readOnly = false,
@@ -36,45 +66,31 @@ function CreateModal({
         Icon = SquareCode,
         actionButtonText = "Save",
         showActionButton = true,
-        headerActions = null,
-        maxLength = null, // Prop para o limite de caracteres
+        maxLength = null,
+        showAiHelper = false,
     } = config || {};
 
     const modalRef = useRef(null);
     const [currentText, setCurrentText] = useState(initialText);
 
-    // Efeito para sincronizar o estado interno com a prop `initialText` quando ela mudar
     useEffect(() => {
         setCurrentText(initialText ?? "");
     }, [initialText]);
 
-    // Efeito para adicionar e remover o listener do teclado para a tecla 'Escape'
     useEffect(() => {
-        // Função que será chamada a cada tecla pressionada no documento
         const handleKeyDown = (event) => {
             if (event.key === 'Escape') {
-                handleAttemptClose(); // Chama a mesma função de fechar do botão 'X'
+                handleAttemptClose();
             }
         };
-
-        // Adiciona o listener apenas se o modal estiver aberto
         if (isOpen) {
             document.addEventListener('keydown', handleKeyDown);
         }
-
-        // Função de limpeza: remove o listener quando o componente é desmontado
-        // ou antes de o efeito ser executado novamente. Essencial para evitar vazamentos de memória.
-        return () => {
-            document.removeEventListener('keydown', handleKeyDown);
-        };
-        // O array de dependências garante que o efeito seja reavaliado se 'isOpen' ou 'currentText' mudar.
-        // 'currentText' é importante para que 'handleAttemptClose' sempre tenha o valor mais recente do estado.
+        return () => document.removeEventListener('keydown', handleKeyDown);
     }, [isOpen, currentText]);
 
-    // Se o modal não estiver aberto, não renderiza nada
     if (!isOpen) return null;
 
-    // Função para tentar fechar o modal, verificando se há alterações não salvas
     const handleAttemptClose = () => {
         if (!readOnly && initialText !== currentText) {
             if (window.confirm("You have unsaved changes. Are you sure you want to close?")) {
@@ -85,77 +101,110 @@ function CreateModal({
         }
     };
 
-    // Função para fechar o modal ao clicar fora da área de conteúdo
     function handleClickOutside(e) {
         if (modalRef.current && !modalRef.current.contains(e.target)) {
             handleAttemptClose();
         }
     }
 
-    // Função para salvar o conteúdo
     function handleSave() {
-        // Garante que o texto salvo não exceda o limite, como uma segurança final.
         const textToSave = maxLength ? currentText.slice(0, maxLength) : currentText;
         onSave(textToSave);
         onClose();
     }
 
-    // Manipulador de mudança para o textarea que respeita o maxLength
     const handleTextChange = (e) => {
-        if (maxLength !== null) {
+        if (maxLength !== null && e.target.value.length > maxLength) {
             setCurrentText(e.target.value.slice(0, maxLength));
         } else {
             setCurrentText(e.target.value);
         }
     };
 
+    // Modal de Resposta (readOnly) - Mantém design simples
+    if (readOnly) {
+        return (
+            <div className="bg-black/50 w-screen h-screen fixed z-50 top-0 left-0 backdrop-blur-sm flex items-center justify-center" onClick={handleClickOutside}>
+                <div ref={modalRef} className="w-[48rem] max-w-[95vw] max-h-[85vh] bg-[#2D2D2D] rounded-3xl border border-[#6C6C6C] p-8 flex flex-col font-inter">
+                    <div className="flex justify-between items-start">
+                        <div className="flex gap-4 items-start">
+                            <Icon size={24} className="mt-1 text-gray-300" />
+                            <div className="flex flex-col">
+                                <div className="text-lg font-semibold text-white">{title}</div>
+                                {subtitle && <div className="text-sm text-[#747474] mt-1">{subtitle}</div>}
+                            </div>
+                        </div>
+                        <button onClick={handleAttemptClose} className="cursor-pointer text-gray-400 hover:text-white"><X size={24} /></button>
+                    </div>
+                    <textarea value={currentText} readOnly={true} className="mt-6 w-full flex-grow bg-[#202024] border border-[#3A3A3A] rounded-2xl p-5 text-white text-sm outline-none resize-none cursor-default" />
+                </div>
+            </div>
+        );
+    }
+
+    // Novo Layout para o Modal de Edição
     return (
-        // Overlay do modal
         <div
-            className="bg-black/50 w-screen h-screen fixed z-40 top-0 left-0 backdrop-blur-sm flex items-center justify-center"
+            className="bg-black/50 w-screen h-screen fixed z-50 top-0 left-0 backdrop-blur-sm flex items-center justify-center p-4"
             onClick={handleClickOutside}
         >
-            {/* Conteúdo do Modal */}
             <div
                 ref={modalRef}
-                className="w-[48rem] max-h-[85vh] bg-[#2D2D2D] rounded-3xl border border-[#6C6C6C] p-8 flex flex-col font-inter"
+                className="w-full max-w-4xl max-h-[90vh] bg-[#26272B] rounded-3xl border border-[#6C6C6C] p-8 flex flex-col font-inter"
             >
-
                 {/* Cabeçalho */}
                 <div className="flex justify-between items-start">
                     <div className="flex gap-4 items-start">
-                        <Icon size={24} className="mt-1 text-gray-300" />
-                        <div className="flex flex-col">
-                            <div className="text-lg font-semibold text-white">{title}</div>
-                            {subtitle && <div className="text-sm text-[#747474] mt-1">{subtitle}</div>}
+                        <Icon size={24} className="text-gray-300 mt-0.5" />
+                        <div>
+                            <h2 className="text-base font-semibold text-white">{title}</h2>
+                            {subtitle && <p className="text-sm text-[#AEAEAE] mt-1">{subtitle}</p>}
                         </div>
                     </div>
-                    <div className="flex items-center gap-4">
-                        {headerActions}
-                        <button onClick={handleAttemptClose} className="cursor-pointer text-gray-400 hover:text-white">
-                            <X size={24} />
-                        </button>
+                    <button onClick={handleAttemptClose} className="cursor-pointer text-gray-400 hover:text-white flex-shrink-0 ml-4">
+                        <X size={24} />
+                    </button>
+                </div>
+
+                {/* Área de Texto Principal com posicionamento relativo */}
+                <div className="relative mt-6 w-full flex-grow bg-[#37393D] border border-[#505050] rounded-2xl flex flex-col min-h-[300px]">
+
+                    {/* Botão de IA posicionado absolutamente */}
+                    {showAiHelper && (
+                        <div className="absolute top-4 right-4 z-10">
+                            <AiGenerateMenu />
+                        </div>
+                    )}
+
+                    {/* Textarea com padding superior para não ficar atrás do botão */}
+                    <textarea
+                        value={currentText}
+                        onChange={handleTextChange}
+                        className="w-full h-full flex-grow bg-transparent text-white text-sm outline-none resize-none placeholder:text-gray-400 p-5 pt-14"
+                        placeholder="Enter your text here..."
+                    />
+
+                    {/* Divisor e Rodapé da Área de Texto */}
+                    <div className="mt-auto flex-shrink-0 px-5 pb-3">
+                        <hr className="border-t border-[#505050] mb-3" />
+                        <div className="flex justify-between items-center">
+                            {maxLength !== null ? (
+                                <span className="text-sm text-[#AEAEAE]">
+                                    Caracteres: {currentText.length}/{maxLength}
+                                </span>
+                            ) : (
+                                <span></span>
+                            )}
+                        </div>
                     </div>
                 </div>
 
-                {/* Área de Texto */}
-                <textarea
-                    value={currentText}
-                    onChange={handleTextChange}
-                    readOnly={readOnly}
-                    maxLength={maxLength} // Atributo nativo para segurança adicional
-                    className={`mt-6 w-full flex-grow bg-[#202024] border border-[#3A3A3A] rounded-2xl p-5 text-white text-sm outline-none resize-none ${readOnly ? 'cursor-default' : 'focus:ring-1 focus:ring-gray-400'}`}
-                />
-
-                {/* Rodapé com a Barra de Status (contador de caracteres) */}
-                <StatusBar text={currentText} maxLength={maxLength} />
-
                 {/* Botão de Ação Principal */}
                 {showActionButton && (
-                    <div className="flex justify-end mt-6">
+                    <div className="flex justify-end mt-6 flex-shrink-0">
                         <button
                             onClick={handleSave}
-                            className="bg-[#E0E0E0] text-black font-semibold py-2 px-6 rounded-lg hover:bg-white transition-colors"
+                            className="bg-[#E0E0E0] text-black font-semibold py-2 px-6 rounded-full hover:bg-white transition-colors text-sm"
                         >
                             {actionButtonText}
                         </button>

@@ -11,7 +11,6 @@ import ExpandableInput from "../components/ui/create/ExpandableInput";
 import { generateWorkgroup, generateImage, runAgent, createChaplin } from "../services/apiService";
 import SpecialistSkeleton from "../components/ui/create/SpecialistSkeleton";
 import CreateModal from "../components/ui/create/CreateModal";
-import AIHelperButtons from "../components/ui/create/AIHelperButtons";
 
 /* ------------------ Constantes ------------------ */
 const NAME_MAX = 25;
@@ -375,17 +374,18 @@ function Create() {
   const getModalConfig = () => {
     if (!editingField) return null;
     const { type, index } = editingField;
+    const agentName = formData.workgroup[index]?.name || 'Specialist';
+
     switch (type) {
       case 'specialist':
-        const agentName = formData.workgroup[index]?.name || 'Specialist';
         return {
           Icon: Pencil,
-          title: `Edit Prompt`,
+          title: "Edit Prompt",
           subtitle: `Edit ${agentName}'s key content.`,
           initialText: formData.workgroup[index]?.prompt || "",
-          headerActions: <AIHelperButtons />,
           actionButtonText: "Finish Editing",
           showActionButton: true,
+          showAiHelper: true,
         };
       case 'specialist_response':
         const responseAgentName = formData.workgroup[index]?.name;
@@ -396,30 +396,37 @@ function Create() {
           initialText: workgroupResponses[responseAgentName] || "No response generated yet.",
           readOnly: true,
           showActionButton: false,
+          showAiHelper: false,
         };
       case 'description':
         return {
           Icon: SquareCode,
-          title: "Edit Persona Description",
+          title: "Edit Prompt",
+          subtitle: "Edit chaplin description content.",
           initialText: formData.personaDescription,
           maxLength: INSTR_MAX,
-          actionButtonText: "Save Changes",
+          actionButtonText: "Finish Editing",
+          showAiHelper: true,
         };
       case 'step2_key':
         return {
           Icon: SquareCode,
-          title: `Edit Key for Output ${index + 1}`,
+          title: "Edit Prompt",
+          subtitle: "Edit the content for this key.",
           initialText: formData.step2.groups[index]?.key || "",
           maxLength: STEP2_KEY_MAX,
-          actionButtonText: "Save Changes",
+          actionButtonText: "Finish Editing",
+          showAiHelper: true,
         };
       case 'step2_description':
         return {
           Icon: SquareCode,
-          title: `Edit Description for Output ${index + 1}`,
+          title: "Edit Prompt",
+          subtitle: "Edit the content for this description.",
           initialText: formData.step2.groups[index]?.description || "",
           maxLength: STEP2_DESC_MAX,
-          actionButtonText: "Save Changes",
+          actionButtonText: "Finish Editing",
+          showAiHelper: true,
         };
       default:
         return { initialText: "" };
@@ -473,8 +480,6 @@ function Create() {
       />
       <PersonaNavbar isOpen={isNavbarOpen} setIsOpen={setIsNavbarOpen} viewMode={viewMode} setViewMode={setViewMode} handleMobileNavClick={handleMobileNavClick} />
 
-      {/* --- CORREÇÃO APLICADA AQUI --- */}
-      {/* Botão de menu movido para fora do <main> e posicionado de forma fixa */}
       <button
         onClick={() => setIsNavbarOpen(true)}
         className={`fixed top-5 left-2 z-20 p-2 rounded-full cursor-pointer hover:bg-[#1F1F22] transition-opacity ${isNavbarOpen && window.innerWidth < 1024 ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
@@ -486,7 +491,6 @@ function Create() {
       <main className={`transition-all duration-300 ease-in-out ${isNavbarOpen ? "lg:ml-[260px]" : "lg:ml-0"}`}>
         <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 lg:py-7 py-5">
 
-          {/* O botão de menu foi removido daqui */}
           <div className="flex flex-wrap items-center justify-between gap-y-4 mb-5">
             <h1 className="font-inter font-semibold text-xl text-[#FAFAFA] w-full lg:w-auto order-last lg:order-first">
               Create
