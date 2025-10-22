@@ -496,9 +496,9 @@ function Create() {
               <button
                 onClick={handlePublish}
                 disabled={!isPublishable || isPublishing}
-                className={`px-5 py-2 rounded-full font-medium transition-colors duration-200 ${isPublishable
-                  ? 'bg-white text-black cursor-pointer hover:bg-gray-200'
-                  : 'bg-[#89898A] text-[#18181B] cursor-not-allowed opacity-50'
+                className={`px-5 py-2 rounded-full font-medium transition-colors duration-300 ${isPublishable
+                  ? 'bg-[#FAFAFA] text-black cursor-pointer hover:bg-[#E4E4E5]'
+                  : 'bg-[#8D8D8F] text-[#18181B] cursor-not-allowed opacity-50'
                   } ${isPublishing && 'opacity-70 cursor-wait'}`}
               >
                 {isPublishing ? "Publishing..." : "Publish"}
