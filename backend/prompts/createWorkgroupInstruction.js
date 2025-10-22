@@ -2,7 +2,7 @@
 export default function buildCreateWorkgroupInstruction({
   name,
   category,
-  instruction,
+  instructions,
   description,
   maxMembers = 5,
   responseformat = null,
@@ -69,7 +69,7 @@ The workgroup you are designing is a research and development team, not a produc
 - Name: "${name}"
 - Category: "${category}"
 - Description: "${description}"
-- How it works: "${instruction}"
+- How it works: "${instructions}"
 
 ${responseFormatContext}
 **Existing Team (if any):**

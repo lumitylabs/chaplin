@@ -23,7 +23,7 @@ async function createChaplinHandler(req, res) {
     const creator_id = req.user?.id || "anonymous_user"; // Usando "anonymous" como fallback
 
 
-    validatePersona({ name, category, description });
+    validatePersona({ name, category, description, instructions });
     validateResponseFormat(responseformat);
     validateWorkgroup(workgroup);
     if (!instructions) throw new ValidationError("Missing required field: instructions");

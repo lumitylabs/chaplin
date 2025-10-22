@@ -8,10 +8,10 @@ import { validatePersona, validateWorkgroup } from "../lib/validators.js"; // <<
 
 async function handler(req, res) {
   try {
-    const { name, description, category, workgroup = [] } = req.body || {};
+    const { name, description, instructions, category, workgroup = [] } = req.body || {};
 
     // <<< VALIDAÇÃO CENTRALIZADA >>>
-    validatePersona({ name, description, category });
+    validatePersona({ name, description, category, instructions });
     validateWorkgroup(workgroup);
 
     // --- Lógica de Negócios ---

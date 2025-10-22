@@ -63,7 +63,7 @@ export const getChaplins = async () => {
 };
 
 
-export const generateWorkgroup = async ({ name, category, description, instruction, responseformat }) => { // <<< ADICIONADO responseformat
+export const generateWorkgroup = async ({ name, category, description, instructions, responseformat }) => { // <<< ADICIONADO responseformat
   if (!API_BASE_URL) {
     const errorMessage = "VITE_APP_API_BASE_URL is not defined in your .env file.";
     console.error(errorMessage);
@@ -78,7 +78,7 @@ export const generateWorkgroup = async ({ name, category, description, instructi
         name,
         category,
         description,
-        instruction,
+        instructions,
         responseformat, 
         max_members: 3, 
       }),
@@ -93,7 +93,7 @@ export const generateWorkgroup = async ({ name, category, description, instructi
   }
 };
 
-export const generateImage = async ({ name, category, description }) => {
+export const generateImage = async ({ name, category, description, instructions }) => {
   if (!API_BASE_URL) {
     const errorMessage = "VITE_APP_API_BASE_URL is not defined in your .env file.";
     console.error(errorMessage);
@@ -104,7 +104,7 @@ export const generateImage = async ({ name, category, description }) => {
     const response = await fetch(`${API_BASE_URL}/generateimage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, category, description }),
+      body: JSON.stringify({ name, category, description, instructions }),
     });
     const data = await handleResponse(response);
     return { data, error: null };

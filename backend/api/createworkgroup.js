@@ -10,20 +10,21 @@ import { AGENT_NAME_MAX, AGENT_PROMPT_MAX, MAX_WORKGROUP_MEMBERS, MAX_PREV } fro
 async function createWorkgroupHandler(req, res) {
   try {
     const {
-      name, category, description, instruction, max_members, responseformat = null,
+      name, category, description, instructions, max_members, responseformat = null,
       previousWorkgroup = [], generateAgentName = null, generateAgentIndex = null,
       style = null, existingPrompt = null
     } = req.body || {};
 
+
     // <<< VALIDAÇÃO CENTRALIZADA >>>
-    validatePersona({ name, category, description, instruction });
+    validatePersona({ name, category, description, instructions });
     validateResponseFormat(responseformat);
     validateWorkgroup(previousWorkgroup, { name: 'previousWorkgroup', max: MAX_PREV });
     
     const personaName = name.trim();
     const personaCategory = category.trim();
     const personaDescription = description.trim();
-    const personaInstruction = instruction.trim();
+    const personaInstruction = instructions.trim();
 
     let maxMembers = Number.isInteger(max_members) ? max_members : parseInt(max_members || `${MAX_WORKGROUP_MEMBERS}`, 3);
     if (Number.isNaN(maxMembers) || maxMembers < 1) maxMembers = 1;
@@ -91,7 +92,7 @@ async function createWorkgroupHandler(req, res) {
 
     // --- FLUXO DE GERAÇÃO NORMAL COM RETRY ---
     const prompt = buildCreateWorkgroupInstruction({
-      name: personaName, category: personaCategory, description: personaDescription, instruction: personaInstruction,
+      name: personaName, category: personaCategory, description: personaDescription, instructions: personaInstruction,
       maxMembers, responseformat, previousWorkgroup: prev,
       generateAgentName: genName, generateAgentIndex: genIndex
     });

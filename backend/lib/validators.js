@@ -19,12 +19,13 @@ class ValidationError extends Error {
  * @param {{name: string, category: string, description: string, instruction:string}} personaData
  * @throws {ValidationError} Se a validação falhar.
  */
-export function validatePersona({ name, category, description, instruction }) {
-  if (!name || !category || !description || !instruction) throw new ValidationError("Missing required fields: name, category, description, instruction");
-  if (typeof name !== "string" || typeof category !== "string" || typeof description !== "string" || typeof instruction !== "string") throw new ValidationError("name/category/description/instruction must be strings");
+export function validatePersona({ name, category, description, instructions }) {
+
+  if (!name || !category || !description || !instructions) throw new ValidationError("Missing required fields: name, category, description, instructions");
+  if (typeof name !== "string" || typeof category !== "string" || typeof description !== "string" || typeof instructions !== "string") throw new ValidationError("name/category/description/instruction must be strings");
   if (name.length > NAME_MAX) throw new ValidationError(`Field 'name' exceeds the maximum length of ${NAME_MAX} characters.`);
   if (description.length > DESCRIPTION_MAX) throw new ValidationError(`Field 'description' exceeds the maximum length of ${DESCRIPTION_MAX} characters.`);
-  if (instruction.length > INSTRUCTION_MAX) throw new ValidationError(`Field 'instruction' exceeds the maximum length of ${INSTRUCTION_MAX} characters.`);
+  if (instructions.length > INSTRUCTION_MAX) throw new ValidationError(`Field 'instructions' exceeds the maximum length of ${INSTRUCTION_MAX} characters.`);
   if (!CATEGORY_OPTIONS.includes(category)) throw new ValidationError(`Invalid 'category'. Must be one of: ${CATEGORY_OPTIONS.join(", ")}`);
 }
 

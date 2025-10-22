@@ -3,7 +3,7 @@
 import React, { useRef, useState, useEffect } from "react";
 // <<< NOVO: Importar useNavigate para redirecionamento >>>
 import { useNavigate } from "react-router-dom";
-import { Menu, Scan, WandSparkles, Globe, ChevronDown, Plus, Trash2, PenLine, Play, Loader2, TextSearch, SquareCode, LockKeyholeOpen, Pencil } from "lucide-react";
+import { Menu, Scan, WandSparkles, Globe, ChevronDown, Plus, Trash2, PenLine, Play, Loader2, TextSearch, SquareCode, LockKeyholeOpen, Pencil, X } from "lucide-react";
 import SimpleBar from 'simplebar-react';
 import 'simplebar-react/dist/simplebar.min.css';
 
@@ -18,10 +18,10 @@ import SpecialistSkeleton from "../components/ui/create/SpecialistSkeleton";
 
 /* ------------------ Constantes ------------------ */
 const NAME_MAX = 25;
-const INSTR_MAX = 200;
+const INSTR_MAX = 500;
 const STEP2_KEY_MAX = 25;
 const STEP2_DESC_MAX = 100;
-const MAX_STEP2_GROUPS = 5;
+const MAX_STEP2_GROUPS = 6;
 const CATEGORY_OPTIONS = [
   "Assistant", "Anime", "Creativity & Writing", "Entertainment & Gaming",
   "History", "Humor", "Learning",
@@ -320,7 +320,7 @@ function Create() {
       name: formData.name,
       category: formData.category,
       description: formData.personaDescription,
-      instruction: formData.instructions,
+      instructions: formData.instructions,
       responseformat: finalResponseFormat,
     });
 
@@ -336,8 +336,8 @@ function Create() {
   };
 
   const handleGenerateImage = async () => {
-    if (!formData.name || !formData.category || !formData.personaDescription) {
-      alert("Please fill in Name, Category, and Description to generate an image.");
+    if (!formData.name || !formData.category || !formData.personaDescription || !formData.instructions) {
+      alert("Please fill in Name, Category, Instructions and Description to generate an image.");
       return;
     }
     setIsGeneratingAvatar(true);
@@ -348,6 +348,7 @@ function Create() {
       name: formData.name,
       category: formData.category,
       description: formData.personaDescription,
+      instructions: formData.instructions
     });
 
     if (result.error) {
@@ -696,7 +697,7 @@ function Create() {
                       <img src={formData.avatarUrl} alt="persona" className="w-full h-full object-cover rounded-3xl select-none" />
 
                       {isGeneratingAvatar && (
-                        <div className="absolute inset-0 bg-black/60 flex items-center justify-center rounded-2xl">
+                        <div className="absolute inset-0 bg-black/60 flex items-center justify-center rounded-3xl">
                           <Loader2 className="w-8 h-8 text-white animate-spin" />
                         </div>
                       )}
