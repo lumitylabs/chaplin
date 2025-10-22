@@ -20,7 +20,7 @@ function NavbarHeader({ closeNavbar, handleMobileNavClick }) {
   };
 
   return (
-    <div className="flex flex-col gap-6 px-5 pt-5 pb-0">
+    <div className="flex flex-col gap-6 px-5 pr-2 pt-5 pb-0">
       <div className="flex items-center justify-between">
         <div className="font-mali w-min font-medium text-2xl text-white tracking-[-0.04em] cursor-pointer" onClick={() => navigate("/home")}>
           Chaplin
