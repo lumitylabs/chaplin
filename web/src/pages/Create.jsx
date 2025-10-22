@@ -623,7 +623,7 @@ function Create() {
                           <button onClick={() => removeStep2Group(idx)} className="p-2 rounded-full hover:bg-[#2C2C30] transition duration-200 active:scale-95 cursor-pointer" aria-label={`Remove group ${idx + 1}`}><Trash2 size={16} color="#A3A3A3" /></button>
                         </div>
                         <div className="flex flex-col items-start gap-4">
-                          <div className="w-full">
+                          <div className="flex flex-col w-full gap-2">
                             <label className="text-xs text-white">key</label>
                             <ExpandableInput
                               value={grp.key}
@@ -633,7 +633,7 @@ function Create() {
                               onOpenModal={() => handleOpenModal({ type: "step2_key", index: idx })}
                             />
                           </div>
-                          <div className="w-full">
+                          <div className="flex flex-col w-full gap-2">
                             <label className="text-xs text-white">description</label>
                             <ExpandableInput
                               value={grp.description}
