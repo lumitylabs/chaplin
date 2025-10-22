@@ -466,14 +466,27 @@ function Create() {
         config={getModalConfig()}
       />
       <PersonaNavbar isOpen={isNavbarOpen} setIsOpen={setIsNavbarOpen} viewMode={viewMode} setViewMode={setViewMode} handleMobileNavClick={handleMobileNavClick} />
-      <button onClick={() => setIsNavbarOpen(true)} className={`lg:hidden fixed top-4 left-4 z-30 p-2 rounded-md bg-black/20 backdrop-blur-sm transition-opacity duration-300 ${isNavbarOpen ? 'opacity-0' : 'opacity-100'}`}>
-        <Menu color="#A2A2AB" size={23} />
-      </button>
 
       <main className={`transition-all duration-300 ease-in-out ${isNavbarOpen ? "lg:ml-[260px]" : "lg:ml-0"}`}>
         <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 py-10">
-          <div className="flex items-center justify-between mb-10">
-            <h1 className="text-2xl font-semibold text-white">Create</h1>
+
+          {/* Este contêiner de cabeçalho agora controla o layout responsivo */}
+          <div className="flex flex-wrap items-center justify-between gap-y-4 mb-10">
+            {/* O botão de menu foi movido para dentro do cabeçalho para participar do layout flexível */}
+            <button
+              onClick={() => setIsNavbarOpen(true)}
+              className={`p-2 rounded-full cursor-pointer hover:bg-[#1F1F22] transition-opacity lg:hidden
+                         ${isNavbarOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
+              aria-label="Open navigation menu"
+            >
+              <Menu color="#A2A2AB" size={23} />
+            </button>
+
+            {/* O título agora usa classes de ordem para se reposicionar em diferentes tamanhos de tela */}
+            <h1 className="text-2xl font-semibold text-white w-full lg:w-auto order-last lg:order-first">
+              Create
+            </h1>
+
             <div className="relative group">
               <button
                 onClick={handlePublish}
