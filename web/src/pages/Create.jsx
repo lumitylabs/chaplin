@@ -1,5 +1,3 @@
-// src/pages/Create.jsx
-
 import React, { useRef, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Menu, WandSparkles, Globe, ChevronDown, Plus, Trash2, PenLine, Play, Loader2, TextSearch, SquareCode, LockKeyholeOpen, Pencil } from "lucide-react";
@@ -467,27 +465,26 @@ function Create() {
       />
       <PersonaNavbar isOpen={isNavbarOpen} setIsOpen={setIsNavbarOpen} viewMode={viewMode} setViewMode={setViewMode} handleMobileNavClick={handleMobileNavClick} />
 
+      {/* --- CORREÇÃO APLICADA AQUI --- */}
+      {/* Botão de menu movido para fora do <main> e posicionado de forma fixa */}
+      <button
+        onClick={() => setIsNavbarOpen(true)}
+        className={`fixed top-5 left-2 z-20 p-2 rounded-full cursor-pointer hover:bg-[#1F1F22] transition-opacity ${isNavbarOpen && window.innerWidth < 1024 ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
+        aria-label="Open navigation menu"
+      >
+        <Menu color="#A2A2AB" size={23} />
+      </button>
+
       <main className={`transition-all duration-300 ease-in-out ${isNavbarOpen ? "lg:ml-[260px]" : "lg:ml-0"}`}>
         <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 py-10">
 
-          {/* Este contêiner de cabeçalho agora controla o layout responsivo */}
+          {/* O botão de menu foi removido daqui */}
           <div className="flex flex-wrap items-center justify-between gap-y-4 mb-10">
-            {/* O botão de menu foi movido para dentro do cabeçalho para participar do layout flexível */}
-            <button
-              onClick={() => setIsNavbarOpen(true)}
-              className={`p-2 rounded-full cursor-pointer hover:bg-[#1F1F22] transition-opacity lg:hidden
-                         ${isNavbarOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
-              aria-label="Open navigation menu"
-            >
-              <Menu color="#A2A2AB" size={23} />
-            </button>
-
-            {/* O título agora usa classes de ordem para se reposicionar em diferentes tamanhos de tela */}
             <h1 className="text-2xl font-semibold text-white w-full lg:w-auto order-last lg:order-first">
               Create
             </h1>
 
-            <div className="relative group">
+            <div className="relative group ml-auto"> {/* Adicionado ml-auto para empurrar para a direita */}
               <button
                 onClick={handlePublish}
                 disabled={!isPublishable || isPublishing}
