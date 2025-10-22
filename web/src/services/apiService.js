@@ -1,5 +1,5 @@
 // src/services/apiService.js
-
+import { fetchEventSource } from '@microsoft/fetch-event-source';
 const API_BASE_URL = import.meta.env.VITE_APP_API_BASE_URL;
 
 async function handleResponse(response) {
@@ -41,6 +41,61 @@ export const createChaplin = async (chaplinData) => {
   }
 };
 
+export const useChaplinStream = (payload, { onData, onError, onClose }) => {
+  if (!API_BASE_URL) {
+    const errorMessage = "VITE_APP_API_BASE_URL is not defined.";
+    onError(new Error(errorMessage));
+    return { abort: () => {} };
+  }
+
+  const controller = new AbortController();
+
+  fetchEventSource(`${API_BASE_URL}/usechaplin`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+    signal: controller.signal,
+
+    async onopen(response) {
+      if (response.ok && response.headers.get('content-type')?.includes('text/event-stream')) {
+        console.log("Stream connection opened successfully.");
+        return; 
+      }
+      const errorText = await response.text();
+      throw new Error(`Failed to connect to stream: ${response.status} ${response.statusText} - ${errorText}`);
+    },
+
+    onmessage(event) {
+      if (event.data === '[DONE]') {
+        return;
+      }
+      try {
+        const jsonData = JSON.parse(event.data);
+        onData(jsonData);
+      } catch (e) {
+        console.error('Failed to parse event data:', e);
+        onError(e);
+      }
+    },
+
+    onclose() {
+      console.log("Stream connection closed.");
+      onClose();
+    },
+
+    onerror(err) {
+      console.error("Stream connection error:", err);
+      onError(err);
+      throw err; 
+    }
+  });
+
+  return {
+    abort: () => controller.abort(),
+  };
+};
 
 
 export const getChaplins = async () => {
@@ -63,7 +118,7 @@ export const getChaplins = async () => {
 };
 
 
-export const generateWorkgroup = async ({ name, category, description, instructions, responseformat }) => { // <<< ADICIONADO responseformat
+export const generateWorkgroup = async ({ name, category, description, instructions, responseformat }) => {
   if (!API_BASE_URL) {
     const errorMessage = "VITE_APP_API_BASE_URL is not defined in your .env file.";
     console.error(errorMessage);

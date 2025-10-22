@@ -12,6 +12,7 @@
   "dependencies": {
     "@clerk/clerk-react": "^5.51.0",
     "@clerk/react-router": "^2.1.0",
+    "@microsoft/fetch-event-source": "^2.0.1",
     "@tailwindcss/vite": "^4.1.14",
     "framer-motion": "^12.23.24",
     "iconoir-react": "^7.11.0",
