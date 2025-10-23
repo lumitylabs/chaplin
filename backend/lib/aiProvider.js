@@ -7,7 +7,7 @@ import GeminiFlashLiteModel from "./models/GeminiFlashLiteModel.js";
 import GeminiProModel from "./models/GeminiProModel.js";
 import { LLM_MAX_ATTEMPTS } from "./constants.js"; // <<< IMPORTAÇÃO CORRIGIDA
 
-const DEFAULT_PRIORITY = ["cortensor", "geminiflash", "geminiflashlite", "geminipro"];
+const DEFAULT_PRIORITY = [ "geminiflash", "geminiflashlite", "geminipro", "cortensor"];
 
 const MODEL_REGISTRY = {
   cortensor: CortensorModel,

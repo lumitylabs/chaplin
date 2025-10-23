@@ -3,6 +3,7 @@ import { withMiddleware } from "../lib/withMiddleware.js";
 import { withCors } from "../lib/withCors.js";
 import { db } from "../lib/firebase.js";
 import { validatePersona, validateResponseFormat, validateWorkgroup } from "../lib/validators.js";
+import { uploadToImgBB } from "../lib/imageUploader.js";
 
 class ValidationError extends Error {
   constructor(message) {
@@ -21,6 +22,22 @@ async function createChaplinHandler(req, res) {
     // Em um ambiente de produção, o middleware de autenticação anexaria o usuário ao `req`.
     // Ex: export const requireAuth = (req) => { req.user = await verifyToken(req.headers.authorization); }
     const creator_id = req.user?.id || "anonymous_user"; // Usando "anonymous" como fallback
+    let image_url = null;
+    let thumb_url = null;
+    if (imagebase64) {
+      // imagebase64 pode vir como 'data:image/png;base64,AAA...'
+      const match = imagebase64.match(/base64,(.*)$/);
+      const pureBase64 = match ? match[1] : imagebase64;
+      try {
+        const uploaded = await uploadToImgBB(pureBase64);
+        image_url = uploaded.url;
+        thumb_url = uploaded.thumb;
+      } catch (err) {
+        console.error("Image upload failed:", err);
+        // opcional: retornar 400 ou persistir sem imagem; aqui eu retorno 500
+        return res.status(500).json({ error: "Image upload failed", detail: err.message });
+      }
+    }
 
 
     validatePersona({ name, category, description, instructions });
@@ -36,7 +53,8 @@ async function createChaplinHandler(req, res) {
     const fullChaplinData = {
       name,
       category,
-      imagebase64: imagebase64 || null,
+      image_url,   // salva URL em vez de base64
+      thumb_url,
       instructions,
       description,
       responseformat,
@@ -50,7 +68,7 @@ async function createChaplinHandler(req, res) {
     const simpleChaplinData = {
       name,
       category,
-      imagebase64: imagebase64 || null,
+      image_url, // opcional aqui: pode omitir para listar sem imagem
       instructions,
       creator_id
     };

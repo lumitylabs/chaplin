@@ -81,7 +81,7 @@ function ResultsTable({ data }) {
 }
 
 function ChaplinMessage({ persona, message }) {
-  const personaImage = persona.imagebase64 || ChaplinImage;
+  const personaImage = persona.image_url || ChaplinImage;
 
   return (
     <div className="flex justify-start items-start gap-3">

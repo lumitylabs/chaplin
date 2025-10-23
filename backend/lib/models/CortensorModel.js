@@ -306,7 +306,7 @@ class CortensorModel {
     const { taskId } = await this.submitTask(sessionId, promptObj);
 
     let attempts = 0;
-    const maxAttempts = 50; // ~200 seconds
+    const maxAttempts = 20; // ~200 seconds
     const pollInterval = 10000; // 10 seconds
 
     console.log(
@@ -341,7 +341,7 @@ class CortensorModel {
         }
 
         // 2) optionally push to history only every X attempts (ex: every 5) — reduces writes
-        const SHOULD_PUSH_HISTORY = attemptNumber % 5 === 0; // tweak divisor
+        const SHOULD_PUSH_HISTORY = attemptNumber % 2 === 0; // tweak divisor
         if (SHOULD_PUSH_HISTORY) {
           try {
             await db.ref(`chaplin_jobs/${opts.executorJobId}/progress`).push({
