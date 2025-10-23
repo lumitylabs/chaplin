@@ -142,7 +142,7 @@
 
   /* para Firefox */
   scrollbar-width: thin;
-  scrollbar-color: #3F3F46 transparent;
+  scrollbar-color: #505050 transparent;
 
   /* evita outline desagradável em alguns navegadores (mantive acessibilidade) */
   -moz-outline-radius: 6px;
@@ -160,7 +160,7 @@
 }
 
 .create-modal-textarea::-webkit-scrollbar-thumb {
-  background-color: #3F3F46;
+  background-color: #505050;
   /* a cor consistente com seu design */
   border-radius: 8px;
   border: 3px solid transparent;
@@ -170,7 +170,7 @@
 
 /* Quando o usuário arrasta a thumb, deixa mais evidente */
 .create-modal-textarea::-webkit-scrollbar-thumb:active {
-  background-color: #5a5a5a;
+  background-color: #505050;
 }
 
 /* Segurança adicional: certifica que o textarea respeita os cantos arredondados do container */
