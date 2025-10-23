@@ -1,5 +1,3 @@
-// src/pages/Create.jsx
-
 import React, { useRef, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Menu, WandSparkles, Globe, ChevronDown, Plus, Trash2, PenLine, Play, Loader2, TextSearch, SquareCode, LockKeyholeOpen, Pencil } from "lucide-react";
@@ -13,7 +11,6 @@ import ExpandableInput from "../components/ui/create/ExpandableInput";
 import { generateWorkgroup, generateImage, runAgent, createChaplin } from "../services/apiService";
 import SpecialistSkeleton from "../components/ui/create/SpecialistSkeleton";
 import CreateModal from "../components/ui/create/CreateModal";
-import AIHelperButtons from "../components/ui/create/AIHelperButtons";
 
 /* ------------------ Constantes ------------------ */
 const NAME_MAX = 25;
@@ -173,9 +170,17 @@ function Create() {
 
   const missingFields = getMissingFields();
   const isPublishable = missingFields.length === 0;
-  const tooltipMessage = isPublishable
-    ? "Ready to publish!"
-    : `Missing fields: ${missingFields.join(', ')}`;
+
+  const tooltipMessage = (
+    <div className="text-sm">
+      <span className="font-semibold text-xs text-[#FAFAFA]">Missing required fields:</span>
+      <ul className="list-disc list-inside text-xs text-left text-[#D0D0D0] mt-2 space-y-1">
+        {missingFields.map(field => (
+          <li key={field}>{field}</li>
+        ))}
+      </ul>
+    </div>
+  );
 
   useEffect(() => {
     const isDesktop = window.innerWidth >= 1024;
@@ -369,17 +374,18 @@ function Create() {
   const getModalConfig = () => {
     if (!editingField) return null;
     const { type, index } = editingField;
+    const agentName = formData.workgroup[index]?.name || 'Specialist';
+
     switch (type) {
       case 'specialist':
-        const agentName = formData.workgroup[index]?.name || 'Specialist';
         return {
           Icon: Pencil,
-          title: `Edit Prompt`,
+          title: "Edit Prompt",
           subtitle: `Edit ${agentName}'s key content.`,
           initialText: formData.workgroup[index]?.prompt || "",
-          headerActions: <AIHelperButtons />,
           actionButtonText: "Finish Editing",
           showActionButton: true,
+          showAiHelper: true,
         };
       case 'specialist_response':
         const responseAgentName = formData.workgroup[index]?.name;
@@ -390,30 +396,37 @@ function Create() {
           initialText: workgroupResponses[responseAgentName] || "No response generated yet.",
           readOnly: true,
           showActionButton: false,
+          showAiHelper: false,
         };
       case 'description':
         return {
           Icon: SquareCode,
-          title: "Edit Persona Description",
+          title: "Edit Prompt",
+          subtitle: "Edit chaplin description content.",
           initialText: formData.personaDescription,
           maxLength: INSTR_MAX,
-          actionButtonText: "Save Changes",
+          actionButtonText: "Finish Editing",
+          showAiHelper: true,
         };
       case 'step2_key':
         return {
           Icon: SquareCode,
-          title: `Edit Key for Output ${index + 1}`,
+          title: "Edit Prompt",
+          subtitle: "Edit the content for this key.",
           initialText: formData.step2.groups[index]?.key || "",
           maxLength: STEP2_KEY_MAX,
-          actionButtonText: "Save Changes",
+          actionButtonText: "Finish Editing",
+          showAiHelper: true,
         };
       case 'step2_description':
         return {
           Icon: SquareCode,
-          title: `Edit Description for Output ${index + 1}`,
+          title: "Edit Prompt",
+          subtitle: "Edit the content for this description.",
           initialText: formData.step2.groups[index]?.description || "",
           maxLength: STEP2_DESC_MAX,
-          actionButtonText: "Save Changes",
+          actionButtonText: "Finish Editing",
+          showAiHelper: true,
         };
       default:
         return { initialText: "" };
@@ -458,238 +471,258 @@ function Create() {
   }
 
   return (
-    <div className="bg-[#18181B] min-h-screen font-inter text-[#D0D0D0]">
-      <CreateModal
-        isOpen={showModal}
-        onClose={handleCloseModal}
-        onSave={handleSaveModal}
-        config={getModalConfig()}
-      />
-      <PersonaNavbar isOpen={isNavbarOpen} setIsOpen={setIsNavbarOpen} viewMode={viewMode} setViewMode={setViewMode} handleMobileNavClick={handleMobileNavClick} />
-      <button onClick={() => setIsNavbarOpen(true)} className={`lg:hidden fixed top-4 left-4 z-30 p-2 rounded-md bg-black/20 backdrop-blur-sm transition-opacity duration-300 ${isNavbarOpen ? 'opacity-0' : 'opacity-100'}`}>
-        <Menu color="#A2A2AB" size={23} />
-      </button>
 
-      <main className={`transition-all duration-300 ease-in-out ${isNavbarOpen ? "lg:ml-[260px]" : "lg:ml-0"}`}>
-        <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 py-10">
-          <div className="flex items-center justify-between mb-10">
-            <h1 className="text-2xl font-semibold text-white">Create</h1>
-            <div className="relative group">
-              <button
-                onClick={handlePublish}
-                disabled={!isPublishable || isPublishing}
-                className={`px-5 py-2 rounded-full font-medium transition-colors duration-200 ${isPublishable ? 'bg-white text-black cursor-pointer hover:bg-gray-200' : 'bg-[#89898A] text-[#18181B] cursor-not-allowed opacity-50'} ${isPublishing && 'opacity-70 cursor-wait'}`}
-              >
-                {isPublishing ? "Publishing..." : "Publish"}
-              </button>
-              {!isPublishable && (
-                <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max max-w-xs bg-gray-800 text-white text-xs rounded-md px-3 py-1.5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
-                  {tooltipMessage}
-                  <svg className="absolute text-gray-800 h-2 w-full left-0 top-full" x="0px" y="0px" viewBox="0 0 255 255">
-                    <polygon className="fill-current" points="0,0 127.5,127.5 255,0" />
-                  </svg>
-                </span>
-              )}
-            </div>
-          </div>
+    <SimpleBar style={{ maxHeight: '100vh' }} className="login-page-scrollbar">
+      <div className="bg-[#18181B] min-h-screen font-inter text-[#D0D0D0]">
+        <CreateModal
+          isOpen={showModal}
+          onClose={handleCloseModal}
+          onSave={handleSaveModal}
+          config={getModalConfig()}
+        />
+        <PersonaNavbar isOpen={isNavbarOpen} setIsOpen={setIsNavbarOpen} viewMode={viewMode} setViewMode={setViewMode} handleMobileNavClick={handleMobileNavClick} />
 
-          <div className="flex flex-col gap-4 max-w-xl">
-            <div>
-              <label className="text-sm text-[#FAFAFA]">Name</label>
-              <div className="mt-2">
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value.slice(0, NAME_MAX) })}
-                  placeholder="e.g. Charles Chaplin"
-                  className="w-full text-sm bg-transparent border border-[#3A3A3A] text-white rounded-xl px-4 py-4 outline-none focus:ring-1 focus:ring-[#FAFAFA]"
-                  maxLength={NAME_MAX}
-                />
-                <div className="w-full flex justify-end mt-1">
-                  <div className="text-xs text-[#8C8C8C] select-none">{formData.name.length}/{NAME_MAX}</div>
-                </div>
-              </div>
-            </div>
+        <button
+          onClick={() => setIsNavbarOpen(true)}
+          className={`fixed top-5 left-2 z-20 p-2 rounded-full cursor-pointer hover:bg-[#1F1F22] transition-opacity ${isNavbarOpen && window.innerWidth < 1024 ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
+          aria-label="Open navigation menu"
+        >
+          <Menu color="#A2A2AB" size={23} />
+        </button>
 
-            <div>
-              <label className="text-sm text-[#FAFAFA]">Category</label>
-              <div className="mt-2 relative pb-3" ref={categoryRef}>
+        <main className={`transition-all duration-300 ease-in-out ${isNavbarOpen ? "lg:ml-[260px]" : "lg:ml-0"}`}>
+          <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 lg:py-7 py-5">
+
+            <div className="flex flex-wrap items-center justify-between gap-y-4 mb-5">
+              <h1 className="font-inter font-semibold text-xl text-[#FAFAFA] w-full lg:w-auto order-last lg:order-first">
+                Create
+              </h1>
+
+              <div className="relative group ml-auto">
                 <button
-                  onClick={toggleCategory}
-                  className={`w-full flex items-center justify-between bg-transparent border border-[#3A3A3A] rounded-xl text-sm  px-4 py-4 text-left focus:ring-1 focus:ring-[#FAFAFA] cursor-pointer ${formData.category ? "text-white" : "text-[#A3A3A3]"}`}
-                  aria-haspopup="listbox"
-                  aria-expanded={isCategoryOpen}
+                  onClick={handlePublish}
+                  disabled={!isPublishable || isPublishing}
+                  className={`px-5 py-2 rounded-full font-medium transition-colors duration-300 ${isPublishable
+                    ? 'bg-[#FAFAFA] text-black cursor-pointer hover:bg-[#E4E4E5]'
+                    : 'bg-[#8D8D8F] text-[#18181B] cursor-not-allowed opacity-50'
+                    } ${isPublishing && 'opacity-70 cursor-wait'}`}
                 >
-                  <span className={`${formData.category ? "" : "text-[#A3A3A3]"}`}>{formData.category || "Select your Chaplin category"}</span>
-                  <ChevronDown size={18} className={`${isCategoryOpen ? "rotate-180" : "rotate-0"} transition-transform`} />
+                  {isPublishing ? "Publishing..." : "Publish"}
                 </button>
-                {isCategoryOpen && (
-                  <div ref={categoryMenuRef} className="absolute z-50 mt-2 w-full bg-[#202024] rounded-lg shadow-lg overflow-hidden">
-                    <SimpleBar className="category-dropdown-scrollbar" style={{ maxHeight: '15rem' }}>
-                      <ul className="p-1 pr-2.5" role="listbox">
-                        {CATEGORY_OPTIONS.map((opt) => (
-                          <li key={opt}>
-                            <button className="w-full text-left px-3 py-3 rounded-lg hover:bg-[#2C2C30] text-white focus:bg-[#2B2B2B] transition cursor-pointer text-sm" onClick={() => selectCategory(opt)}>{opt}</button>
-                          </li>
-                        ))}
-                      </ul>
-                    </SimpleBar>
+                {!isPublishable && (
+                  <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-max max-w-xs bg-[#26272B] rounded-lg p-3 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 border border-[#303136] shadow-lg">
+                    {tooltipMessage}
+                    <svg
+                      className="absolute text-[#26272B] h-2 w-full left-0 bottom-full"
+                      x="0px"
+                      y="0px"
+                      viewBox="0 0 255 255"
+                    >
+                      <polygon className="fill-current" points="0,255 127.5,127.5 255,255" />
+                    </svg>
                   </div>
                 )}
               </div>
             </div>
 
-            <div>
-              <label className="text-sm text-[#FAFAFA]">Instructions</label>
-              <div className="mt-2">
-                <textarea
-                  value={formData.instructions}
-                  onChange={(e) => setFormData({ ...formData, instructions: e.target.value.slice(0, INSTR_MAX) })}
-                  placeholder="How this Chaplin works?"
-                  className="w-full bg-transparent border border-[#3A3A3A] text-white text-sm rounded-xl px-4 py-4 outline-none resize-none focus:ring-1 focus:ring-[#FAFAFA]"
-                  rows={4}
-                  maxLength={INSTR_MAX}
-                />
-                <div className="w-full flex justify-end mt-1">
-                  <div className="text-xs text-[#8C8C8C] select-none">{formData.instructions.length}/{INSTR_MAX}</div>
+            <div className="flex flex-col gap-4 max-w-xl">
+              <div>
+                <label className="text-sm text-[#FAFAFA]">Name</label>
+                <div className="mt-2">
+                  <input
+                    type="text"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value.slice(0, NAME_MAX) })}
+                    placeholder="e.g. Charles Chaplin"
+                    className="w-full text-sm bg-transparent border border-[#3A3A3A] text-white rounded-xl px-4 py-4 outline-none focus:ring-1 focus:ring-[#FAFAFA]"
+                    maxLength={NAME_MAX}
+                  />
+                  <div className="w-full flex justify-end mt-1">
+                    <div className="text-xs text-[#8C8C8C] select-none">{formData.name.length}/{NAME_MAX}</div>
+                  </div>
                 </div>
+              </div>
+
+              <div>
+                <label className="text-sm text-[#FAFAFA]">Category</label>
+                <div className="mt-2 relative pb-3" ref={categoryRef}>
+                  <button
+                    onClick={toggleCategory}
+                    className={`w-full flex items-center justify-between bg-transparent border border-[#3A3A3A] rounded-xl text-sm  px-4 py-4 text-left focus:ring-1 focus:ring-[#FAFAFA] cursor-pointer ${formData.category ? "text-white" : "text-[#A3A3A3]"}`}
+                    aria-haspopup="listbox"
+                    aria-expanded={isCategoryOpen}
+                  >
+                    <span className={`${formData.category ? "" : "text-[#A3A3A3]"}`}>{formData.category || "Select your Chaplin category"}</span>
+                    <ChevronDown size={18} className={`${isCategoryOpen ? "rotate-180" : "rotate-0"} transition-transform`} />
+                  </button>
+                  {isCategoryOpen && (
+                    <div ref={categoryMenuRef} className="absolute z-50 mt-2 w-full bg-[#202024] rounded-lg shadow-lg overflow-hidden">
+                      <SimpleBar className="category-dropdown-scrollbar" style={{ maxHeight: '14.5rem' }}>
+                        <ul className="p-1 pr-2.5" role="listbox">
+                          {CATEGORY_OPTIONS.map((opt) => (
+                            <li key={opt}>
+                              <button className="w-full text-left px-3 py-3 rounded-lg hover:bg-[#2C2C30] text-white focus:bg-[#2B2B2B] transition cursor-pointer text-sm" onClick={() => selectCategory(opt)}>{opt}</button>
+                            </li>
+                          ))}
+                        </ul>
+                      </SimpleBar>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <label className="text-sm text-[#FAFAFA]">Instructions</label>
+                <div className="mt-2">
+                  <textarea
+                    value={formData.instructions}
+                    onChange={(e) => setFormData({ ...formData, instructions: e.target.value.slice(0, INSTR_MAX) })}
+                    placeholder="How this Chaplin works?"
+                    className="instructions-scrollbar w-full bg-transparent border border-[#3A3A3A] text-white text-sm rounded-xl px-4 py-4 outline-none resize-none focus:ring-1 focus:ring-[#FAFAFA]"
+                    rows={4}
+                    maxLength={INSTR_MAX}
+                  />
+                  <div className="w-full flex justify-end mt-1">
+                    <div className="text-xs text-[#8C8C8C] select-none">{formData.instructions.length}/{INSTR_MAX}</div>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-sm text-[#FAFAFA]">Visibility</label>
+                <button className="flex items-center gap-1.5 border border-[#3A3A3A] p-2.5 px-3 rounded-lg mt-2 text-sm text-[#FAFAFA] w-fit bg-transparent cursor-pointer">
+                  <Globe color="#FAFAFA" size={16} />
+                  Public
+                </button>
               </div>
             </div>
 
-            <div>
-              <label className="text-sm text-[#FAFAFA]">Visibility</label>
-              <button className="flex items-center gap-1.5 border border-[#3A3A3A] p-2.5 px-3 rounded-lg mt-2 text-sm text-[#FAFAFA] w-fit bg-transparent cursor-pointer">
-                <Globe color="#FAFAFA" size={16} />
-                Public
-              </button>
-            </div>
-          </div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-14">
+              <div>
+                <div className="mb-3"><div className="text-4xl font-semibold text-[#2E2E31] select-none">Step 1</div></div>
+                <div className="border border-[#3A3A3A] rounded-xl">
+                  <div className="px-4 py-5"><div className="flex items-center justify-between"><div className="text-[#FAFAFA] font-medium text-sm">Input Data</div></div></div>
+                  <div className="h-px w-full bg-[#3A3A3A]" />
+                  <div className="p-4 mt-2">
+                    <div className="flex flex-col gap-3 mb-4">
+                      <label className="text-xs text-white">Chaplin Description</label>
+                      <ExpandableInput
+                        value={formData.personaDescription}
+                        onChange={(e) => setFormData({ ...formData, personaDescription: e.target.value.slice(0, INSTR_MAX) })}
+                        placeholder="Describe your Chaplin"
+                        maxLength={INSTR_MAX}
+                        onOpenModal={() => handleOpenModal({ type: "description" })}
+                      />
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <label className="text-xs text-white">Avatar</label>
+                      <div className="relative w-37 h-42">
+                        <img src={formData.avatarUrl} alt="persona" className="w-full h-full object-cover rounded-3xl select-none" />
+                        {isGeneratingAvatar && (<div className="absolute inset-0 bg-black/60 flex items-center justify-center rounded-3xl"><Loader2 className="w-8 h-8 text-white animate-spin" /></div>)}
+                        <div className="absolute bottom-0 right-0">
+                          <button ref={avatarButtonRef} onClick={() => setIsAvatarMenuOpen(prev => !prev)} className="bg-[#26272B] p-3 shadow-md rounded-full transition-colors cursor-pointer" aria-label="Avatar options" aria-expanded={isAvatarMenuOpen}><PenLine size={16} color="#F3F3F3" /></button>
+                        </div>
+                        {isAvatarMenuOpen && (
+                          <div ref={avatarMenuRef} className="absolute bottom-4 left-37.5 z-50 w-56 bg-[#202024] rounded-lg p-1 shadow-lg">
+                            <button onClick={handleGenerateImage} disabled={isGeneratingAvatar} className="flex justify-between items-center gap-2 w-full text-left px-3 py-2.5 rounded-lg text-sm hover:bg-[#2C2C30] transition cursor-pointer">
+                              {isGeneratingAvatar ? "Generating..." : "Generate image"}
+                              <WandSparkles size={14} color="#D9D3D3" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-14">
-            <div>
-              <div className="mb-3"><div className="text-4xl font-semibold text-[#2E2E31] select-none">Step 1</div></div>
-              <div className="border border-[#3A3A3A] rounded-xl">
-                <div className="px-4 py-5"><div className="flex items-center justify-between"><div className="text-[#FAFAFA] font-medium text-sm">Input Data</div></div></div>
-                <div className="h-px w-full bg-[#3A3A3A]" />
-                <div className="p-4 mt-2">
-                  <div className="flex flex-col gap-3 mb-4">
-                    <label className="text-xs text-white">Chaplin Description</label>
-                    <ExpandableInput
-                      value={formData.personaDescription}
-                      onChange={(e) => setFormData({ ...formData, personaDescription: e.target.value.slice(0, INSTR_MAX) })}
-                      placeholder="Describe your Chaplin"
-                      maxLength={INSTR_MAX}
-                      onOpenModal={() => handleOpenModal({ type: "description" })}
+              <div>
+                <div className="mb-3 flex items-center justify-between"><div className="text-4xl font-semibold text-[#2E2E31] select-none">Step 2</div></div>
+                <div className="border border-[#3A3A3A] rounded-xl">
+                  <div className="px-4 py-3">
+                    <div className="flex items-center justify-between">
+                      <div className="text-[#FAFAFA] font-medium text-sm flex items-center gap-3"><span>Output Format</span></div>
+                      <div><button onClick={addStep2Group} className="p-2 rounded-full hover:bg-[#2C2C30] transition duration-200 active:scale-95 cursor-pointer" aria-label="Add key/description" title="Add key/description" disabled={formData.step2.groups.length >= MAX_STEP2_GROUPS}><Plus size={20} /></button></div>
+                    </div>
+                  </div>
+                  <div className="h-px w-full bg-[#3A3A3A]" />
+                  <div className="p-4">
+                    <div className="flex flex-col gap-4">
+                      {formData.step2.groups.map((grp, idx) => (
+                        <div key={idx} className="border border-[#3A3A3A] rounded-xl p-3">
+                          <div className="flex justify-between items-center mb-3">
+                            <span className="text-[#797A86] text-sm font-regular">Output {idx + 1}</span>
+                            <button onClick={() => removeStep2Group(idx)} className="p-2 rounded-full hover:bg-[#2C2C30] transition duration-200 active:scale-95 cursor-pointer" aria-label={`Remove group ${idx + 1}`}><Trash2 size={16} color="#A3A3A3" /></button>
+                          </div>
+                          <div className="flex flex-col items-start gap-4">
+                            <div className="flex flex-col w-full gap-2">
+                              <label className="text-xs text-white">key</label>
+                              <ExpandableInput
+                                value={grp.key}
+                                onChange={(e) => updateStep2Field(idx, "key", e.target.value.slice(0, STEP2_KEY_MAX))}
+                                placeholder="Name"
+                                maxLength={STEP2_KEY_MAX}
+                                onOpenModal={() => handleOpenModal({ type: "step2_key", index: idx })}
+                              />
+                            </div>
+                            <div className="flex flex-col w-full gap-2">
+                              <label className="text-xs text-white">description</label>
+                              <ExpandableInput
+                                value={grp.description}
+                                onChange={(e) => updateStep2Field(idx, "description", e.target.value.slice(0, STEP2_DESC_MAX))}
+                                placeholder="Describe the key"
+                                maxLength={STEP2_DESC_MAX}
+                                onOpenModal={() => handleOpenModal({ type: "step2_description", index: idx })}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                      {formData.step2.groups.length >= MAX_STEP2_GROUPS && (<div className="text-xs text-center text-[#8C8C8C] mt-2">Max {MAX_STEP2_GROUPS} keys allowed.</div>)}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <div className="mb-3"><div className="text-4xl font-semibold text-[#2E2E31] select-none">Step 3</div></div>
+                <div className="border border-[#3A3A3A] rounded-xl">
+                  <div className="px-4 py-[13px]">
+                    <div className="flex items-center justify-between">
+                      <div className="text-[#FAFAFA] text-sm font-medium">Workgroup</div>
+                      <div className="flex gap-3">
+                        <button onClick={handleGenerateWorkgroup} disabled={isGenerating} className="flex items-center gap-2 px-3 py-1.5 bg-transparent border border-[#3A3A3A] text-sm text-[#D9D3D3] font-semibold rounded-full cursor-pointer hover:bg-[#1F1F22] transition duration-200 active:scale-95 select-none" title="AI Generate">
+                          <WandSparkles size={14} color="#D9D3D3" />
+                          {isGenerating ? "Generating..." : "AI Generate"}
+                        </button>
+                        <button onClick={handleRunWorkgroup} className="flex items-center gap-2 px-3 py-1.5 bg-[#202024] text-[#D9D9D9] text-sm font-semibold rounded-full cursor-pointer hover:bg-[#3B3B42] transition duration-200 active:scale-95 select-none" title="Run Workgroup">
+                          <Play size={10} fill="#D9D9D9" />
+                          Run
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="h-px w-full bg-[#3A3A3A]" />
+                  <div className="p-4">
+                    <WorkGroup
+                      workgroupData={formData.workgroup}
+                      workgroupResponses={workgroupResponses}
+                      runningAgentIndex={runningAgentIndex}
+                      onRunAgent={handleRunAgent}
+                      onOpenSpecialistModal={(index) => handleOpenModal({ type: "specialist", index })}
+                      onOpenResponseModal={(index) => handleOpenModal({ type: "specialist_response", index })}
+                      isGenerating={isGenerating}
+                      onPromptChange={handleSpecialistPromptChange}
                     />
                   </div>
-                  <div className="flex flex-col gap-2">
-                    <label className="text-xs text-white">Avatar</label>
-                    <div className="relative w-37 h-42">
-                      <img src={formData.avatarUrl} alt="persona" className="w-full h-full object-cover rounded-3xl select-none" />
-                      {isGeneratingAvatar && (<div className="absolute inset-0 bg-black/60 flex items-center justify-center rounded-3xl"><Loader2 className="w-8 h-8 text-white animate-spin" /></div>)}
-                      <div className="absolute bottom-0 right-0">
-                        <button ref={avatarButtonRef} onClick={() => setIsAvatarMenuOpen(prev => !prev)} className="bg-[#26272B] p-3 shadow-md rounded-full transition-colors cursor-pointer" aria-label="Avatar options" aria-expanded={isAvatarMenuOpen}><PenLine size={16} color="#F3F3F3" /></button>
-                      </div>
-                      {isAvatarMenuOpen && (
-                        <div ref={avatarMenuRef} className="absolute bottom-4 left-37.5 z-50 w-56 bg-[#202024] rounded-lg p-1 shadow-lg">
-                          <button onClick={handleGenerateImage} disabled={isGeneratingAvatar} className="flex justify-between items-center gap-2 w-full text-left px-3 py-2.5 rounded-lg text-sm hover:bg-[#2C2C30] transition cursor-pointer">
-                            {isGeneratingAvatar ? "Generating..." : "Generate image"}
-                            <WandSparkles size={14} color="#D9D3D3" />
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
                 </div>
               </div>
             </div>
-
-            <div>
-              <div className="mb-3 flex items-center justify-between"><div className="text-4xl font-semibold text-[#2E2E31] select-none">Step 2</div></div>
-              <div className="border border-[#3A3A3A] rounded-xl">
-                <div className="px-4 py-3">
-                  <div className="flex items-center justify-between">
-                    <div className="text-[#FAFAFA] font-medium text-sm flex items-center gap-3"><span>Output Format</span></div>
-                    <div><button onClick={addStep2Group} className="p-2 rounded-full hover:bg-[#2C2C30] transition duration-200 active:scale-95 cursor-pointer" aria-label="Add key/description" title="Add key/description" disabled={formData.step2.groups.length >= MAX_STEP2_GROUPS}><Plus size={20} /></button></div>
-                  </div>
-                </div>
-                <div className="h-px w-full bg-[#3A3A3A]" />
-                <div className="p-4">
-                  <div className="flex flex-col gap-4">
-                    {formData.step2.groups.map((grp, idx) => (
-                      <div key={idx} className="border border-[#3A3A3A] rounded-xl p-3">
-                        <div className="flex justify-between items-center mb-3">
-                          <span className="text-[#797A86] text-sm font-regular">Output {idx + 1}</span>
-                          <button onClick={() => removeStep2Group(idx)} className="p-2 rounded-full hover:bg-[#2C2C30] transition duration-200 active:scale-95 cursor-pointer" aria-label={`Remove group ${idx + 1}`}><Trash2 size={16} color="#A3A3A3" /></button>
-                        </div>
-                        <div className="flex flex-col items-start gap-4">
-                          <div className="flex flex-col w-full gap-2">
-                            <label className="text-xs text-white">key</label>
-                            <ExpandableInput
-                              value={grp.key}
-                              onChange={(e) => updateStep2Field(idx, "key", e.target.value.slice(0, STEP2_KEY_MAX))}
-                              placeholder="Name"
-                              maxLength={STEP2_KEY_MAX}
-                              onOpenModal={() => handleOpenModal({ type: "step2_key", index: idx })}
-                            />
-                          </div>
-                          <div className="flex flex-col w-full gap-2">
-                            <label className="text-xs text-white">description</label>
-                            <ExpandableInput
-                              value={grp.description}
-                              onChange={(e) => updateStep2Field(idx, "description", e.target.value.slice(0, STEP2_DESC_MAX))}
-                              placeholder="Describe the key"
-                              maxLength={STEP2_DESC_MAX}
-                              onOpenModal={() => handleOpenModal({ type: "step2_description", index: idx })}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                    {formData.step2.groups.length >= MAX_STEP2_GROUPS && (<div className="text-xs text-center text-[#8C8C8C] mt-2">Max {MAX_STEP2_GROUPS} keys allowed.</div>)}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <div className="mb-3"><div className="text-4xl font-semibold text-[#2E2E31] select-none">Step 3</div></div>
-              <div className="border border-[#3A3A3A] rounded-xl">
-                <div className="px-4 py-[13px]">
-                  <div className="flex items-center justify-between">
-                    <div className="text-[#FAFAFA] text-sm font-medium">Workgroup</div>
-                    <div className="flex gap-3">
-                      <button onClick={handleGenerateWorkgroup} disabled={isGenerating} className="flex items-center gap-2 px-3 py-1.5 bg-transparent border border-[#3A3A3A] text-sm text-[#D9D3D3] font-semibold rounded-full cursor-pointer hover:bg-[#1F1F22] transition duration-200 active:scale-95 select-none" title="AI Generate">
-                        <WandSparkles size={14} color="#D9D3D3" />
-                        {isGenerating ? "Generating..." : "AI Generate"}
-                      </button>
-                      <button onClick={handleRunWorkgroup} className="flex items-center gap-2 px-3 py-1.5 bg-[#202024] text-[#D9D9D9] text-sm font-semibold rounded-full cursor-pointer hover:bg-[#3B3B42] transition duration-200 active:scale-95 select-none" title="Run Workgroup">
-                        <Play size={10} fill="#D9D9D9" />
-                        Run
-                      </button>
-                    </div>
-                  </div>
-                </div>
-                <div className="h-px w-full bg-[#3A3A3A]" />
-                <div className="p-4">
-                  <WorkGroup
-                    workgroupData={formData.workgroup}
-                    workgroupResponses={workgroupResponses}
-                    runningAgentIndex={runningAgentIndex}
-                    onRunAgent={handleRunAgent}
-                    onOpenSpecialistModal={(index) => handleOpenModal({ type: "specialist", index })}
-                    onOpenResponseModal={(index) => handleOpenModal({ type: "specialist_response", index })}
-                    isGenerating={isGenerating}
-                    onPromptChange={handleSpecialistPromptChange}
-                  />
-                </div>
-              </div>
-            </div>
+            <div className="h-10" />
           </div>
-          <div className="h-10" />
-        </div>
-      </main>
-    </div>
+        </main>
+      </div>
+    </SimpleBar>
   );
 }
 export default Create;

@@ -155,6 +155,19 @@ export default function TryModal({ persona, onClose }) {
     }
   }, [messages]);
 
+  useEffect(() => {
+    const handleEsc = (event) => {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleEsc);
+
+    return () => {
+      window.removeEventListener('keydown', handleEsc);
+    };
+  }, [onClose]); // Adiciona onClose como dependência
+
   // Visibility handler: abort SSE when hidden (to avoid accidental reconnect races),
   // on visible, if pausedDueToHidden reattach using saved jobId (if exists).
   useEffect(() => {
@@ -412,12 +425,12 @@ export default function TryModal({ persona, onClose }) {
               onChange={(e) => setUserInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
               disabled={isProcessing}
-              className="w-full bg-[#37393D] text-[#FAFAFA] text-sm placeholder:text-[#7C7C7C] rounded-full py-3 pl-5 pr-14 border border-[#505050] focus:outline-none focus:ring-2 focus:ring-[#C7C7C7] transition-all duration-200 disabled:opacity-50"
+              className="w-full bg-[#37393D] text-[#FAFAFA] text-sm placeholder:text-[#7C7C7C] rounded-full py-3 pl-5 pr-14 border border-[#505050] focus:outline-none focus:ring-1 focus:ring-[#FAFAFA] transition-all duration-200"
             />
             <button
               onClick={handleSendMessage}
               disabled={isProcessing || !userInput.trim()}
-              className="absolute right-1.5 top-1/2 -translate-y-1/2 bg-white p-2.5 rounded-full font-semibold hover:bg-[#E3E3E4] cursor-pointer disabled:bg-gray-400 disabled:cursor-not-allowed"
+              className="absolute right-1.5 top-1/2 -translate-y-1/2 bg-white p-2.5 rounded-full font-semibold hover:bg-[#E4E4E5] transition-all duration-200 cursor-pointer "
             >
               <SendSolid color="#242424" height={15} width={15} />
             </button>
