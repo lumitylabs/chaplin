@@ -283,38 +283,49 @@ export default function TryModal({ persona, onClose }) {
   }
 
   function applyChunkToMessage(chunk, mid) {
-    if (!mid || !chunk) return;
-    setMessages(prev => prev.map(m => {
-      if (m.id !== mid) return m;
-      const updated = { ...m };
-      if (chunk.type === 'start') {
-        updated.statusText = 'Processing your request...';
-      } else if (chunk.type === 'agent_start') {
-        updated.statusText = `${chunk.data?.name || 'Agent'} is working...`;
-      } else if (chunk.type === 'agent_result') {
-        updated.statusText = `${chunk.data?.name || 'Agent'} completed`;
-      } else if (chunk.type === 'integrator_start') {
-        updated.statusText = 'Assembling final response...';
-      } else if (chunk.type === 'integrator_result') {
+  if (!mid || !chunk) return;
+  setMessages(prev => prev.map(m => {
+    if (m.id !== mid) return m;
+    const updated = { ...m };
+
+    // friendly name fallback: prefer chunk.data.name, then chunk.data.agentName, then "Agent"
+    const name = chunk.data?.name || chunk.data?.agentName || 'Agent';
+
+    if (chunk.type === 'start') {
+      updated.statusText = 'Processing your request...';
+    } else if (chunk.type === 'agent_start') {
+      // e.g. "Cortensor started..."
+      updated.statusText = `${name} started...`;
+    } else if (chunk.type === 'agent_attempt') {
+      // Normalized attempt/max fields (be tolerant to different shapes)
+      const attempt = chunk.data?.attempt ?? chunk.data?.attemptNumber ?? 0;
+      const max = chunk.data?.maxAttempts ?? chunk.data?.max ?? '?';
+      // EXACT format requested:
+      updated.statusText = `Waiting for ${name} attempt ${attempt} of ${max}...`;
+    } else if (chunk.type === 'agent_result') {
+      updated.statusText = `${name} responded`;
+    } else if (chunk.type === 'integrator_start') {
+      updated.statusText = 'Assembling final response...';
+    } else if (chunk.type === 'integrator_result') {
+      updated.status = 'complete';
+      updated.content = chunk.data?.final || {};
+      updated.statusText = '';
+    } else if (chunk.type === 'error' || chunk.type === 'agent_error') {
+      updated.status = 'complete';
+      updated.content = { Error: chunk.data?.message || chunk.data?.error || 'Unknown error' };
+      updated.statusText = '';
+    } else if (chunk.type === 'done') {
+      if (!updated.content) {
         updated.status = 'complete';
-        updated.content = chunk.data?.final || {};
         updated.statusText = '';
-      } else if (chunk.type === 'error') {
-        updated.status = 'complete';
-        updated.content = { Error: chunk.data?.message || 'Unknown error' };
-        updated.statusText = '';
-      } else if (chunk.type === 'done') {
-        if (!updated.content) {
-          updated.status = 'complete';
-          updated.statusText = '';
-        }
-      } else if (chunk._raw) {
-        // non-JSON/raw chunk forwarded by backend, append to statusText as debug
-        updated.statusText = (updated.statusText ? updated.statusText + "\n" : "") + `[raw] ${String(chunk.raw).slice(0, 1000)}`;
       }
-      return updated;
-    }));
-  }
+    } else if (chunk._raw) {
+      updated.statusText = (updated.statusText ? updated.statusText + "\n" : "") + `[raw] ${String(chunk.raw).slice(0, 1000)}`;
+    }
+
+    return updated;
+  }));
+}
 
   // ---- User actions ----
   const handleSendMessage = () => {

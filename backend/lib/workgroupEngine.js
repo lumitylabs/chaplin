@@ -18,6 +18,7 @@ function normName(name) {
  *  - options:
  *      - stopAtAgentName: string | null. If provided, run up to and including this agent (but still skip already answered).
  *      - maxTokens, temperature for generateText
+ *      - executorJobId: optional string - if present, will be forwarded to generateText as part of opts (so models can write progress)
  *
  * Returns:
  *  {
@@ -27,7 +28,7 @@ function normName(name) {
  *  }
  */
 export async function runAgentsSequentially({ input, workgroup, workgroupResponseMap = {}, options = {} }) {
-  const { stopAtAgentName = null, maxTokens = 800, temperature = 0.7 } = options;
+  const { stopAtAgentName = null, maxTokens = 800, temperature = 0.7, executorJobId = null } = options;
 
   // Map normal names -> original names for matching
   const normalizedMap = {};
@@ -51,10 +52,8 @@ export async function runAgentsSequentially({ input, workgroup, workgroupRespons
       const out = normalizedMap[agentNorm];
       perAgent.push({ name: agent.name, output: out, source: "prefilled" });
       // Ensure updatedMap has original key name (preserve provided key)
-      // If user provided a slightly different casing, keep their key; otherwise set to agent.name
       const existingKey = Object.keys(workgroupResponseMap || {}).find(k => normName(k) === agentNorm) || agent.name;
       updatedMap[existingKey] = out;
-      // If this is the stop agent and it was already present, stop here (we filled nothing)
       if (stopNorm && agentNorm === stopNorm) {
         return { updatedWorkgroupResponse: updatedMap, generated, perAgent };
       }
@@ -68,7 +67,9 @@ export async function runAgentsSequentially({ input, workgroup, workgroupRespons
       previousOutputs: perAgent.map(p => p.output) // pass only outputs in order
     });
 
-    const out = await generateText({ prompt: agentPrompt, maxTokens, temperature });
+    // Pass executorJobId (if any) as opts to generateText so models (like Cortensor) can write progress.
+    const generateOpts = executorJobId ? { executorJobId, agentName: agent.name } : undefined;
+    const out = await generateText({ prompt: agentPrompt, maxTokens, temperature }, generateOpts);
 
     // Save in maps
     updatedMap[agent.name] = out;
@@ -89,7 +90,8 @@ export async function runAgentsSequentially({ input, workgroup, workgroupRespons
 export async function* executeWorkgroupStream({ input, workgroup, workgroupResponseMap = {}, responseformat, options = {} }) {
   const {
     maxTokens = 800, temperature = 0.7,
-    integratorMaxAttempts = 3, integratorMaxTokens = 900, integratorTemperature = 0.5
+    integratorMaxAttempts = 3, integratorMaxTokens = 900, integratorTemperature = 0.5,
+    executorJobId = null
   } = options;
 
   let finalPerAgent = [];
@@ -98,11 +100,14 @@ export async function* executeWorkgroupStream({ input, workgroup, workgroupRespo
   for (const agent of workgroup) {
     const agentNorm = normName(agent.name);
     
-    // Simplificando: este fluxo não reutiliza respostas, sempre executa tudo.
+    // Notify agent started (stream chunk)
     yield { type: 'agent_start', data: { name: agent.name }};
 
     const agentPrompt = buildAgentExecutionPrompt({ agent, input, previousOutputs: finalPerAgent.map(p => p.output) });
-    const output = await generateText({ prompt: agentPrompt, maxTokens, temperature });
+
+    // pass executorJobId (if present) so model can record attempt progress into DB
+    const generateOpts = executorJobId ? { executorJobId, agentName: agent.name } : undefined;
+    const output = await generateText({ prompt: agentPrompt, maxTokens, temperature }, generateOpts);
 
     const result = { name: agent.name, output, source: "generated" };
     finalPerAgent.push(result);
@@ -121,7 +126,9 @@ export async function* executeWorkgroupStream({ input, workgroup, workgroupRespo
   while (attempt < integratorMaxAttempts) {
     attempt++;
     const integratorPrompt = buildHardcodedIntegratorPrompt({ responseformat, outputs: outputsInOrder, workgroup });
-    lastRaw = await generateText({ prompt: integratorPrompt, maxTokens: integratorMaxTokens, temperature: integratorTemperature });
+
+    const integratorGenerateOpts = executorJobId ? { executorJobId, agentName: "Integrator", attempt, maxAttempts: integratorMaxAttempts } : undefined;
+    lastRaw = await generateText({ prompt: integratorPrompt, maxTokens: integratorMaxTokens, temperature: integratorTemperature }, integratorGenerateOpts);
     
     let parsed = null;
     try {
@@ -164,7 +171,7 @@ export async function* executeWorkgroupStream({ input, workgroup, workgroupRespo
  * - workgroup
  * - workgroupResponseMap: { name: output } (can be empty)
  * - responseformat: object (keys->descriptions) required by integrator
- * - options: maxAttempts (integrator), generateText params
+ * - options: maxAttempts (integrator), generateText params, executorJobId (forwarded)
  *
  * Returns:
  * {
@@ -182,7 +189,8 @@ export async function runWorkgroupAndIntegrate({ input, workgroup, workgroupResp
     temperature = 0.7,
     integratorMaxAttempts = 3,
     integratorMaxTokens = 900,
-    integratorTemperature = 0.5
+    integratorTemperature = 0.5,
+    executorJobId = null
   } = options;
 
   // First, run agents sequentially to fill missing ones
@@ -190,7 +198,7 @@ export async function runWorkgroupAndIntegrate({ input, workgroup, workgroupResp
     input,
     workgroup,
     workgroupResponseMap,
-    options: { maxTokens, temperature }
+    options: { maxTokens, temperature, executorJobId }
   });
 
   const perAgent = runResult.perAgent; // includes prefilled + generated, in order
@@ -221,7 +229,7 @@ export async function runWorkgroupAndIntegrate({ input, workgroup, workgroupResp
       prompt: integratorPrompt,
       maxTokens: integratorMaxTokens,
       temperature: integratorTemperature
-    });
+    }, executorJobId ? { executorJobId, agentName: "Integrator", attempt, maxAttempts: integratorMaxAttempts } : undefined);
     lastRaw = finalRaw;
 
     // Try parse

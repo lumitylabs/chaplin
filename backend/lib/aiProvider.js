@@ -7,15 +7,13 @@ import GeminiFlashLiteModel from "./models/GeminiFlashLiteModel.js";
 import GeminiProModel from "./models/GeminiProModel.js";
 import { LLM_MAX_ATTEMPTS } from "./constants.js"; // <<< IMPORTAÇÃO CORRIGIDA
 
-const DEFAULT_PRIORITY = ["cortensor", "geminiflash", "geminiflashlite", "geminipro", ];
+const DEFAULT_PRIORITY = ["cortensor", "geminiflash", "geminiflashlite", "geminipro"];
 
 const MODEL_REGISTRY = {
   cortensor: CortensorModel,
   geminiflash: GeminiFlashModel,
   geminiflashlite: GeminiFlashLiteModel,
   geminipro: GeminiProModel,
-  
-  
 };
 
 function buildPriorityFromEnv() {
@@ -25,31 +23,35 @@ function buildPriorityFromEnv() {
   return arr.length > 0 ? arr : DEFAULT_PRIORITY;
 }
 
-
-
 let modelsPriority = buildPriorityFromEnv();
 let modelInstances = null;
 
-
 function initModelInstances() {
-    if (modelInstances) return;
-    modelInstances = modelsPriority.map(key => {
-      const Cls = MODEL_REGISTRY[key];
-      if (!Cls) {
-        console.warn(`[aiProvider] No registered model class for key="${key}"`);
-        return null;
-      }
-      try {
-        return new Cls({ key });
-      } catch (err) {
-        console.error(`[aiProvider] Failed to instantiate model ${key}:`, err);
-        return null;
-      }
-    }).filter(Boolean);
+  if (modelInstances) return;
+  modelInstances = modelsPriority.map(key => {
+    const Cls = MODEL_REGISTRY[key];
+    if (!Cls) {
+      console.warn(`[aiProvider] No registered model class for key="${key}"`);
+      return null;
+    }
+    try {
+      return new Cls({ key });
+    } catch (err) {
+      console.error(`[aiProvider] Failed to instantiate model ${key}:`, err);
+      return null;
+    }
+  }).filter(Boolean);
 }
 
 
-export async function generateText({ prompt, maxTokens = 512, temperature = 0.7 } = {}) {
+/**
+ * generateText(params, opts)
+ * - params: { prompt, maxTokens = 512, temperature = 0.7 }
+ * - opts: optional object forwarded to model.generateText as second parameter (e.g. { executorJobId })
+ *
+ * Backwards-compatible: callers that don't provide opts behave exactly as before.
+ */
+export async function generateText({ prompt, maxTokens = 512, temperature = 0.7 } = {}, opts = {}) {
   if (!prompt || typeof prompt !== "string") throw new Error("prompt (string) is required");
   initModelInstances();
   if (!modelInstances || modelInstances.length === 0) {
@@ -60,7 +62,9 @@ export async function generateText({ prompt, maxTokens = 512, temperature = 0.7 
   for (const model of modelInstances) {
     const key = model.key || "unknown";
     try {
-      const out = await model.generateText({ prompt, maxTokens, temperature });
+      // Forward opts as second argument to model.generateText so models that support it can use it.
+      // Models that do not declare/use a second parameter will simply ignore it (JS allows extra args).
+      const out = await model.generateText({ prompt, maxTokens, temperature }, opts);
       if (typeof out === "string" && out.trim().length > 0) return out;
       errors.push({ model: key, reason: "empty response" });
     } catch (err) {
@@ -73,9 +77,18 @@ export async function generateText({ prompt, maxTokens = 512, temperature = 0.7 
 }
 
 
+/**
+ * generateTextAndParseJson(promptParams, parseOptions = {}, generateOpts = {})
+ * - promptParams: { prompt, maxTokens, temperature }
+ * - parseOptions: { maxAttempts = LLM_MAX_ATTEMPTS, expectedShape = 'array' }
+ * - generateOpts: optional object forwarded to generateText (e.g. { executorJobId })
+ *
+ * Returns { parsedJson, rawText } on success, otherwise throws after attempts.
+ */
 export async function generateTextAndParseJson(
-  { prompt, maxTokens, temperature },
-  { maxAttempts = LLM_MAX_ATTEMPTS, expectedShape = 'array' } = {} // <<< USA A CONSTANTE CORRETA
+  { prompt, maxTokens, temperature } = {},
+  { maxAttempts = LLM_MAX_ATTEMPTS, expectedShape = 'array' } = {},
+  generateOpts = {}
 ) {
   let lastError = null;
   let lastRawText = "";
@@ -83,7 +96,7 @@ export async function generateTextAndParseJson(
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
       console.log(`Attempt ${attempt} of ${maxAttempts} to generate and parse JSON.`);
-      const llmText = await generateText({ prompt, maxTokens, temperature });
+      const llmText = await generateText({ prompt, maxTokens, temperature }, generateOpts);
       lastRawText = llmText;
 
       let parsed = null;

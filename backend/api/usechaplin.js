@@ -41,6 +41,7 @@ async function backgroundRun(jobId) {
   } catch (e) { /* ignore metadata update errors */ }
 
   try {
+    // <-- IMPORTANT: pass executorJobId in options so workgroupEngine / models can push attempt events
     const gen = executeWorkgroupStream({
       input: job.input,
       workgroup: chap.workgroup,
@@ -51,6 +52,7 @@ async function backgroundRun(jobId) {
         integratorMaxAttempts: 3,
         integratorMaxTokens: 900,
         integratorTemperature: 0.5,
+        executorJobId: jobId, // <<< NEW: models can use this to write progress back to DB
       },
     });
 
