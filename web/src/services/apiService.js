@@ -41,10 +41,10 @@ export const createChaplin = async (chaplinData) => {
   }
 };
 
-export const useChaplinStream = (payload, { onData, onError, onClose }) => {
+export const startChaplinStream = (payload, { onData, onError, onClose } = {}) => {
   if (!API_BASE_URL) {
     const errorMessage = "VITE_APP_API_BASE_URL is not defined.";
-    onError(new Error(errorMessage));
+    if (onError) onError(new Error(errorMessage));
     return { abort: () => {} };
   }
 
@@ -52,48 +52,72 @@ export const useChaplinStream = (payload, { onData, onError, onClose }) => {
 
   fetchEventSource(`${API_BASE_URL}/usechaplin`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
     signal: controller.signal,
 
     async onopen(response) {
       if (response.ok && response.headers.get('content-type')?.includes('text/event-stream')) {
-        console.log("Stream connection opened successfully.");
-        return; 
+        // abriu
+        console.log("[startChaplinStream] Stream opened.");
+        return;
       }
-      const errorText = await response.text();
-      throw new Error(`Failed to connect to stream: ${response.status} ${response.statusText} - ${errorText}`);
+      const text = await response.text().catch(() => "<no body>");
+      const err = new Error(`Failed to connect to stream: ${response.status} ${response.statusText} - ${text}`);
+      if (onError) onError(err);
+      // não throw aqui para evitar fechar automaticamente em algumas impls; caller decide
+      throw err;
     },
 
     onmessage(event) {
+      // Ignore keep-alive / noop signals
+      if (!event.data) return;
       if (event.data === '[DONE]') {
+        // sinal de fim
         return;
       }
+
+      // Tolerante: tenta parse, se falhar envia como raw
       try {
         const jsonData = JSON.parse(event.data);
-        onData(jsonData);
-      } catch (e) {
-        console.error('Failed to parse event data:', e);
-        onError(e);
+        if (onData) {
+          try { onData(jsonData); } catch (e) { console.error("[startChaplinStream] onData handler failed:", e); }
+        }
+      } catch (parseErr) {
+        // Em vez de chamar onError e forçar a lib a fechar, emite um objeto raw
+        console.warn("[startChaplinStream] Failed to parse event data as JSON, forwarding as raw:", parseErr?.message);
+        if (onData) {
+          try {
+            onData({ _raw: true, raw: event.data });
+          } catch (e) {
+            console.error("[startChaplinStream] onData handler failed while forwarding raw:", e);
+          }
+        }
       }
     },
 
     onclose() {
-      console.log("Stream connection closed.");
-      onClose();
+      console.log("[startChaplinStream] Stream closed by server.");
+      if (onClose) onClose();
     },
 
     onerror(err) {
-      console.error("Stream connection error:", err);
-      onError(err);
-      throw err; 
-    }
+      // Não lançar erro aqui: apenas notifica o callback. Lançar pode terminar a stream imediatamente.
+      console.error("[startChaplinStream] stream error:", err?.message || err);
+      if (onError) {
+        try { onError(err); } catch (e) { console.error("[startChaplinStream] onError handler threw:", e); }
+      }
+      // Não rethrow; deixa o caller decidir se aborta
+    },
   });
 
   return {
-    abort: () => controller.abort(),
+    abort: () => {
+      try { controller.abort(); } 
+      catch (e) {
+        console.error("[startChaplinStream] Failed to abort stream:", e);
+      }
+    }
   };
 };
 

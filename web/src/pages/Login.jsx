@@ -12,7 +12,7 @@ import LumityFooter from "../assets/login_powered_by_lumity.svg";
 import Navbar from "../components/ui/general/Navbar";
 import "simplebar-react/dist/simplebar.min.css";
 import SimpleBar from 'simplebar-react';
-import { SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/clerk-react';
+import { SignedIn, SignedOut, SignInButton, SignUp, UserButton, useSignUp } from '@clerk/clerk-react';
 import { useSignIn } from '@clerk/clerk-react';
 import { useState } from 'react';
 
@@ -46,6 +46,7 @@ function IconGrid() {
 
 function LoginModal() {
   const { signIn, setActive } = useSignIn();
+  const { signUp } = useSignUp();
   const [isLoading, setIsLoading] = useState(false);
 
   const handleMetaMaskSignIn = async () => {
@@ -61,6 +62,10 @@ function LoginModal() {
       }
     } catch (error) {
       console.error('Erro na autenticação:', error);
+      const signUpAttempt = await signUp.authenticateWithMetamask();
+      if (signUpAttempt.status === 'complete') {
+        await setActive({ session: signUpAttempt.createdSessionId });
+      }
     } finally {
       setIsLoading(false);
     }

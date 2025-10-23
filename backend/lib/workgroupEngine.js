@@ -8,56 +8,6 @@ function normName(name) {
   return String(name || "").trim().toLowerCase();
 }
 
-
-// ==================================================================
-// === VERSÕES COM STREAMING (para o endpoint /usechaplin) =========
-// ==================================================================
-
-/**
- * [STREAMING] Executa agentes sequencialmente, produzindo (yielding) o status em cada passo.
- * É uma função geradora assíncrona.
- * @returns {AsyncGenerator<object, {finalMap: object, finalPerAgent: Array}, void>}
- */
-async function* runAgentsSequentiallyStream({ input, workgroup, workgroupResponseMap = {}, options = {} }) {
-  const { maxTokens = 800, temperature = 0.7 } = options;
-  const normalizedMap = {};
-  Object.keys(workgroupResponseMap).forEach(k => {
-    normalizedMap[normName(k)] = workgroupResponseMap[k];
-  });
-
-  const updatedMap = { ...workgroupResponseMap };
-  const perAgent = [];
-
-  for (const agent of workgroup) {
-    const agentNorm = normName(agent.name);
-    
-    if (normalizedMap[agentNorm]) {
-      const output = normalizedMap[agentNorm];
-      const result = { name: agent.name, output, source: "prefilled" };
-      perAgent.push(result);
-      yield { type: 'agent_result', data: result };
-      continue;
-    }
-
-    yield { type: 'agent_start', data: { name: agent.name }};
-
-    const agentPrompt = buildAgentExecutionPrompt({ agent, input, previousOutputs: perAgent.map(p => p.output) });
-    const output = await generateText({ prompt: agentPrompt, maxTokens, temperature });
-
-    const result = { name: agent.name, output, source: "generated" };
-    updatedMap[agent.name] = output;
-    normalizedMap[agentNorm] = output;
-    perAgent.push(result);
-    
-    yield { type: 'agent_result', data: result };
-  }
-
-  // O valor de retorno do gerador contém os resultados finais da sequência de agentes
-  return { finalMap: updatedMap, finalPerAgent: perAgent };
-}
-
-
-
 /**
  * Runs agents sequentially, skipping those already present in workgroupResponseMap.
  *

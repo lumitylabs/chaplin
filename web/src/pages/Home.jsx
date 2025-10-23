@@ -18,6 +18,8 @@ const personasData = [
   { id: 3, name: "Analista Market", image: AnalystImage, category: "Assistant", desc: "Um auxiliar para criação de propagandas para...", apiUrl: "http://persona.request/analyst-7734" },
 ];
 
+const CHAPLIN_SESSION_MAP_KEY = "chaplin_jobs_map_session";
+
 // --- SUB-COMPONENTES DA PÁGINA HOME ---
 function TopBar({ searchTerm, onSearchChange, viewMode }) {
   return (
@@ -122,6 +124,27 @@ function CardSkeleton() {
 }
 
 
+
+function removeChaplinSessionKeys(personaId) {
+  try {
+    // remove só o jobId do mapa (se existir)
+    const raw = sessionStorage.getItem(CHAPLIN_SESSION_MAP_KEY) || "{}";
+    const map = JSON.parse(raw);
+    if (map && map[personaId]) {
+      delete map[personaId];
+      sessionStorage.setItem(CHAPLIN_SESSION_MAP_KEY, JSON.stringify(map));
+    }
+  } catch (e) {
+    // swallow
+  }
+
+  try {
+    // remove o flag de modal aberto (caso exista)
+    sessionStorage.removeItem(`chaplin_modal_open_${personaId}`);
+  } catch (e) {}
+}
+
+
 // --- COMPONENTE PRINCIPAL (Atualizado) ---
 function Home() {
   const location = useLocation();
@@ -184,7 +207,7 @@ function Home() {
 
   const handleMobileNavClick = () => { if (window.innerWidth < 1024) setIsNavbarOpen(false); };
   const handleApiClick = (persona) => { setSelectedPersona(persona); setActiveModal("api"); };
-  const handleTryClick = (persona) => { setSelectedPersona(persona); setActiveModal("try"); };
+  const handleTryClick = (persona) => { removeChaplinSessionKeys(persona.id); setSelectedPersona(persona); setActiveModal("try"); };
   const handleCloseModal = () => { setActiveModal(null); setSelectedPersona(null); };
   const handleCategorySelect = (category) => setActiveCategory(category);
   const handleToggleFavorite = (personaId) => {

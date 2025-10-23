@@ -212,13 +212,16 @@ async checkSessionHealth(sessionId) {
     const { taskId } = await this.submitTask(sessionId, prompt);
 
     let attempts = 0;
-    const maxAttempts = 50; // ~200 segundos
+    const maxAttempts = 30; // ~200 segundos
     const pollInterval = 10000; // 10 segundos
 
     console.log(`[CortensorModel] Polling for the first available result of Task ID ${taskId}...`);
     while (attempts < maxAttempts) {
 
       const { miners, results } = await this.getTaskResults(sessionId, taskId);
+
+      console.log("miners:", miners)
+      console.log("results:", results)
       
 
       if (results && results.length > 0) {
