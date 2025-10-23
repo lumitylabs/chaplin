@@ -557,7 +557,7 @@ function Create() {
                   </button>
                   {isCategoryOpen && (
                     <div ref={categoryMenuRef} className="absolute z-50 mt-2 w-full bg-[#202024] rounded-lg shadow-lg overflow-hidden">
-                      <SimpleBar className="category-dropdown-scrollbar" style={{ maxHeight: '15rem' }}>
+                      <SimpleBar className="category-dropdown-scrollbar" style={{ maxHeight: '14.5rem' }}>
                         <ul className="p-1 pr-2.5" role="listbox">
                           {CATEGORY_OPTIONS.map((opt) => (
                             <li key={opt}>

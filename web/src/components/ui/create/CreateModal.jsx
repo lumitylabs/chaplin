@@ -54,11 +54,6 @@ function AiGenerateMenu() {
     );
 }
 
-/**
- * CreateModal
- * - Mantive todos os props e comportamento (initialText, readOnly, maxLength, showAiHelper, actionButtonText...)
- * - Garantia: textarea não expande o modal; rolagem interna; scrollbar estilizada; bordas arredondadas respeitadas.
- */
 function CreateModal({
     isOpen,
     onClose,
@@ -160,10 +155,6 @@ function CreateModal({
                     </button>
                 </div>
 
-                {/*
-          Container fixo/responsivo do editor:
-          - clamp para responsividade; overflow-hidden e rounded preservam bordas.
-        */}
                 <div
                     className="relative mt-6 w-full bg-[#37393D] border border-[#505050] rounded-2xl flex flex-col min-h-0 overflow-hidden"
                     style={{
@@ -175,12 +166,6 @@ function CreateModal({
                             <AiGenerateMenu />
                         </div>
                     )}
-
-                    {/*
-            Aqui usamos um wrapper para o textarea.
-            - O wrapper garante rounded + overflow hidden.
-            - O textarea é o elemento que rola (overflow-y: auto), e estilizamos sua scrollbar via CSS global.
-          */}
                     <div className="flex-grow min-h-0 p-0" style={{ boxSizing: 'border-box' }}>
                         <textarea
                             ref={textareaRef}
@@ -189,20 +174,16 @@ function CreateModal({
                             onChange={handleTextChange}
                             placeholder="Enter your prompt here..."
                             className="create-modal-textarea w-full bg-transparent text-white text-sm outline-none resize-none p-5 pt-9 box-border"
-                            // preserva atributo maxLength HTML (além do truncamento em handleTextChange)
+
                             {...(maxLength ? { maxLength } : {})}
                             style={{
-                                // garante que textarea ocupe toda altura do wrapper
                                 height: '100%',
                                 minHeight: '100%',
                                 maxHeight: '100%',
                                 boxSizing: 'border-box',
-                                // evita que o texto ultrapasse horizontalmente (quebra de palavras longas)
                                 whiteSpace: 'pre-wrap',
                                 wordBreak: 'break-word',
-                                // reserva espaço para a scrollbar e evita que a track se sobreponha ao border-radius
                                 paddingRight: '1rem',
-                                // boa linha para legibilidade
                                 lineHeight: 1.5,
                             }}
                         />
@@ -226,7 +207,7 @@ function CreateModal({
                     <div className="flex justify-end mt-6 flex-shrink-0">
                         <button
                             onClick={handleSave}
-                            className="bg-[#FAFAFA] text-[#26272B] font-semibold py-2 px-6 rounded-full hover:bg-[#E4E4E5] transition-colors text-sm cursor-pointer select-none"
+                            className="bg-[#FAFAFA] text-[#26272B] font-medium py-2 px-6 rounded-full hover:bg-[#E4E4E5] text-sm cursor-pointer select-none transition duration-200 active:scale-95"
                         >
                             {actionButtonText}
                         </button>
