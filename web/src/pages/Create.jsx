@@ -17,6 +17,7 @@ const NAME_MAX = 25;
 const INSTR_MAX = 500;
 const STEP2_KEY_MAX = 25;
 const STEP2_DESC_MAX = 100;
+const PROMPT_SPECIALIST_MAX = 4000;
 const MAX_STEP2_GROUPS = 6;
 const CATEGORY_OPTIONS = [
   "Assistant", "Anime", "Creativity & Writing", "Entertainment & Gaming",
@@ -379,13 +380,14 @@ function Create() {
     switch (type) {
       case 'specialist':
         return {
-          Icon: Pencil,
+          Icon: SquareCode,
           title: "Edit Prompt",
           subtitle: `Edit ${agentName}'s key content.`,
           initialText: formData.workgroup[index]?.prompt || "",
           actionButtonText: "Finish Editing",
           showActionButton: true,
           showAiHelper: true,
+          maxLength: PROMPT_SPECIALIST_MAX,
         };
       case 'specialist_response':
         const responseAgentName = formData.workgroup[index]?.name;

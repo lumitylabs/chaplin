@@ -1,10 +1,9 @@
 // CreateModal.jsx
+
 import React, { useRef, useState, useEffect } from "react";
 import { X, SquareCode, WandSparkles, Sparkles } from "lucide-react";
-// NOTE: não usamos SimpleBar aqui para o textarea (evita conflito entre a scrollbar nativa do textarea e SimpleBar)
 import 'simplebar-react/dist/simplebar.min.css';
 
-/* AiGenerateMenu mantido igual (sem alterações funcionais) */
 function AiGenerateMenu() {
     const [isOpen, setIsOpen] = useState(false);
     const menuRef = useRef(null);
@@ -23,7 +22,8 @@ function AiGenerateMenu() {
         <div className="relative" ref={menuRef}>
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="flex items-center gap-1.5 text-xs text-white border border-[#6C6C6C] bg-[#37393D] rounded-full px-3 py-1 hover:bg-white/10 transition-colors cursor-pointer"
+                // MODIFICAÇÃO: Trocamos 'hover:bg-white/10' por uma cor sólida 'hover:bg-[#4A4C50]'
+                className="flex items-center gap-1.5 text-xs text-white border border-[#6C6C6C] bg-[#37393D] rounded-full px-3 py-1 hover:bg-[#4A4C50] transition-colors cursor-pointer"
             >
                 <WandSparkles size={12} />
                 AI Generate
@@ -73,15 +73,12 @@ function CreateModal({
     } = config || {};
 
     const modalRef = useRef(null);
-    const textareaRef = useRef(null);
     const [currentText, setCurrentText] = useState(initialText);
 
-    // Sincroniza com initialText
     useEffect(() => {
         setCurrentText(initialText ?? "");
     }, [initialText]);
 
-    // Escape para fechar (mantive a confirmação de alterações não salvas)
     useEffect(() => {
         const handleKeyDown = (event) => {
             if (event.key === 'Escape') {
@@ -94,7 +91,7 @@ function CreateModal({
         return () => {
             document.removeEventListener('keydown', handleKeyDown);
         };
-    }, [isOpen, currentText]);
+    }, [isOpen, currentText, readOnly, initialText]);
 
     if (!isOpen) return null;
 
@@ -128,10 +125,7 @@ function CreateModal({
         }
     };
 
-    // Mantive o readOnly placeholder do seu código (não alterei a lógica)
-    if (readOnly) {
-        // ... O seu modal readOnly ...
-    }
+    const isAiHelperVisible = showAiHelper && !readOnly;
 
     return (
         <div
@@ -158,32 +152,24 @@ function CreateModal({
                 <div
                     className="relative mt-6 w-full bg-[#37393D] border border-[#505050] rounded-2xl flex flex-col min-h-0 overflow-hidden"
                     style={{
-                        height: 'clamp(180px, 28vh, 420px)',
+                        height: 'clamp(300px, 50vh, 600px)',
                     }}
                 >
-                    {showAiHelper && (
+                    {isAiHelperVisible && (
                         <div className="absolute top-2 right-2.5 z-10">
                             <AiGenerateMenu />
                         </div>
                     )}
-                    <div className="flex-grow min-h-0 p-0" style={{ boxSizing: 'border-box' }}>
+                    <div className="flex-grow min-h-0">
                         <textarea
-                            ref={textareaRef}
-                            rows={1}
                             value={currentText}
                             onChange={handleTextChange}
-                            placeholder="Enter your prompt here..."
-                            className="create-modal-textarea w-full bg-transparent text-white text-sm outline-none resize-none p-5 pt-9 box-border"
-
-                            {...(maxLength ? { maxLength } : {})}
+                            readOnly={readOnly}
+                            placeholder={readOnly ? "No response available." : "Enter your prompt here..."}
+                            className={`create-modal-textarea w-full h-full bg-transparent text-white text-sm outline-none resize-none px-5 pb-5 box-border ${readOnly ? 'cursor-default' : ''} ${isAiHelperVisible ? 'pt-9' : 'pt-5'}`}
                             style={{
-                                height: '100%',
-                                minHeight: '100%',
-                                maxHeight: '100%',
-                                boxSizing: 'border-box',
                                 whiteSpace: 'pre-wrap',
                                 wordBreak: 'break-word',
-                                paddingRight: '1rem',
                                 lineHeight: 1.5,
                             }}
                         />
@@ -192,9 +178,9 @@ function CreateModal({
                     <div className="mt-auto flex-shrink-0">
                         <hr className="border-t border-[#505050]" />
                         <div className="flex justify-between items-center px-5 py-3">
-                            {maxLength !== null ? (
-                                <span className="text-xs text-[#AEAEAE]">
-                                    Caracteres: {currentText.length}/{maxLength}
+                            {(maxLength !== null || readOnly) ? (
+                                <span className="text-xs text-[#AEAEAE] select-none">
+                                    {`Caracteres: ${currentText.length}${maxLength && !readOnly ? `/${maxLength}` : ''}`}
                                 </span>
                             ) : (
                                 <span></span>
