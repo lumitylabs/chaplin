@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { Search, Star, Menu } from 'lucide-react';
 import { getChaplins } from "../services/apiService"; // <<< Importar a nova função
+import "simplebar-react/dist/simplebar.min.css";
+import SimpleBar from 'simplebar-react';
 
 // --- COMPONENTES E ASSETS ---
 import PersonaNavbar from "../components/ui/general/PersonaNavbar";
@@ -197,42 +199,44 @@ function Home() {
     .filter((p) => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
 
   return (
-    <div className="bg-[#18181B] min-h-screen font-inter text-white">
-      <PersonaNavbar isOpen={isNavbarOpen} setIsOpen={setIsNavbarOpen} viewMode={viewMode} setViewMode={setViewMode} handleMobileNavClick={handleMobileNavClick} />
-      <button onClick={() => setIsNavbarOpen(true)} className={`fixed top-5 left-2 z-20 p-2 rounded-full cursor-pointer hover:bg-[#1F1F22] ...`}>
-        <Menu color="#A2A2AB" size={23} />
-      </button>
+    <SimpleBar style={{ maxHeight: '100vh' }} className="login-page-scrollbar">
+      <div className="bg-[#18181B] min-h-screen font-inter text-white">
+        <PersonaNavbar isOpen={isNavbarOpen} setIsOpen={setIsNavbarOpen} viewMode={viewMode} setViewMode={setViewMode} handleMobileNavClick={handleMobileNavClick} />
+        <button onClick={() => setIsNavbarOpen(true)} className={`fixed top-5 left-2 z-20 p-2 rounded-full cursor-pointer hover:bg-[#1F1F22] ...`}>
+          <Menu color="#A2A2AB" size={23} />
+        </button>
 
-      <main className={`transition-all duration-300 ease-in-out ${isNavbarOpen ? 'lg:ml-[260px]' : 'lg:ml-0'}`}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col py-5">
-            <div className="flex flex-col gap-5">
-              <TopBar searchTerm={searchTerm} onSearchChange={(e) => setSearchTerm(e.target.value)} viewMode={viewMode} />
-              <h1 className="md:hidden font-inter font-semibold text-lg text-[#FAFAFA]">{viewMode === 'favorites' ? 'Favorites' : 'Community Chaplins'}</h1>
-              <FilterBar activeCategory={activeCategory} onCategorySelect={handleCategorySelect} />
+        <main className={`transition-all duration-300 ease-in-out ${isNavbarOpen ? 'lg:ml-[260px]' : 'lg:ml-0'}`}>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex flex-col py-5">
+              <div className="flex flex-col gap-5">
+                <TopBar searchTerm={searchTerm} onSearchChange={(e) => setSearchTerm(e.target.value)} viewMode={viewMode} />
+                <h1 className="md:hidden font-inter font-semibold text-lg text-[#FAFAFA]">{viewMode === 'favorites' ? 'Favorites' : 'Community Chaplins'}</h1>
+                <FilterBar activeCategory={activeCategory} onCategorySelect={handleCategorySelect} />
+              </div>
+
+              {/* <<< LÓGICA DE RENDERIZAÇÃO CONDICIONAL >>> */}
+              <div className="flex flex-col gap-5">
+                {isLoading ? (
+                  // Exibe 3 esqueletos enquanto carrega
+                  <div className="mt-5 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"> <CardSkeleton /> <CardSkeleton /> <CardSkeleton /> </div>
+                ) : error ? (
+                  // Exibe uma mensagem de erro se a API falhar
+                  <div className="col-span-full text-center text-red-400 py-10">{`Error: ${error}`}</div>
+                ) : (
+                  // Renderiza a lista de personas quando os dados estiverem prontos
+                  <PersonaList personas={filteredPersonas} onApiClick={handleApiClick} onTryClick={handleTryClick} favorites={favorites} onToggleFavorite={handleToggleFavorite} />
+                )}
+              </div>
+
             </div>
-
-            {/* <<< LÓGICA DE RENDERIZAÇÃO CONDICIONAL >>> */}
-            <div className="flex flex-col gap-5">
-              {isLoading ? (
-                // Exibe 3 esqueletos enquanto carrega
-                <div className="mt-5 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"> <CardSkeleton /> <CardSkeleton /> <CardSkeleton /> </div>
-              ) : error ? (
-                // Exibe uma mensagem de erro se a API falhar
-                <div className="col-span-full text-center text-red-400 py-10">{`Error: ${error}`}</div>
-              ) : (
-                // Renderiza a lista de personas quando os dados estiverem prontos
-                <PersonaList personas={filteredPersonas} onApiClick={handleApiClick} onTryClick={handleTryClick} favorites={favorites} onToggleFavorite={handleToggleFavorite} />
-              )}
-            </div>
-
           </div>
-        </div>
-      </main>
+        </main>
 
-      {activeModal === "api" && selectedPersona && <ApiModal persona={selectedPersona} onClose={handleCloseModal} />}
-      {activeModal === "try" && selectedPersona && <TryModal persona={selectedPersona} onClose={handleCloseModal} />}
-    </div>
+        {activeModal === "api" && selectedPersona && <ApiModal persona={selectedPersona} onClose={handleCloseModal} />}
+        {activeModal === "try" && selectedPersona && <TryModal persona={selectedPersona} onClose={handleCloseModal} />}
+      </div>
+    </SimpleBar>
   );
 }
 
