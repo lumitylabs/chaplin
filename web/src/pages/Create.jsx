@@ -216,7 +216,7 @@ function Create() {
       category: formData.category,
       instructions: formData.instructions,
       description: formData.personaDescription,
-      imagebase64: formData.avatarUrl === Persona ? null : formData.avatarUrl,
+      image_url: formData.avatarUrl === Persona ? null : formData.avatarUrl,
       workgroup: formData.workgroup,
       responseformat: Object.keys(responseformat).length > 0 ? responseformat : { speech: "character's response to message" },
     };

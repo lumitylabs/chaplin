@@ -41,7 +41,7 @@ async function backgroundRun(jobId) {
   } catch (e) { /* ignore metadata update errors */ }
 
   try {
-    // <-- IMPORTANT: pass executorJobId in options so workgroupEngine / models can push attempt events
+    // Pass executorJobId so models can publish attempt progress if they support it
     const gen = executeWorkgroupStream({
       input: job.input,
       workgroup: chap.workgroup,
@@ -52,7 +52,7 @@ async function backgroundRun(jobId) {
         integratorMaxAttempts: 3,
         integratorMaxTokens: 900,
         integratorTemperature: 0.5,
-        executorJobId: jobId, // <<< NEW: models can use this to write progress back to DB
+        executorJobId: jobId, // models can use this to write progress back to DB
       },
     });
 
@@ -157,6 +157,9 @@ async function handler(req) {
         let cleaned = false;
         let childHandler = null;
         let statusHandler = null;
+        let lastReplayedKey = null;
+        const HISTORY_REPLAY_COUNT = 1; // <-- change here to replay last N items only
+
         const cleanup = () => {
           if (cleaned) return;
           cleaned = true;
@@ -174,37 +177,43 @@ async function handler(req) {
         const jobRef = db.ref(`chaplin_jobs/${jobId}`);
         const progressRef = jobRef.child("progress");
 
-        // replay existing history
+        // replay only last N items (limitToLast) to avoid downloading whole history
         try {
-          const histSnap = await progressRef.once("value");
+          const histSnap = await progressRef.limitToLast(HISTORY_REPLAY_COUNT).once("value");
           const hist = histSnap.val();
           if (hist) {
-            Object.keys(hist).forEach((k) => send(hist[k]));
-            console.log(`[usechaplin] replayed ${Object.keys(hist).length} history items for ${jobId}`);
+            const keys = Object.keys(hist);
+            // send in natural order (keys are push keys, but we'll send in the order returned)
+            keys.forEach((k) => send(hist[k]));
+            lastReplayedKey = keys[keys.length - 1];
+            console.log(`[usechaplin] replayed ${keys.length} history items (lastKey=${lastReplayedKey}) for ${jobId}`);
           } else {
-            console.log(`[usechaplin] no history for ${jobId}`);
+            console.log(`[usechaplin] no recent history for ${jobId}`);
+            lastReplayedKey = null;
           }
         } catch (e) {
-          console.warn("[usechaplin] failed to read history:", e?.message || e);
+          console.warn("[usechaplin] failed to read limited history:", e?.message || e);
+          lastReplayedKey = null;
         }
 
-        // quick final check for already-done job
+        // quick final check for already-done job WITHOUT reading full progress list
         try {
-          const jobSnapNow = await jobRef.once("value");
-          const jobNow = jobSnapNow.val() || {};
-          const histSnap2 = await progressRef.once("value");
-          const hist2 = histSnap2.val();
-          const hasHist = hist2 && Object.keys(hist2).length > 0;
-          if (!hasHist && jobNow.status === "done" && jobNow.final) {
-            send({ type: "integrator_result", data: { final: jobNow.final, validation: jobNow.integrator || null } });
-            try {
-              controller.enqueue(encoder.encode("data: [DONE]\n\n"));
-            } catch (e) {}
-            try {
-              controller.close();
-            } catch (e) {}
-            cleanup();
-            return;
+          const statusSnap = await jobRef.child("status").once("value");
+          const statusVal = statusSnap.val();
+          if (statusVal === "done") {
+            const finalSnap = await jobRef.child("final").once("value");
+            if (finalSnap.exists()) {
+              const finalVal = finalSnap.val();
+              send({ type: "integrator_result", data: { final: finalVal, validation: jobRef.integrator || null } });
+              try {
+                controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+              } catch (e) {}
+              try {
+                controller.close();
+              } catch (e) {}
+              cleanup();
+              return;
+            }
           }
         } catch (e) {
           console.warn("[usechaplin] quick final check failed", e?.message || e);
@@ -243,7 +252,14 @@ async function handler(req) {
 
         // attach listeners
         childHandler = (snap) => {
+          const key = snap.key;
           const chunk = snap.val();
+          // Ignore the exact last item we already replayed to prevent duplicate send
+          if (lastReplayedKey && key === lastReplayedKey) {
+            // Clear so only the first duplicate is ignored; subsequent new items will be forwarded.
+            lastReplayedKey = null;
+            return;
+          }
           send(chunk);
           if (chunk && chunk.type === "done") {
             try {
