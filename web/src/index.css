@@ -210,6 +210,25 @@
   display: none;
 }
 
+/* ===== Scroll FilterTag ===== */
+
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  /* IE e Edge */
+  scrollbar-width: none;
+  /* Firefox */
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+  /* Safari e Chrome */
+}
+
+.touch-scroll-improvements {
+  cursor: grab;
+  -webkit-overflow-scrolling: touch;
+}
+
 /* ===== BASE RESET ===== */
 html,
 body,
