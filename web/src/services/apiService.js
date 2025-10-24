@@ -58,33 +58,27 @@ export const startChaplinStream = (payload, { onData, onError, onClose } = {}) =
 
     async onopen(response) {
       if (response.ok && response.headers.get('content-type')?.includes('text/event-stream')) {
-        // abriu
         console.log("[startChaplinStream] Stream opened.");
         return;
       }
       const text = await response.text().catch(() => "<no body>");
       const err = new Error(`Failed to connect to stream: ${response.status} ${response.statusText} - ${text}`);
       if (onError) onError(err);
-      // não throw aqui para evitar fechar automaticamente em algumas impls; caller decide
       throw err;
     },
 
     onmessage(event) {
-      // Ignore keep-alive / noop signals
       if (!event.data) return;
       if (event.data === '[DONE]') {
-        // sinal de fim
         return;
       }
 
-      // Tolerante: tenta parse, se falhar envia como raw
       try {
         const jsonData = JSON.parse(event.data);
         if (onData) {
           try { onData(jsonData); } catch (e) { console.error("[startChaplinStream] onData handler failed:", e); }
         }
       } catch (parseErr) {
-        // Em vez de chamar onError e forçar a lib a fechar, emite um objeto raw
         console.warn("[startChaplinStream] Failed to parse event data as JSON, forwarding as raw:", parseErr?.message);
         if (onData) {
           try {
@@ -102,12 +96,12 @@ export const startChaplinStream = (payload, { onData, onError, onClose } = {}) =
     },
 
     onerror(err) {
-      // Não lançar erro aqui: apenas notifica o callback. Lançar pode terminar a stream imediatamente.
       console.error("[startChaplinStream] stream error:", err?.message || err);
       if (onError) {
         try { onError(err); } catch (e) { console.error("[startChaplinStream] onError handler threw:", e); }
       }
-      // Não rethrow; deixa o caller decidir se aborta
+      // A biblioteca tentará se reconectar por padrão, mas nossa lógica de visibilidade
+      // no componente irá abortar a conexão antes que isso aconteça, nos dando controle.
     },
   });
 
@@ -120,6 +114,8 @@ export const startChaplinStream = (payload, { onData, onError, onClose } = {}) =
     }
   };
 };
+
+
 
 
 export const getChaplins = async () => {

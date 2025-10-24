@@ -1,311 +1,136 @@
-// api/usechaplin.js
-import { waitUntil } from "@vercel/functions";
-import { withCorsEdge } from "../lib/withCorsEdge.js";
-import { db } from "../lib/firebase.js";
-import { executeWorkgroupStream } from "../lib/workgroupEngine.js";
+// /api/usechaplin.js
+import { Redis } from "@upstash/redis";
+import { Client } from "@upstash/qstash";
 import crypto from "crypto";
+import { withCorsEdge } from "../lib/withCorsEdge.js";
+import { db } from "../lib/firebase.js"; 
 
-function makeSignature(clientSessionId, chaplin_id, input) {
-  const raw = `${String(clientSessionId || "anon")}::${chaplin_id}::${String(input || "")}`;
-  return crypto.createHash("sha256").update(raw).digest("hex");
-}
+const redis = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL,
+  token: process.env.UPSTASH_REDIS_REST_TOKEN,
+});
+
+const qstash = new Client({
+  token: process.env.QSTASH_TOKEN,
+});
 
 const encoder = new TextEncoder();
 
-async function backgroundRun(jobId) {
-  const jobRef = db.ref(`chaplin_jobs/${jobId}`);
-  const jobSnap = await jobRef.once("value");
-  const job = jobSnap.val();
-  if (!job) {
-    console.warn(`[backgroundRun] job ${jobId} not found`);
-    return;
-  }
+async function* pollRedisForUpdates(jobId, signal) {
+  // ... (esta função permanece a mesma)
+  const jobKey = `job:${jobId}`;
+  let lastProgressIndex = 0;
 
-  if (job.status === "done") {
-    console.log(`[backgroundRun] job ${jobId} already done`);
-    return;
-  }
+  while (!signal.aborted) {
+    const jobData = await redis.json.get(jobKey, "$");
+    const job = jobData && jobData.length > 0 ? jobData[0] : null;
 
-  const chapSnap = await db.ref(`chaplin_full/${job.chaplin_id}`).once("value");
-  const chap = chapSnap.val();
-  if (!chap) {
-    await jobRef.update({ status: "error", errorMessage: "chaplin not found", updatedAt: Date.now() });
-    console.error(`[backgroundRun] chaplin ${job.chaplin_id} not found for job ${jobId}`);
-    return;
-  }
+    if (!job) {
+      yield { type: 'error', data: { message: 'Job not found or expired.' } };
+      return;
+    }
 
-  const progressRef = jobRef.child("progress");
-
-  try {
-    await jobRef.update({ status: "running", executorStarted: true, updatedAt: Date.now() });
-  } catch (e) { /* ignore metadata update errors */ }
-
-  try {
-    // Pass executorJobId so models can publish attempt progress if they support it
-    const gen = executeWorkgroupStream({
-      input: job.input,
-      workgroup: chap.workgroup,
-      responseformat: chap.responseformat,
-      options: {
-        maxTokens: 800,
-        temperature: 0.7,
-        integratorMaxAttempts: 3,
-        integratorMaxTokens: 900,
-        integratorTemperature: 0.5,
-        executorJobId: jobId, // models can use this to write progress back to DB
-      },
-    });
-
-    for await (const chunk of gen) {
-      try {
-        await progressRef.push({ ...chunk, ts: Date.now() });
-      } catch (e) {
-        console.warn("[backgroundRun] push failed:", e?.message || e);
+    const progress = job.progress || [];
+    if (progress.length > lastProgressIndex) {
+      for (let i = lastProgressIndex; i < progress.length; i++) {
+        yield progress[i];
       }
-
-      if (chunk.type === "integrator_result") {
-        try {
-          const finalData = chunk.data?.final || null;
-          await jobRef.update({ final: finalData, integrator: chunk.data || null, updatedAt: Date.now() });
-        } catch (e) {
-          console.warn("[backgroundRun] failed to write final:", e?.message || e);
-        }
-      }
+      lastProgressIndex = progress.length;
     }
 
-    try {
-      await jobRef.update({ status: "done", finishedAt: Date.now(), updatedAt: Date.now() });
-      await progressRef.push({ type: "done", ts: Date.now() });
-      console.log(`[backgroundRun] job ${jobId} finished`);
-    } catch (e) {
-      console.warn("[backgroundRun] final update failed:", e?.message || e);
+    if (job.status === 'done' || job.status === 'failed') {
+      const finalResult = progress.find(p => p.type === 'integrator_result');
+      if (finalResult) yield finalResult;
+      
+      yield { type: 'done', data: { status: job.status, error: job.error || null } };
+      return;
     }
-  } catch (err) {
-    console.error(`[backgroundRun] execution error for job ${jobId}:`, err);
-    try {
-      await jobRef.update({ status: "error", errorMessage: String(err?.message || err), updatedAt: Date.now() });
-      await progressRef.push({ type: "error", data: { message: String(err?.message || err) }, ts: Date.now() });
-    } catch (e) {
-      console.warn("[backgroundRun] failed to persist error:", e?.message || e);
-    }
+
+    await new Promise(resolve => setTimeout(resolve, 1500));
   }
 }
 
 async function handler(req) {
   try {
     const body = await req.json().catch(() => ({}));
-    const { chaplin_id, input, jobId: requestedJobId, clientSessionId } = body || {};
+    // Renomeia jobId vindo da requisição para evitar conflito
+    const { chaplin_id, input, jobId: requestedJobId, chaplinData: reqChaplinData } = body;
 
-    if (!chaplin_id && !requestedJobId) {
-      return new Response(JSON.stringify({ error: "Missing chaplin_id or jobId" }), {
-        status: 400,
-        headers: { "Content-Type": "application/json" },
-      });
-    }
+    let jobId = requestedJobId;
 
-    if (chaplin_id) {
-      const chapSnap = await db.ref(`chaplin_full/${chaplin_id}`).once("value");
-      if (!chapSnap.exists()) {
-        return new Response(JSON.stringify({ error: "Chaplin not found" }), {
-          status: 400,
-          headers: { "Content-Type": "application/json" },
-        });
-      }
-    }
-
-    const signature = makeSignature(clientSessionId, chaplin_id, input);
-    const jobsRef = db.ref("chaplin_jobs");
-
-    let jobId = null;
-    if (requestedJobId) {
-      const snap = await db.ref(`chaplin_jobs/${requestedJobId}`).once("value");
-      if (snap.exists()) jobId = requestedJobId;
-    }
-
+    // <<< CORREÇÃO PRINCIPAL: LÓGICA DE CRIAÇÃO VS REANEXAÇÃO >>>
     if (!jobId) {
-      const newRef = jobsRef.push();
-      jobId = newRef.key;
-      const now = Date.now();
-      await newRef.set({
-        chaplin_id: chaplin_id || null,
-        signature,
-        input: input || null,
-        ownerSession: clientSessionId || null,
+      // --- Cenário 1: CRIAR um novo job ---
+      let finalChaplinData = reqChaplinData;
+
+      if (chaplin_id && !finalChaplinData) {
+        const chapSnap = await db.ref(`chaplin_full/${chaplin_id}`).once("value");
+        if (!chapSnap.exists()) {
+          return new Response(JSON.stringify({ error: "Chaplin not found" }), { status: 404 });
+        }
+        finalChaplinData = chapSnap.val();
+      }
+
+      if (!finalChaplinData || !finalChaplinData.workgroup) {
+         return new Response(JSON.stringify({ error: "Invalid Chaplin data: missing workgroup definition." }), { status: 400 });
+      }
+
+      // Gera um novo ID para o job que estamos criando
+      jobId = crypto.randomBytes(12).toString('hex');
+      const jobKey = `job:${jobId}`;
+
+      const jobPayload = {
+        jobId,
         status: "queued",
-        createdAt: now,
-        updatedAt: now,
-        executorStarted: false,
-        executorOwner: null,
-        final: null,
+        input: input || null,
+        chaplinData: finalChaplinData, 
+        chaplin_id: chaplin_id || null,
+        createdAt: Date.now(),
+        progress: [],
+      };
+
+      const p = redis.pipeline();
+      p.json.set(jobKey, "$", jobPayload);
+      p.expire(jobKey, 3600);
+      await p.exec();
+
+      await qstash.publishJSON({
+        url: `${process.env.BACKEND_URL}/api/process-job`,
+        body: { jobId },
+        delay: 1, 
       });
-      console.log(`[usechaplin] created job ${jobId}`);
-    } else {
-      console.log(`[usechaplin] reattach to job ${jobId}`);
     }
+    // --- Cenário 2: REANEXAR a um job existente ---
+    // Se um 'jobId' foi fornecido, não fazemos nada. Apenas pulamos para a fase de polling.
+    // A validação se o job existe será feita pelo próprio poller.
+    console.log(`[usechaplin] ${requestedJobId ? 'Re-attaching to' : 'Creating'} job: ${jobId}`);
+    
+    const abortController = new AbortController();
 
     const stream = new ReadableStream({
       async start(controller) {
-        function send(obj) {
-          try {
-            controller.enqueue(encoder.encode(`data: ${JSON.stringify(obj)}\n\n`));
-          } catch (e) {
-            console.warn("[usechaplin] enqueue failed (client maybe disconnected):", e?.message || e);
-          }
-        }
+        // Envia o start event com o ID do job (seja ele novo ou existente)
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: "start", jobId })}\n\n`));
 
-        // cleanup closure
-        let cleaned = false;
-        let childHandler = null;
-        let statusHandler = null;
-        let lastReplayedKey = null;
-        const HISTORY_REPLAY_COUNT = 1; // <-- change here to replay last N items only
-
-        const cleanup = () => {
-          if (cleaned) return;
-          cleaned = true;
-          try {
-            if (progressRef && childHandler) progressRef.off("child_added", childHandler);
-          } catch (e) {}
-          try {
-            if (jobRef && statusHandler) jobRef.child("status").off("value", statusHandler);
-          } catch (e) {}
-        };
-
-        // send start
-        send({ type: "start", chaplin_id, jobId });
-
-        const jobRef = db.ref(`chaplin_jobs/${jobId}`);
-        const progressRef = jobRef.child("progress");
-
-        // replay only last N items (limitToLast) to avoid downloading whole history
+        const poller = pollRedisForUpdates(jobId, abortController.signal);
+        
         try {
-          const histSnap = await progressRef.limitToLast(HISTORY_REPLAY_COUNT).once("value");
-          const hist = histSnap.val();
-          if (hist) {
-            const keys = Object.keys(hist);
-            // send in natural order (keys are push keys, but we'll send in the order returned)
-            keys.forEach((k) => send(hist[k]));
-            lastReplayedKey = keys[keys.length - 1];
-            console.log(`[usechaplin] replayed ${keys.length} history items (lastKey=${lastReplayedKey}) for ${jobId}`);
-          } else {
-            console.log(`[usechaplin] no recent history for ${jobId}`);
-            lastReplayedKey = null;
-          }
-        } catch (e) {
-          console.warn("[usechaplin] failed to read limited history:", e?.message || e);
-          lastReplayedKey = null;
-        }
-
-        // quick final check for already-done job WITHOUT reading full progress list
-        try {
-          const statusSnap = await jobRef.child("status").once("value");
-          const statusVal = statusSnap.val();
-          if (statusVal === "done") {
-            const finalSnap = await jobRef.child("final").once("value");
-            if (finalSnap.exists()) {
-              const finalVal = finalSnap.val();
-              send({ type: "integrator_result", data: { final: finalVal, validation: jobRef.integrator || null } });
-              try {
-                controller.enqueue(encoder.encode("data: [DONE]\n\n"));
-              } catch (e) {}
-              try {
-                controller.close();
-              } catch (e) {}
-              cleanup();
-              return;
+            for await (const chunk of poller) {
+                if (abortController.signal.aborted) break;
+                controller.enqueue(encoder.encode(`data: ${JSON.stringify(chunk)}\n\n`));
             }
-          }
-        } catch (e) {
-          console.warn("[usechaplin] quick final check failed", e?.message || e);
+        } catch (err) {
+            console.error(`[usechaplin] Error during polling for job ${jobId}:`, err);
+        } finally {
+            if (!controller.closed) {
+                controller.close();
+            }
         }
-
-        // try to claim executor
-        let txnResult = null;
-        try {
-          txnResult = await jobRef.child("executorStarted").transaction((current) => {
-            if (current) return;
-            return true;
-          }, undefined, false);
-        } catch (e) {
-          console.warn("[usechaplin] transaction error:", e?.message || e);
-        }
-
-        const weStarted = txnResult && txnResult.committed === true;
-        if (weStarted) {
-          try {
-            await jobRef.update({
-              executorStarted: true,
-              executorOwner: clientSessionId || "vercel-invoker",
-              status: "running",
-              updatedAt: Date.now(),
-            });
-          } catch (e) {}
-          try {
-            waitUntil(backgroundRun(jobId));
-            console.log(`[usechaplin] scheduled backgroundRun via waitUntil for ${jobId}`);
-          } catch (e) {
-            console.warn("[usechaplin] waitUntil scheduling failed:", e?.message || e);
-          }
-        } else {
-          console.log(`[usechaplin] did not win executor for ${jobId}`);
-        }
-
-        // attach listeners
-        childHandler = (snap) => {
-          const key = snap.key;
-          const chunk = snap.val();
-          // Ignore the exact last item we already replayed to prevent duplicate send
-          if (lastReplayedKey && key === lastReplayedKey) {
-            // Clear so only the first duplicate is ignored; subsequent new items will be forwarded.
-            lastReplayedKey = null;
-            return;
-          }
-          send(chunk);
-          if (chunk && chunk.type === "done") {
-            try {
-              controller.enqueue(encoder.encode("data: [DONE]\n\n"));
-            } catch (e) {}
-            try {
-              controller.close();
-            } catch (e) {}
-            cleanup();
-          }
-        };
-        try {
-          progressRef.on("child_added", childHandler);
-        } catch (e) {
-          console.warn("[usechaplin] failed attach child_added", e?.message || e);
-        }
-
-        statusHandler = (snap) => {
-          const s = snap.val();
-          if (s === "done") {
-            try {
-              controller.enqueue(encoder.encode("data: [DONE]\n\n"));
-            } catch (e) {}
-            try {
-              controller.close();
-            } catch (e) {}
-            cleanup();
-          }
-        };
-        try {
-          jobRef.child("status").on("value", statusHandler);
-        } catch (e) {
-          console.warn("[usechaplin] failed attach status", e?.message || e);
-        }
-
-        // expose nothing else: cleanup will be used on close/done
       },
-
       cancel(reason) {
-        // If consumer aborts, remove DB listeners via the cleanup closure in start
-        // (start's cleanup is in scope and will run when we close in that path).
-        // We can't directly call cleanup from here (different scope), but listeners
-        // will be removed by the stream close path above when appropriate in our code.
-        // If you want explicit logging for cancel, add it here:
-        console.log("[usechaplin] stream cancel called, reason:", reason);
-      },
+        console.log(`[usechaplin] Stream for job ${jobId} cancelled by client. Reason:`, reason);
+        abortController.abort();
+      }
     });
 
     return new Response(stream, {
@@ -315,12 +140,10 @@ async function handler(req) {
         "Connection": "keep-alive",
       },
     });
+
   } catch (err) {
-    console.error("[usechaplin] setup error:", err);
-    return new Response(JSON.stringify({ error: err?.message || "Internal" }), {
-      status: 500,
-      headers: { "Content-Type": "application/json" },
-    });
+    console.error("[usechaplin] Setup error:", err);
+    return new Response(JSON.stringify({ error: err.message }), { status: 500 });
   }
 }
 

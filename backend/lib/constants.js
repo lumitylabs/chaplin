@@ -5,7 +5,7 @@ export const NAME_MAX = 25;
 export const DESCRIPTION_MAX = 500;
 export const INSTRUCTION_MAX = 500;
 export const CATEGORY_OPTIONS = [
-  "Assistant", "Anime", "Creativity & Writing", "Entertainment & Gaming",
+  "Assistants", "Anime", "Creativity & Writing", "Entertainment & Gaming",
   "History", "Humor", "Learning",
 ];
 

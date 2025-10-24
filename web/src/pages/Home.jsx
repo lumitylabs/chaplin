@@ -326,7 +326,8 @@ function Home() {
         </main>
 
         {activeModal === "api" && selectedPersona && <ApiModal persona={selectedPersona} onClose={handleCloseModal} />}
-        {activeModal === "try" && selectedPersona && <TryModal persona={selectedPersona} onClose={handleCloseModal} />}
+        {/* CORREÇÃO: A propriedade foi alterada de 'persona' para 'chaplin' para corresponder à nova API do TryModal */}
+        {activeModal === "try" && selectedPersona && <TryModal chaplin={selectedPersona} onClose={handleCloseModal} />}
       </div>
     </SimpleBar>
   );
