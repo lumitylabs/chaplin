@@ -6,7 +6,7 @@ import ChatInterface from "../components/ChatInterface";
 import { Menu } from "lucide-react";
 import { startChaplinStream } from "../services/apiService";
 import { mockState } from '../_mockData'; // Ajuste o caminho se necessário
-const USE_MOCK_DATA = false;
+const USE_MOCK_DATA = true;
 
 // Função utilitária
 function getClientSessionId() {

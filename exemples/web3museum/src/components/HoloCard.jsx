@@ -128,9 +128,9 @@ const HoloCard = ({ imageUrl, title }) => {
 
     // Parâmetros e conteúdo do cartão (sem alterações)
     const effectParams = {
-        patternScale: 1.00, reflectivity: 2.17, cursorIntensity: 0.15,
-        ambientIntensity: 1.00, cursorSize: 1.26, holoMainLightResponse: 2.0,
-        holoGlow: 4.62, specularSharpness: 0.44, rimLightIntensity: 0.31,
+        patternScale: 1.00, reflectivity: 2.17, cursorIntensity: 0.3,
+        ambientIntensity: 1.00, cursorSize: 1.0, holoMainLightResponse: 1.1,
+        holoGlow: 2.62, specularSharpness: 0.44, rimLightIntensity: 0.31,
         parallaxStrength: 0.27,
     };
     const gradientParams = { angle: 45, scale: 1.01 };
