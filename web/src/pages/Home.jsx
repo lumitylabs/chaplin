@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { Search, Star, Menu } from 'lucide-react';
-import { getChaplins } from "../services/apiService"; // <<< Importar a nova função
+import { getChaplins } from "../services/apiService";
 import "simplebar-react/dist/simplebar.min.css";
 import SimpleBar from 'simplebar-react';
 
@@ -60,7 +60,6 @@ function FilterBar({ activeCategory, onCategorySelect }) {
 }
 
 function PersonaCard({ persona, onApiClick, onTryClick, isFavorite, onToggleFavorite }) {
-  // Ajuste para usar a imagem do placeholder se não houver uma definida
   const imageUrl = persona.image_url || ChaplinImage;
 
   return (
@@ -71,7 +70,6 @@ function PersonaCard({ persona, onApiClick, onTryClick, isFavorite, onToggleFavo
       <img src={imageUrl} className="w-24 h-32 object-cover rounded-2xl flex-shrink-0" alt={persona.name} />
       <div className="flex flex-col gap-1 h-full w-full">
         <div className="font-inter font-bold text-sm text-[#F7F7F7]">{persona.name}</div>
-        {/* Usando 'instructions' como descrição, conforme a estrutura de dados */}
         <div className="text-sm text-[#88888F] mb-2 line-clamp-2 h-10">{persona.instructions}</div>
         <div className="flex gap-2 justify-end mt-auto">
           <button onClick={() => onApiClick(persona)} className="flex w-20 py-1.5 px-5 border-[#303136] border rounded-full text-white text-sm justify-center items-center cursor-pointer transition duration-200 active:scale-95 hover:bg-[#1F1F23]">API</button>
@@ -92,18 +90,13 @@ function PersonaList({ personas, onApiClick, onTryClick, favorites, onToggleFavo
   );
 }
 
-// Componente para exibir o esqueleto de carregamento
 function CardSkeleton() {
   return (
-
     <div className="flex flex-col sm:flex-row gap-4 h-auto sm:h-40 w-full bg-[#202024] rounded-2xl p-4 relative items-center select-none">
-      <button className="absolute top-3.5 right-4 p-1 z-10 cursor-pointer" aria-label="Toggle Favorite">
-
-      </button>
+      <button className="absolute top-3.5 right-4 p-1 z-10 cursor-pointer" aria-label="Toggle Favorite"></button>
       <div className="w-24 h-32 object-cover rounded-2xl flex-shrink-0 animate-pulse bg-gray-400" />
       <div className="flex flex-col gap-1 h-full w-full">
         <div className="font-inter font-bold text-sm text-[#F7F7F7] w-40 h-[14px] animate-pulse bg-gray-400"></div>
-        {/* Usando 'instructions' como descrição, conforme a estrutura de dados */}
         <div className="">
           <div className="text-sm text-[#88888F] mb-1 line-clamp-2 w-60 h-[14px] animate-pulse bg-gray-400"></div>
           <div className="text-sm text-[#88888F] mb-2 line-clamp-2 w-60 h-[14px] animate-pulse bg-gray-400"></div>
@@ -117,11 +110,8 @@ function CardSkeleton() {
   );
 }
 
-
-
 function removeChaplinSessionKeys(personaId) {
   try {
-    // remove só o jobId do mapa (se existir)
     const raw = sessionStorage.getItem(CHAPLIN_SESSION_MAP_KEY) || "{}";
     const map = JSON.parse(raw);
     if (map && map[personaId]) {
@@ -133,13 +123,10 @@ function removeChaplinSessionKeys(personaId) {
   }
 
   try {
-    // remove o flag de modal aberto (caso exista)
     sessionStorage.removeItem(`chaplin_modal_open_${personaId}`);
   } catch (e) { }
 }
 
-
-// --- COMPONENTE PRINCIPAL (Atualizado) ---
 function Home() {
   const location = useLocation();
   const [isNavbarOpen, setIsNavbarOpen] = useState(false);
@@ -148,8 +135,6 @@ function Home() {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeCategory, setActiveCategory] = useState("All");
   const [viewMode, setViewMode] = useState('all');
-
-  // <<< NOVOS ESTADOS PARA DADOS DA API >>>
   const [allPersonas, setAllPersonas] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -165,7 +150,6 @@ function Home() {
     setIsNavbarOpen(isDesktop);
   }, []);
 
-  // <<< NOVO: EFEITO PARA BUSCAR OS DADOS DA API >>>
   useEffect(() => {
     async function fetchChaplins() {
       setIsLoading(true);
@@ -176,9 +160,8 @@ function Home() {
         setError(result.error);
         setAllPersonas([]);
       } else {
-        // Transforma o objeto do Firebase em um array que o React pode mapear
         const personasArray = Object.keys(result.data).map(key => ({
-          id: key, // O ID do chaplin é a chave do objeto
+          id: key,
           ...result.data[key]
         }));
         setAllPersonas(personasArray);
@@ -187,7 +170,7 @@ function Home() {
     }
 
     fetchChaplins();
-  }, []); // Executa apenas uma vez, quando o componente é montado
+  }, []);
 
 
   const [favorites, setFavorites] = useState(() => {
@@ -230,16 +213,12 @@ function Home() {
                 <FilterBar activeCategory={activeCategory} onCategorySelect={handleCategorySelect} />
               </div>
 
-              {/* <<< LÓGICA DE RENDERIZAÇÃO CONDICIONAL >>> */}
               <div className="flex flex-col gap-5">
                 {isLoading ? (
-                  // Exibe 3 esqueletos enquanto carrega
                   <div className="mt-5 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"> <CardSkeleton /> <CardSkeleton /> <CardSkeleton /> </div>
                 ) : error ? (
-                  // Exibe uma mensagem de erro se a API falhar
                   <div className="col-span-full text-center text-red-400 py-10">{`Error: ${error}`}</div>
                 ) : (
-                  // Renderiza a lista de personas quando os dados estiverem prontos
                   <PersonaList personas={filteredPersonas} onApiClick={handleApiClick} onTryClick={handleTryClick} favorites={favorites} onToggleFavorite={handleToggleFavorite} />
                 )}
               </div>
@@ -249,7 +228,8 @@ function Home() {
         </main>
 
         {activeModal === "api" && selectedPersona && <ApiModal persona={selectedPersona} onClose={handleCloseModal} />}
-        {activeModal === "try" && selectedPersona && <TryModal persona={selectedPersona} onClose={handleCloseModal} />}
+        {/* CORREÇÃO: A propriedade foi alterada de 'persona' para 'chaplin' para corresponder à nova API do TryModal */}
+        {activeModal === "try" && selectedPersona && <TryModal chaplin={selectedPersona} onClose={handleCloseModal} />}
       </div>
     </SimpleBar>
   );

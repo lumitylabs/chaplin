@@ -11,6 +11,7 @@ import ExpandableInput from "../components/ui/create/ExpandableInput";
 import { generateWorkgroup, generateImage, runAgent, createChaplin } from "../services/apiService";
 import SpecialistSkeleton from "../components/ui/create/SpecialistSkeleton";
 import CreateModal from "../components/ui/create/CreateModal";
+import TryModal from "../components/ui/general/TryModal";
 
 /* ------------------ Constantes ------------------ */
 const NAME_MAX = 25;
@@ -138,13 +139,6 @@ function Specialist({
           />
         </div>
       </div>
-
-      {/* 
-        INÍCIO DA CORREÇÃO DE UI/UX
-        - A propriedade 'color' do ícone TextSearch foi removida.
-        - Agora, o ícone herda automaticamente a cor do texto do botão pai.
-        - Isso garante que o ícone e o texto "Response" tenham sempre a mesma cor, seja no estado ativo (claro) ou inativo (escuro).
-      */}
       <button
         onClick={hasResponse ? onOpenResponseModal : undefined}
         disabled={!hasResponse}
@@ -156,7 +150,6 @@ function Specialist({
         <span>Response</span>
         <TextSearch size={16} />
       </button>
-      {/* FIM DA CORREÇÃO DE UI/UX */}
     </div>
   );
 }
@@ -233,6 +226,8 @@ function Create() {
   const [isCategoryOpen, setIsCategoryOpen] = useState(false);
   const categoryRef = useRef(null);
   const categoryMenuRef = useRef(null);
+  const [isTryModalOpen, setIsTryModalOpen] = useState(false);
+  const [tryModalChaplin, setTryModalChaplin] = useState(null);
 
   const getMissingFields = useCallback(() => {
     const missing = [];
@@ -389,10 +384,27 @@ function Create() {
   };
 
   const handleRunWorkgroup = () => {
-    setFormData((prev) => ({ ...prev, io: { ...prev.io, output: "Running workgroup..." } }));
-    setTimeout(() => {
-      setFormData((prev) => ({ ...prev, io: { ...prev.io, output: "Run complete — results ready." } }));
-    }, 1200);
+    if (!isPublishable) return; // Adicionado para segurança, mas o botão já estará desabilitado
+
+    const responseformat = formData.step2.groups.reduce((acc, group) => {
+      if (group.key && group.key.trim() !== "") acc[group.key.trim()] = group.description;
+      return acc;
+    }, {});
+
+    const chaplinDataForModal = {
+      name: formData.name || "Untitled Chaplin",
+      instructions: formData.instructions || "No instructions provided.",
+      avatarUrl: formData.avatarUrl,
+      workgroup: formData.workgroup,
+      responseformat: Object.keys(responseformat).length > 0 ? responseformat : { speech: "character's response to message" },
+    };
+
+    setTryModalChaplin(chaplinDataForModal);
+    setIsTryModalOpen(true);
+  };
+
+  const handleTryModalSave = (results) => {
+    setWorkgroupResponses(prev => ({ ...prev, ...results }));
   };
 
   const handleMobileNavClick = () => {
@@ -566,7 +578,6 @@ function Create() {
   }
 
   return (
-
     <SimpleBar style={{ maxHeight: '100vh' }} className="login-page-scrollbar">
       <div className="bg-[#18181B] min-h-screen font-inter text-[#D0D0D0]">
         <CreateModal
@@ -575,6 +586,13 @@ function Create() {
           onSave={handleSaveModal}
           config={getModalConfig()}
         />
+        {isTryModalOpen && (
+          <TryModal
+            chaplin={tryModalChaplin}
+            onClose={() => setIsTryModalOpen(false)}
+            onSaveResults={handleTryModalSave}
+          />
+        )}
         <PersonaNavbar isOpen={isNavbarOpen} setIsOpen={setIsNavbarOpen} viewMode={viewMode} setViewMode={setViewMode} handleMobileNavClick={handleMobileNavClick} />
 
         <button
@@ -794,10 +812,36 @@ function Create() {
                           )}
                           {isGenerating ? "Generating..." : "AI Generate"}
                         </button>
-                        <button onClick={handleRunWorkgroup} className="flex items-center gap-2 px-3 py-1.5 bg-[#202024] text-[#D9D9D9] text-sm font-semibold rounded-full cursor-pointer hover:bg-[#3B3B42] transition duration-200 active:scale-95 select-none" title="Run Workgroup">
-                          <Play size={8} fill="#D9D9D9" />
-                          Run
-                        </button>
+                        {/* INÍCIO DA MODIFICAÇÃO */}
+                        <div className="relative group">
+                          <button
+                            onClick={handleRunWorkgroup}
+                            disabled={!isPublishable || isGenerating}
+                            className={`flex items-center gap-2 px-3 py-1.5 bg-[#202024] text-[#D9D9D9] text-sm font-semibold rounded-full transition duration-200 active:scale-95 select-none ${
+                              isPublishable && !isGenerating
+                                ? 'cursor-pointer hover:bg-[#3B3B42]'
+                                : 'cursor-not-allowed opacity-50'
+                            }`}
+                            title="Run Workgroup"
+                          >
+                            <Play size={8} fill="#D9D9D9" />
+                            Run
+                          </button>
+                          {!isPublishable && (
+                            <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-max max-w-xs bg-[#26272B] rounded-lg p-3 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 border border-[#303136] shadow-lg">
+                              {tooltipMessage}
+                              <svg
+                                className="absolute text-[#26272B] h-2 w-full left-0 bottom-full"
+                                x="0px"
+                                y="0px"
+                                viewBox="0 0 255 255"
+                              >
+                                <polygon className="fill-current" points="0,255 127.5,127.5 255,255" />
+                              </svg>
+                            </div>
+                          )}
+                        </div>
+                        {/* FIM DA MODIFICAÇÃO */}
                       </div>
                     </div>
                   </div>
