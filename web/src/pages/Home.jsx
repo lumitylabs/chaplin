@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import { Search, Star, Menu, ChevronLeft, ChevronRight } from 'lucide-react';
+// 1. Importando a função de animação do framer-motion
+import { animate } from "framer-motion";
 import { getChaplins } from "../services/apiService";
 import "simplebar-react/dist/simplebar.min.css";
 import SimpleBar from 'simplebar-react';
@@ -13,7 +15,6 @@ import ChaplinImage from "../assets/persona.png";
 
 const CHAPLIN_SESSION_MAP_KEY = "chaplin_jobs_map_session";
 
-// ---------- TopBar: Removido padding para herdar do container pai e garantir alinhamento ----------
 function TopBar({ searchTerm, onSearchChange, viewMode }) {
   return (
     <header className="flex justify-end md:justify-between items-center w-full gap-4">
@@ -45,14 +46,13 @@ function FilterTag({ name, isActive, onClick }) {
   );
 }
 
-// ---------- FilterBar: Funcionalidade de arrastar (drag-to-scroll) reintroduzida ----------
+// ---------- FilterBar: Implementado com animação de scroll suave via Framer Motion ----------
 function FilterBar({ activeCategory, onCategorySelect }) {
   const categories = ["All", "Assistant", "Anime", "Creativity & Writing", "Entertainment & Gaming", "History", "Humor", "Learning", "Lifestyle", "Parody", "RPG & Puzzles"];
   const scrollContainerRef = useRef(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
 
-  // Refs para a funcionalidade de arrastar
   const isDragging = useRef(false);
   const startX = useRef(0);
   const scrollLeftStart = useRef(0);
@@ -77,7 +77,6 @@ function FilterBar({ activeCategory, onCategorySelect }) {
     observer.observe(firstItem);
     observer.observe(lastItem);
 
-    // --- Lógica de Arrastar ---
     const handleMouseDown = (e) => {
       isDragging.current = true;
       startX.current = e.pageX - container.offsetLeft;
@@ -112,15 +111,32 @@ function FilterBar({ activeCategory, onCategorySelect }) {
   const handleScrollByButton = (direction) => {
     const container = scrollContainerRef.current;
     if (!container) return;
+
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const scrollAmount = container.clientWidth * 0.8;
-    container.scrollBy({ left: direction === 'left' ? -scrollAmount : scrollAmount, behavior: 'smooth' });
+    const newScrollLeft = container.scrollLeft + (direction === 'left' ? -scrollAmount : scrollAmount);
+
+    if (prefersReducedMotion) {
+      container.scrollLeft = newScrollLeft;
+    } else {
+      // 2. Usando a função animate para controlar a propriedade scrollLeft
+      animate(container.scrollLeft, newScrollLeft, {
+        type: "spring",
+        stiffness: 400,
+        damping: 40,
+        onUpdate: (latest) => {
+          container.scrollLeft = latest;
+        }
+      });
+    }
   };
 
   return (
     <div className="relative w-full group">
+      {/* 3. Removida a classe 'scroll-smooth' para evitar conflito com a animação do framer-motion */}
       <div
         ref={scrollContainerRef}
-        className="w-full overflow-x-auto hide-scrollbar snap-x snap-mandatory scroll-smooth cursor-grab"
+        className="w-full overflow-x-auto hide-scrollbar snap-x snap-mandatory cursor-grab"
       >
         <div className="flex gap-2 px-6 py-2">
           {categories.map((category) => (
@@ -157,8 +173,6 @@ function FilterBar({ activeCategory, onCategorySelect }) {
     </div>
   );
 }
-
-// --- O restante do código permanece o mesmo ---
 
 function PersonaCard({ persona, onApiClick, onTryClick, isFavorite, onToggleFavorite }) {
   const imageUrl = persona.image_url || ChaplinImage;
@@ -282,17 +296,16 @@ function Home() {
     <SimpleBar style={{ maxHeight: '100vh' }} className="login-page-scrollbar">
       <div className="bg-[#18181B] min-h-screen font-inter text-white">
         <PersonaNavbar isOpen={isNavbarOpen} setIsOpen={setIsNavbarOpen} viewMode={viewMode} setViewMode={setViewMode} handleMobileNavClick={handleMobileNavClick} />
+
         <button onClick={() => setIsNavbarOpen(true)} className={`fixed top-5 left-2 z-20 p-2 rounded-full cursor-pointer hover:bg-[#1F1F22] ...`}>
           <Menu color="#A2A2AB" size={23} />
         </button>
 
         <main className={`transition-all duration-300 ease-in-out ${isNavbarOpen ? 'lg:ml-[260px]' : 'lg:ml-0'}`}>
-          {/* Este container agora controla o padding de todo o conteúdo para garantir o alinhamento */}
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col py-5">
               <div className="flex flex-col gap-5">
                 <TopBar searchTerm={searchTerm} onSearchChange={(e) => setSearchTerm(e.target.value)} viewMode={viewMode} />
-                {/* ---------- Título H1: Removido padding para herdar do container pai ---------- */}
                 <h1 className="md:hidden font-inter font-semibold text-lg text-[#FAFAFA]">
                   {viewMode === 'favorites' ? 'Favorites' : 'Community Chaplins'}
                 </h1>
