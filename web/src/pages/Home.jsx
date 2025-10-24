@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import { Search, Star, Menu, ChevronLeft, ChevronRight } from 'lucide-react';
-// 1. Importando a função de animação do framer-motion
 import { animate } from "framer-motion";
 import { getChaplins } from "../services/apiService";
 import "simplebar-react/dist/simplebar.min.css";
@@ -36,7 +35,7 @@ function TopBar({ searchTerm, onSearchChange, viewMode }) {
 }
 
 function FilterTag({ name, isActive, onClick }) {
-  const baseClasses = "flex items-center justify-center font-inter font-medium text-[0.90em] p-3 px-4 rounded-xl cursor-pointer transition-colors whitespace-nowrap";
+  const baseClasses = "flex items-center justify-center font-inter font-semibold text-[0.80em] p-[14px] px-4 rounded-xl cursor-pointer transition-colors whitespace-nowrap";
   const activeClasses = "bg-[#FAFAFA] text-[#1C1C1F]";
   const inactiveClasses = "bg-[#26272B] text-[#A2A2AB] hover:text-white";
   return (
@@ -46,7 +45,6 @@ function FilterTag({ name, isActive, onClick }) {
   );
 }
 
-// ---------- FilterBar: Implementado com animação de scroll suave via Framer Motion ----------
 function FilterBar({ activeCategory, onCategorySelect }) {
   const categories = ["All", "Assistants", "Anime", "Creativity & Writing", "Entertainment & Gaming", "History", "Humor", "Learning", "Lifestyle", "Parody", "RPG & Puzzles"];
   const scrollContainerRef = useRef(null);
@@ -57,25 +55,24 @@ function FilterBar({ activeCategory, onCategorySelect }) {
   const startX = useRef(0);
   const scrollLeftStart = useRef(0);
 
+  const checkScrollability = () => {
+    const container = scrollContainerRef.current;
+    if (container) {
+      const { scrollLeft, scrollWidth, clientWidth } = container;
+      const isOverflowing = scrollWidth > clientWidth;
+      setCanScrollLeft(isOverflowing && scrollLeft > 1);
+      setCanScrollRight(isOverflowing && Math.ceil(scrollLeft) < scrollWidth - clientWidth - 1);
+    }
+  };
+
   useEffect(() => {
     const container = scrollContainerRef.current;
     if (!container) return;
 
-    const firstItem = container.querySelector('.snap-start:first-child');
-    const lastItem = container.querySelector('.snap-start:last-child');
-    if (!firstItem || !lastItem) return;
+    const observer = new ResizeObserver(() => checkScrollability());
+    observer.observe(container);
 
-    container.scrollLeft = 0;
-
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.target === firstItem) setCanScrollLeft(!entry.isIntersecting);
-        if (entry.target === lastItem) setCanScrollRight(!entry.isIntersecting);
-      });
-    }, { root: container, threshold: 1.0 });
-
-    observer.observe(firstItem);
-    observer.observe(lastItem);
+    container.addEventListener('scroll', checkScrollability, { passive: true });
 
     const handleMouseDown = (e) => {
       isDragging.current = true;
@@ -99,8 +96,11 @@ function FilterBar({ activeCategory, onCategorySelect }) {
     container.addEventListener('mouseup', handleMouseUp);
     container.addEventListener('mousemove', handleMouseMove);
 
+    checkScrollability();
+
     return () => {
       observer.disconnect();
+      container.removeEventListener('scroll', checkScrollability);
       container.removeEventListener('mousedown', handleMouseDown);
       container.removeEventListener('mouseleave', handleMouseLeave);
       container.removeEventListener('mouseup', handleMouseUp);
@@ -119,7 +119,6 @@ function FilterBar({ activeCategory, onCategorySelect }) {
     if (prefersReducedMotion) {
       container.scrollLeft = newScrollLeft;
     } else {
-      // 2. Usando a função animate para controlar a propriedade scrollLeft
       animate(container.scrollLeft, newScrollLeft, {
         type: "spring",
         stiffness: 400,
@@ -133,12 +132,11 @@ function FilterBar({ activeCategory, onCategorySelect }) {
 
   return (
     <div className="relative w-full group">
-      {/* 3. Removida a classe 'scroll-smooth' para evitar conflito com a animação do framer-motion */}
       <div
         ref={scrollContainerRef}
         className="w-full overflow-x-auto hide-scrollbar snap-x snap-mandatory cursor-grab"
       >
-        <div className="flex gap-2 px-6 py-2">
+        <div className="flex gap-2 py-2">
           {categories.map((category) => (
             <div key={category} className="snap-start">
               <FilterTag name={category} isActive={activeCategory === category} onClick={onCategorySelect} />
@@ -150,24 +148,24 @@ function FilterBar({ activeCategory, onCategorySelect }) {
       {canScrollLeft && (
         <button
           onClick={() => handleScrollByButton('left')}
-          className="absolute top-1/2 left-0 transform -translate-y-1/2 z-20 w-24 h-full flex items-center justify-start
-                     opacity-0 group-hover:opacity-100 transition-opacity duration-300
-                     bg-gradient-to-r from-[#18181B] to-transparent cursor-pointer"
+          className="absolute top-1/2 -left-4 sm:-left-6 lg:-left-8 transform -translate-y-1/2 z-20 w-24 h-full flex items-center justify-start
+                       opacity-0 group-hover:opacity-100 transition-opacity duration-300
+                       bg-gradient-to-r from-[#18181B] to-transparent cursor-pointer"
           aria-label="Scroll left"
         >
-          <ChevronLeft size={24} className="text-white/80 ml-2" />
+          <ChevronLeft size={24} className="text-white/80 ml-4 sm:ml-6 lg:ml-8" />
         </button>
       )}
 
       {canScrollRight && (
         <button
           onClick={() => handleScrollByButton('right')}
-          className="absolute top-1/2 right-0 transform -translate-y-1/2 z-20 w-24 h-full flex items-center justify-end
-                     opacity-0 group-hover:opacity-100 transition-opacity duration-300
-                     bg-gradient-to-l from-[#18181B] to-transparent cursor-pointer"
+          className="absolute top-1/2 -right-4 sm:-right-6 lg:-right-8 transform -translate-y-1/2 z-20 w-24 h-full flex items-center justify-end
+                       opacity-0 group-hover:opacity-100 transition-opacity duration-300
+                       bg-gradient-to-l from-[#18181B] to-transparent cursor-pointer"
           aria-label="Scroll right"
         >
-          <ChevronRight size={24} className="text-white/80 mr-2" />
+          <ChevronRight size={24} className="text-white/80 mr-4 sm:mr-6 lg:mr-8" />
         </button>
       )}
     </div>
@@ -241,6 +239,7 @@ function removeChaplinSessionKeys(personaId) {
 
 function Home() {
   const location = useLocation();
+  // *** LINHA CORRIGIDA / ADICIONADA DE VOLTA ***
   const [isNavbarOpen, setIsNavbarOpen] = useState(false);
   const [activeModal, setActiveModal] = useState(null);
   const [selectedPersona, setSelectedPersona] = useState(null);
@@ -297,7 +296,7 @@ function Home() {
       <div className="bg-[#18181B] min-h-screen font-inter text-white">
         <PersonaNavbar isOpen={isNavbarOpen} setIsOpen={setIsNavbarOpen} viewMode={viewMode} setViewMode={setViewMode} handleMobileNavClick={handleMobileNavClick} />
 
-        <button onClick={() => setIsNavbarOpen(true)} className={`fixed top-5 left-2 z-20 p-2 rounded-full cursor-pointer hover:bg-[#1F1F22] ...`}>
+        <button onClick={() => setIsNavbarOpen(true)} className={`lg:hidden fixed top-5 left-2 z-20 p-2 rounded-full cursor-pointer hover:bg-[#1F1F22]`}>
           <Menu color="#A2A2AB" size={23} />
         </button>
 
@@ -326,7 +325,6 @@ function Home() {
         </main>
 
         {activeModal === "api" && selectedPersona && <ApiModal persona={selectedPersona} onClose={handleCloseModal} />}
-        {/* CORREÇÃO: A propriedade foi alterada de 'persona' para 'chaplin' para corresponder à nova API do TryModal */}
         {activeModal === "try" && selectedPersona && <TryModal chaplin={selectedPersona} onClose={handleCloseModal} />}
       </div>
     </SimpleBar>
