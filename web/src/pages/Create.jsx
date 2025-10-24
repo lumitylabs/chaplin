@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from "react";
+import React, { useRef, useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Menu, WandSparkles, Globe, ChevronDown, Plus, Trash2, PenLine, Play, Loader2, TextSearch, SquareCode, LockKeyholeOpen, Pencil } from "lucide-react";
 import SimpleBar from 'simplebar-react';
@@ -17,7 +17,9 @@ const NAME_MAX = 25;
 const INSTR_MAX = 500;
 const STEP2_KEY_MAX = 25;
 const STEP2_DESC_MAX = 100;
+const PROMPT_SPECIALIST_MAX = 4000;
 const MAX_STEP2_GROUPS = 6;
+const SPECIALIST_NAME_MAX = 60;
 const CATEGORY_OPTIONS = [
   "Assistant", "Anime", "Creativity & Writing", "Entertainment & Gaming",
   "History", "Humor", "Learning",
@@ -33,30 +35,95 @@ function Specialist({
   onRun,
   onOpenModal,
   onOpenResponseModal,
-  onPromptChange
+  onPromptChange,
+  onNameChange
 }) {
   const hasResponse = !!response;
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editedName, setEditedName] = useState(name);
+  const editRef = useRef(null);
+
+  useEffect(() => {
+    setEditedName(name);
+  }, [name]);
+
+  const handleSaveName = useCallback(() => {
+    if (editedName.trim() && editedName !== name) {
+      onNameChange(editedName.trim());
+    } else {
+      setEditedName(name);
+    }
+    setIsEditingName(false);
+  }, [editedName, name, onNameChange]);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (editRef.current && !editRef.current.contains(event.target)) {
+        handleSaveName();
+      }
+    }
+    if (isEditingName) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isEditingName, handleSaveName]);
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      handleSaveName();
+    } else if (e.key === 'Escape') {
+      setEditedName(name);
+      setIsEditingName(false);
+    }
+  };
+
+  const toggleEditMode = () => {
+    if (isEditingName) {
+      handleSaveName();
+    } else {
+      setIsEditingName(true);
+    }
+  };
+
   return (
     <div className="w-full border border-[#3A3A3A] rounded-xl font-inter text-sm flex flex-col justify-between">
       <div className="flex flex-col gap-3 p-4">
         <div className="flex justify-between items-center">
-          <div className="flex flex-row gap-2">
-            <div className="font-semibold text-white">{name}</div>
+          <div className="flex flex-row gap-2 items-center flex-grow pr-2 min-w-0">
+            {isEditingName ? (
+              <div ref={editRef} className="w-full">
+                <input
+                  type="text"
+                  value={editedName}
+                  onChange={(e) => setEditedName(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  className="w-full bg-transparent border border-[#3A3A3A] text-white font-semibold outline-none rounded-lg px-2 py-1 focus:ring-1 focus:ring-[#FAFAFA]"
+                  maxLength={SPECIALIST_NAME_MAX}
+                  autoFocus
+                />
+              </div>
+            ) : (
+              <div className="font-semibold text-white truncate" title={name}>{name}</div>
+            )}
           </div>
-          <div className="flex justify-center items-center">
-            <button className="p-2 rounded-full hover:bg-[#2C2C30] transition duration-200 active:scale-95 cursor-pointer">
+          <div className="flex justify-start items-start flex-shrink-0">
+            <button onClick={toggleEditMode} className="p-2 rounded-full hover:bg-[#2C2C30] transition duration-200 active:scale-95 cursor-pointer">
               <Pencil alt="Edit Name Agent" size={16} color="#9E9EA0" />
             </button>
             <button className="p-2 rounded-full hover:bg-[#2C2C30] transition duration-200 active:scale-95 cursor-pointer">
               <LockKeyholeOpen alt="Open/Lock Agent" size={16} color="#9E9EA0" />
             </button>
-            <button onClick={onRun} disabled={isRunning} className="disabled:cursor-not-allowed p-1">
+            <button
+              onClick={onRun}
+              disabled={isRunning}
+              className="p-2 rounded-full hover:bg-[#2C2C30] transition duration-200 active:scale-95 cursor-pointer disabled:cursor-not-allowed disabled:hover:bg-transparent"
+            >
               {isRunning ? (
-                <Loader2 size={16} className="animate-spin text-gray-400" />
+                <Loader2 color="#EFEFEF" size={16} className="animate-spin" />
               ) : (
-                <button className="p-2 rounded-full hover:bg-[#2C2C30] transition duration-200 active:scale-95 cursor-pointer">
-                  <Play alt="Run Agent" size={15} color="#9E9EA0" />
-                </button>
+                <Play alt="Run Agent" size={16} color="#9E9EA0" />
               )}
             </button>
           </div>
@@ -72,17 +139,24 @@ function Specialist({
         </div>
       </div>
 
+      {/* 
+        INÍCIO DA CORREÇÃO DE UI/UX
+        - A propriedade 'color' do ícone TextSearch foi removida.
+        - Agora, o ícone herda automaticamente a cor do texto do botão pai.
+        - Isso garante que o ícone e o texto "Response" tenham sempre a mesma cor, seja no estado ativo (claro) ou inativo (escuro).
+      */}
       <button
         onClick={hasResponse ? onOpenResponseModal : undefined}
         disabled={!hasResponse}
-        className={`w-full h-10 rounded-b-[10px] text-[#D9D9D9] flex items-center justify-end gap-3 px-4 transition duration-200 ${hasResponse
-          ? "bg-[#3B3B42] font-semibold cursor-pointer"
-          : "bg-[#202024] cursor-default"
+        className={`w-full h-10 rounded-b-[10px] flex items-center justify-end gap-3 px-4 transition-colors duration-200 ${hasResponse
+          ? "bg-[#3B3B42] text-[#D9D9D9] font-semibold cursor-pointer hover:bg-[#4a4a52]"
+          : "bg-[#202024] text-[#797A86] cursor-default"
           }`}
       >
-        Response
-        <TextSearch size={14} color="#9E9EA0" />
+        <span>Response</span>
+        <TextSearch size={16} />
       </button>
+      {/* FIM DA CORREÇÃO DE UI/UX */}
     </div>
   );
 }
@@ -96,6 +170,7 @@ function WorkGroup({
   onOpenResponseModal,
   isGenerating,
   onPromptChange,
+  onNameChange,
 }) {
   return (
     <div>
@@ -114,6 +189,7 @@ function WorkGroup({
               onOpenModal={() => onOpenSpecialistModal(index)}
               onOpenResponseModal={() => onOpenResponseModal(index)}
               onPromptChange={(e) => onPromptChange(index, e.target.value)}
+              onNameChange={(newName) => onNameChange(index, newName)}
             />
           ))
         ) : (
@@ -158,7 +234,7 @@ function Create() {
   const categoryRef = useRef(null);
   const categoryMenuRef = useRef(null);
 
-  const getMissingFields = () => {
+  const getMissingFields = useCallback(() => {
     const missing = [];
     if (formData.name.trim() === "") missing.push("Name");
     if (formData.category.trim() === "") missing.push("Category");
@@ -166,7 +242,7 @@ function Create() {
     if (formData.personaDescription.trim() === "") missing.push("Chaplin Description (Step 1)");
     if (formData.workgroup.length === 0) missing.push("Workgroup (Step 3)");
     return missing;
-  };
+  }, [formData]);
 
   const missingFields = getMissingFields();
   const isPublishable = missingFields.length === 0;
@@ -333,6 +409,24 @@ function Create() {
     });
   };
 
+  const handleSpecialistNameChange = (index, newName) => {
+    setFormData(prevData => {
+      const newWorkgroup = [...prevData.workgroup];
+      if (newWorkgroup[index]) {
+        const oldName = newWorkgroup[index].name;
+        newWorkgroup[index] = { ...newWorkgroup[index], name: newName };
+
+        if (oldName in workgroupResponses) {
+          const newResponses = { ...workgroupResponses };
+          newResponses[newName] = newResponses[oldName];
+          delete newResponses[oldName];
+          setWorkgroupResponses(newResponses);
+        }
+      }
+      return { ...prevData, workgroup: newWorkgroup };
+    });
+  };
+
   function handleOpenModal(fieldIdentifier) {
     setEditingField(fieldIdentifier);
     setShowModal(true);
@@ -371,7 +465,7 @@ function Create() {
     });
   }
 
-  const getModalConfig = () => {
+  const getModalConfig = useCallback(() => {
     if (!editingField) return null;
     const { type, index } = editingField;
     const agentName = formData.workgroup[index]?.name || 'Specialist';
@@ -379,13 +473,14 @@ function Create() {
     switch (type) {
       case 'specialist':
         return {
-          Icon: Pencil,
+          Icon: SquareCode,
           title: "Edit Prompt",
           subtitle: `Edit ${agentName}'s key content.`,
           initialText: formData.workgroup[index]?.prompt || "",
           actionButtonText: "Finish Editing",
           showActionButton: true,
           showAiHelper: true,
+          maxLength: PROMPT_SPECIALIST_MAX,
         };
       case 'specialist_response':
         const responseAgentName = formData.workgroup[index]?.name;
@@ -416,7 +511,7 @@ function Create() {
           initialText: formData.step2.groups[index]?.key || "",
           maxLength: STEP2_KEY_MAX,
           actionButtonText: "Finish Editing",
-          showAiHelper: true,
+          showAiHelper: false,
         };
       case 'step2_description':
         return {
@@ -426,12 +521,12 @@ function Create() {
           initialText: formData.step2.groups[index]?.description || "",
           maxLength: STEP2_DESC_MAX,
           actionButtonText: "Finish Editing",
-          showAiHelper: true,
+          showAiHelper: false,
         };
       default:
         return { initialText: "" };
     }
-  };
+  }, [editingField, formData.workgroup, formData.personaDescription, formData.step2.groups, workgroupResponses]);
 
   function addStep2Group() {
     setFormData((prev) => {
@@ -691,12 +786,16 @@ function Create() {
                     <div className="flex items-center justify-between">
                       <div className="text-[#FAFAFA] text-sm font-medium">Workgroup</div>
                       <div className="flex gap-3">
-                        <button onClick={handleGenerateWorkgroup} disabled={isGenerating} className="flex items-center gap-2 px-3 py-1.5 bg-transparent border border-[#3A3A3A] text-sm text-[#D9D3D3] font-semibold rounded-full cursor-pointer hover:bg-[#1F1F22] transition duration-200 active:scale-95 select-none" title="AI Generate">
-                          <WandSparkles size={14} color="#D9D3D3" />
+                        <button onClick={handleGenerateWorkgroup} disabled={isGenerating} className="flex items-center gap-2 px-3 py-1.5 bg-transparent border border-[#3A3A3A] text-sm text-[#D9D3D3] font-semibold rounded-full cursor-pointer hover:bg-[#1F1F22] transition duration-200 active:scale-95 select-none disabled:cursor-not-allowed" title="AI Generate">
+                          {isGenerating ? (
+                            <Loader2 color="#EFEFEF" size={14} className="animate-spin" />
+                          ) : (
+                            <WandSparkles size={14} color="#D9D3D3" />
+                          )}
                           {isGenerating ? "Generating..." : "AI Generate"}
                         </button>
                         <button onClick={handleRunWorkgroup} className="flex items-center gap-2 px-3 py-1.5 bg-[#202024] text-[#D9D9D9] text-sm font-semibold rounded-full cursor-pointer hover:bg-[#3B3B42] transition duration-200 active:scale-95 select-none" title="Run Workgroup">
-                          <Play size={10} fill="#D9D9D9" />
+                          <Play size={8} fill="#D9D9D9" />
                           Run
                         </button>
                       </div>
@@ -713,11 +812,13 @@ function Create() {
                       onOpenResponseModal={(index) => handleOpenModal({ type: "specialist_response", index })}
                       isGenerating={isGenerating}
                       onPromptChange={handleSpecialistPromptChange}
+                      onNameChange={handleSpecialistNameChange}
                     />
                   </div>
                 </div>
               </div>
             </div>
+            {apiError && <div className="text-red-500 text-sm mt-4">{apiError}</div>}
             <div className="h-10" />
           </div>
         </main>

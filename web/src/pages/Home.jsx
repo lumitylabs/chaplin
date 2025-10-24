@@ -9,16 +9,8 @@ import SimpleBar from 'simplebar-react';
 import PersonaNavbar from "../components/ui/general/PersonaNavbar";
 import ApiModal from "../components/ui/general/ApiModal";
 import TryModal from "../components/ui/general/TryModal";
-import OrcImage from "../assets/persona.png";
-import MinerImage from "../assets/persona.png";
-import AnalystImage from "../assets/persona.png";
+import ChaplinImage from "../assets/persona.png";
 
-// --- DADOS MOCKADOS ---
-const personasData = [
-  { id: 1, name: "Charlie Chaplin", image: OrcImage, category: "Humor", desc: "Um putasso, mas que tem um coração...", apiUrl: "http://persona.request/orc-1832" },
-  { id: 2, name: "Orc Minerador", image: MinerImage, category: "Entertainment & Gaming", desc: "Um ego minerador que fala com o jogador.", apiUrl: "http://persona.request/miner-4512" },
-  { id: 3, name: "Analista Market", image: AnalystImage, category: "Assistant", desc: "Um auxiliar para criação de propagandas para...", apiUrl: "http://persona.request/analyst-7734" },
-];
 
 const CHAPLIN_SESSION_MAP_KEY = "chaplin_jobs_map_session";
 
@@ -69,7 +61,7 @@ function FilterBar({ activeCategory, onCategorySelect }) {
 
 function PersonaCard({ persona, onApiClick, onTryClick, isFavorite, onToggleFavorite }) {
   // Ajuste para usar a imagem do placeholder se não houver uma definida
-  const imageUrl = persona.image_url || OrcImage;
+  const imageUrl = persona.image_url || ChaplinImage;
 
   return (
     <div className="flex flex-col sm:flex-row gap-4 h-auto sm:h-40 w-full bg-[#202024] rounded-2xl p-4 relative items-center select-none">
@@ -143,7 +135,7 @@ function removeChaplinSessionKeys(personaId) {
   try {
     // remove o flag de modal aberto (caso exista)
     sessionStorage.removeItem(`chaplin_modal_open_${personaId}`);
-  } catch (e) {}
+  } catch (e) { }
 }
 
 
