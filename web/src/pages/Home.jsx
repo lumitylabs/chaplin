@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
-import { Search, Star, Menu } from 'lucide-react';
-import { getChaplins } from "../services/apiService"; // <<< Importar a nova função
+import { Search, Star, Menu, ChevronLeft, ChevronRight } from 'lucide-react';
+import { getChaplins } from "../services/apiService";
 import "simplebar-react/dist/simplebar.min.css";
 import SimpleBar from 'simplebar-react';
 
@@ -11,13 +11,12 @@ import ApiModal from "../components/ui/general/ApiModal";
 import TryModal from "../components/ui/general/TryModal";
 import ChaplinImage from "../assets/persona.png";
 
-
 const CHAPLIN_SESSION_MAP_KEY = "chaplin_jobs_map_session";
 
-// --- SUB-COMPONENTES DA PÁGINA HOME ---
+// ---------- TopBar: Removido padding para herdar do container pai e garantir alinhamento ----------
 function TopBar({ searchTerm, onSearchChange, viewMode }) {
   return (
-    <header className="flex justify-end md:justify-between items-center w-full gap-4 pl-12 md:pl-0">
+    <header className="flex justify-end md:justify-between items-center w-full gap-4">
       <h1 className="hidden md:block font-inter font-semibold text-lg text-[#FAFAFA] whitespace-nowrap">
         {viewMode === 'favorites' ? 'Favorites' : 'Community Chaplins'}
       </h1>
@@ -46,21 +45,122 @@ function FilterTag({ name, isActive, onClick }) {
   );
 }
 
+// ---------- FilterBar: Funcionalidade de arrastar (drag-to-scroll) reintroduzida ----------
 function FilterBar({ activeCategory, onCategorySelect }) {
-  const categories = ["All", "Assistant", "Anime", "Creativity & Writing", "Entertainment & Gaming", "History", "Humor", "Learning"];
+  const categories = ["All", "Assistant", "Anime", "Creativity & Writing", "Entertainment & Gaming", "History", "Humor", "Learning", "Lifestyle", "Parody", "RPG & Puzzles"];
+  const scrollContainerRef = useRef(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  // Refs para a funcionalidade de arrastar
+  const isDragging = useRef(false);
+  const startX = useRef(0);
+  const scrollLeftStart = useRef(0);
+
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const firstItem = container.querySelector('.snap-start:first-child');
+    const lastItem = container.querySelector('.snap-start:last-child');
+    if (!firstItem || !lastItem) return;
+
+    container.scrollLeft = 0;
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.target === firstItem) setCanScrollLeft(!entry.isIntersecting);
+        if (entry.target === lastItem) setCanScrollRight(!entry.isIntersecting);
+      });
+    }, { root: container, threshold: 1.0 });
+
+    observer.observe(firstItem);
+    observer.observe(lastItem);
+
+    // --- Lógica de Arrastar ---
+    const handleMouseDown = (e) => {
+      isDragging.current = true;
+      startX.current = e.pageX - container.offsetLeft;
+      scrollLeftStart.current = container.scrollLeft;
+      container.style.cursor = 'grabbing';
+      container.style.userSelect = 'none';
+    };
+    const handleMouseLeave = () => { isDragging.current = false; container.style.cursor = 'grab'; container.style.userSelect = 'auto'; };
+    const handleMouseUp = () => { isDragging.current = false; container.style.cursor = 'grab'; container.style.userSelect = 'auto'; };
+    const handleMouseMove = (e) => {
+      if (!isDragging.current) return;
+      e.preventDefault();
+      const x = e.pageX - container.offsetLeft;
+      const walk = (x - startX.current) * 1.5;
+      container.scrollLeft = scrollLeftStart.current - walk;
+    };
+
+    container.addEventListener('mousedown', handleMouseDown);
+    container.addEventListener('mouseleave', handleMouseLeave);
+    container.addEventListener('mouseup', handleMouseUp);
+    container.addEventListener('mousemove', handleMouseMove);
+
+    return () => {
+      observer.disconnect();
+      container.removeEventListener('mousedown', handleMouseDown);
+      container.removeEventListener('mouseleave', handleMouseLeave);
+      container.removeEventListener('mouseup', handleMouseUp);
+      container.removeEventListener('mousemove', handleMouseMove);
+    };
+  }, []);
+
+  const handleScrollByButton = (direction) => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+    const scrollAmount = container.clientWidth * 0.8;
+    container.scrollBy({ left: direction === 'left' ? -scrollAmount : scrollAmount, behavior: 'smooth' });
+  };
+
   return (
-    <div className="w-full overflow-x-auto pb-2">
-      <div className="flex gap-2">
-        {categories.map((category) => (
-          <FilterTag key={category} name={category} isActive={activeCategory === category} onClick={onCategorySelect} />
-        ))}
+    <div className="relative w-full group">
+      <div
+        ref={scrollContainerRef}
+        className="w-full overflow-x-auto hide-scrollbar snap-x snap-mandatory scroll-smooth cursor-grab"
+      >
+        <div className="flex gap-2 px-6 py-2">
+          {categories.map((category) => (
+            <div key={category} className="snap-start">
+              <FilterTag name={category} isActive={activeCategory === category} onClick={onCategorySelect} />
+            </div>
+          ))}
+        </div>
       </div>
+
+      {canScrollLeft && (
+        <button
+          onClick={() => handleScrollByButton('left')}
+          className="absolute top-1/2 left-0 transform -translate-y-1/2 z-20 w-24 h-full flex items-center justify-start
+                     opacity-0 group-hover:opacity-100 transition-opacity duration-300
+                     bg-gradient-to-r from-[#18181B] to-transparent cursor-pointer"
+          aria-label="Scroll left"
+        >
+          <ChevronLeft size={24} className="text-white/80 ml-2" />
+        </button>
+      )}
+
+      {canScrollRight && (
+        <button
+          onClick={() => handleScrollByButton('right')}
+          className="absolute top-1/2 right-0 transform -translate-y-1/2 z-20 w-24 h-full flex items-center justify-end
+                     opacity-0 group-hover:opacity-100 transition-opacity duration-300
+                     bg-gradient-to-l from-[#18181B] to-transparent cursor-pointer"
+          aria-label="Scroll right"
+        >
+          <ChevronRight size={24} className="text-white/80 mr-2" />
+        </button>
+      )}
     </div>
   );
 }
 
+// --- O restante do código permanece o mesmo ---
+
 function PersonaCard({ persona, onApiClick, onTryClick, isFavorite, onToggleFavorite }) {
-  // Ajuste para usar a imagem do placeholder se não houver uma definida
   const imageUrl = persona.image_url || ChaplinImage;
 
   return (
@@ -71,7 +171,6 @@ function PersonaCard({ persona, onApiClick, onTryClick, isFavorite, onToggleFavo
       <img src={imageUrl} className="w-24 h-32 object-cover rounded-2xl flex-shrink-0" alt={persona.name} />
       <div className="flex flex-col gap-1 h-full w-full">
         <div className="font-inter font-bold text-sm text-[#F7F7F7]">{persona.name}</div>
-        {/* Usando 'instructions' como descrição, conforme a estrutura de dados */}
         <div className="text-sm text-[#88888F] mb-2 line-clamp-2 h-10">{persona.instructions}</div>
         <div className="flex gap-2 justify-end mt-auto">
           <button onClick={() => onApiClick(persona)} className="flex w-20 py-1.5 px-5 border-[#303136] border rounded-full text-white text-sm justify-center items-center cursor-pointer transition duration-200 active:scale-95 hover:bg-[#1F1F23]">API</button>
@@ -92,18 +191,13 @@ function PersonaList({ personas, onApiClick, onTryClick, favorites, onToggleFavo
   );
 }
 
-// Componente para exibir o esqueleto de carregamento
 function CardSkeleton() {
   return (
-
     <div className="flex flex-col sm:flex-row gap-4 h-auto sm:h-40 w-full bg-[#202024] rounded-2xl p-4 relative items-center select-none">
-      <button className="absolute top-3.5 right-4 p-1 z-10 cursor-pointer" aria-label="Toggle Favorite">
-
-      </button>
+      <button className="absolute top-3.5 right-4 p-1 z-10 cursor-pointer" aria-label="Toggle Favorite"></button>
       <div className="w-24 h-32 object-cover rounded-2xl flex-shrink-0 animate-pulse bg-gray-400" />
       <div className="flex flex-col gap-1 h-full w-full">
         <div className="font-inter font-bold text-sm text-[#F7F7F7] w-40 h-[14px] animate-pulse bg-gray-400"></div>
-        {/* Usando 'instructions' como descrição, conforme a estrutura de dados */}
         <div className="">
           <div className="text-sm text-[#88888F] mb-1 line-clamp-2 w-60 h-[14px] animate-pulse bg-gray-400"></div>
           <div className="text-sm text-[#88888F] mb-2 line-clamp-2 w-60 h-[14px] animate-pulse bg-gray-400"></div>
@@ -117,29 +211,20 @@ function CardSkeleton() {
   );
 }
 
-
-
 function removeChaplinSessionKeys(personaId) {
   try {
-    // remove só o jobId do mapa (se existir)
     const raw = sessionStorage.getItem(CHAPLIN_SESSION_MAP_KEY) || "{}";
     const map = JSON.parse(raw);
     if (map && map[personaId]) {
       delete map[personaId];
       sessionStorage.setItem(CHAPLIN_SESSION_MAP_KEY, JSON.stringify(map));
     }
-  } catch (e) {
-    // swallow
-  }
-
+  } catch (e) { }
   try {
-    // remove o flag de modal aberto (caso exista)
     sessionStorage.removeItem(`chaplin_modal_open_${personaId}`);
   } catch (e) { }
 }
 
-
-// --- COMPONENTE PRINCIPAL (Atualizado) ---
 function Home() {
   const location = useLocation();
   const [isNavbarOpen, setIsNavbarOpen] = useState(false);
@@ -148,56 +233,36 @@ function Home() {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeCategory, setActiveCategory] = useState("All");
   const [viewMode, setViewMode] = useState('all');
-
-  // <<< NOVOS ESTADOS PARA DADOS DA API >>>
   const [allPersonas, setAllPersonas] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    if (location.state?.desiredView) {
-      setViewMode(location.state.desiredView);
-    }
-  }, [location.state]);
+  useEffect(() => { if (location.state?.desiredView) setViewMode(location.state.desiredView); }, [location.state]);
+  useEffect(() => { setIsNavbarOpen(window.innerWidth >= 1024); }, []);
 
-  useEffect(() => {
-    const isDesktop = window.innerWidth >= 1024;
-    setIsNavbarOpen(isDesktop);
-  }, []);
-
-  // <<< NOVO: EFEITO PARA BUSCAR OS DADOS DA API >>>
   useEffect(() => {
     async function fetchChaplins() {
       setIsLoading(true);
       setError(null);
       const result = await getChaplins();
-
       if (result.error) {
         setError(result.error);
         setAllPersonas([]);
       } else {
-        // Transforma o objeto do Firebase em um array que o React pode mapear
-        const personasArray = Object.keys(result.data).map(key => ({
-          id: key, // O ID do chaplin é a chave do objeto
-          ...result.data[key]
-        }));
+        const personasArray = Object.keys(result.data).map(key => ({ id: key, ...result.data[key] }));
         setAllPersonas(personasArray);
       }
       setIsLoading(false);
     }
-
     fetchChaplins();
-  }, []); // Executa apenas uma vez, quando o componente é montado
-
+  }, []);
 
   const [favorites, setFavorites] = useState(() => {
     const savedFavorites = localStorage.getItem('favoritePersonas');
     return savedFavorites ? JSON.parse(savedFavorites) : [];
   });
 
-  useEffect(() => {
-    localStorage.setItem('favoritePersonas', JSON.stringify(favorites));
-  }, [favorites]);
+  useEffect(() => { localStorage.setItem('favoritePersonas', JSON.stringify(favorites)); }, [favorites]);
 
   const handleMobileNavClick = () => { if (window.innerWidth < 1024) setIsNavbarOpen(false); };
   const handleApiClick = (persona) => { setSelectedPersona(persona); setActiveModal("api"); };
@@ -222,28 +287,27 @@ function Home() {
         </button>
 
         <main className={`transition-all duration-300 ease-in-out ${isNavbarOpen ? 'lg:ml-[260px]' : 'lg:ml-0'}`}>
+          {/* Este container agora controla o padding de todo o conteúdo para garantir o alinhamento */}
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col py-5">
               <div className="flex flex-col gap-5">
                 <TopBar searchTerm={searchTerm} onSearchChange={(e) => setSearchTerm(e.target.value)} viewMode={viewMode} />
-                <h1 className="md:hidden font-inter font-semibold text-lg text-[#FAFAFA]">{viewMode === 'favorites' ? 'Favorites' : 'Community Chaplins'}</h1>
+                {/* ---------- Título H1: Removido padding para herdar do container pai ---------- */}
+                <h1 className="md:hidden font-inter font-semibold text-lg text-[#FAFAFA]">
+                  {viewMode === 'favorites' ? 'Favorites' : 'Community Chaplins'}
+                </h1>
                 <FilterBar activeCategory={activeCategory} onCategorySelect={handleCategorySelect} />
               </div>
 
-              {/* <<< LÓGICA DE RENDERIZAÇÃO CONDICIONAL >>> */}
-              <div className="flex flex-col gap-5">
+              <div className="flex flex-col">
                 {isLoading ? (
-                  // Exibe 3 esqueletos enquanto carrega
                   <div className="mt-5 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"> <CardSkeleton /> <CardSkeleton /> <CardSkeleton /> </div>
                 ) : error ? (
-                  // Exibe uma mensagem de erro se a API falhar
                   <div className="col-span-full text-center text-red-400 py-10">{`Error: ${error}`}</div>
                 ) : (
-                  // Renderiza a lista de personas quando os dados estiverem prontos
                   <PersonaList personas={filteredPersonas} onApiClick={handleApiClick} onTryClick={handleTryClick} favorites={favorites} onToggleFavorite={handleToggleFavorite} />
                 )}
               </div>
-
             </div>
           </div>
         </main>
