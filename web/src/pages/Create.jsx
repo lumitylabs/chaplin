@@ -105,7 +105,6 @@ function Specialist({
                 />
               </div>
             ) : (
-              // AQUI ESTÁ A CORREÇÃO: trocado 'break-words' por 'truncate'
               <div className="font-semibold text-white truncate" title={name}>{name}</div>
             )}
           </div>
@@ -140,17 +139,24 @@ function Specialist({
         </div>
       </div>
 
+      {/* 
+        INÍCIO DA CORREÇÃO DE UI/UX
+        - A propriedade 'color' do ícone TextSearch foi removida.
+        - Agora, o ícone herda automaticamente a cor do texto do botão pai.
+        - Isso garante que o ícone e o texto "Response" tenham sempre a mesma cor, seja no estado ativo (claro) ou inativo (escuro).
+      */}
       <button
         onClick={hasResponse ? onOpenResponseModal : undefined}
         disabled={!hasResponse}
-        className={`w-full h-10 rounded-b-[10px] text-[#D9D9D9] flex items-center justify-end gap-3 px-4 transition duration-200 ${hasResponse
-          ? "bg-[#3B3B42] font-semibold cursor-pointer"
-          : "bg-[#202024] cursor-default"
+        className={`w-full h-10 rounded-b-[10px] flex items-center justify-end gap-3 px-4 transition-colors duration-200 ${hasResponse
+          ? "bg-[#3B3B42] text-[#D9D9D9] font-semibold cursor-pointer hover:bg-[#4a4a52]"
+          : "bg-[#202024] text-[#797A86] cursor-default"
           }`}
       >
-        Response
-        <TextSearch size={14} color="#9E9EA0" />
+        <span>Response</span>
+        <TextSearch size={16} />
       </button>
+      {/* FIM DA CORREÇÃO DE UI/UX */}
     </div>
   );
 }
@@ -505,7 +511,7 @@ function Create() {
           initialText: formData.step2.groups[index]?.key || "",
           maxLength: STEP2_KEY_MAX,
           actionButtonText: "Finish Editing",
-          showAiHelper: true,
+          showAiHelper: false,
         };
       case 'step2_description':
         return {
@@ -515,7 +521,7 @@ function Create() {
           initialText: formData.step2.groups[index]?.description || "",
           maxLength: STEP2_DESC_MAX,
           actionButtonText: "Finish Editing",
-          showAiHelper: true,
+          showAiHelper: false,
         };
       default:
         return { initialText: "" };
