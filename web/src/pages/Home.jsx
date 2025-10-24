@@ -175,18 +175,56 @@ function FilterBar({ activeCategory, onCategorySelect }) {
 function PersonaCard({ persona, onApiClick, onTryClick, isFavorite, onToggleFavorite }) {
   const imageUrl = persona.image_url || ChaplinImage;
 
+  // Lida com o clique nos botões para evitar que o clique no card seja acionado também
+  const handleButtonClick = (e, callback) => {
+    e.stopPropagation();
+    callback();
+  };
+
   return (
-    <div className="flex flex-col sm:flex-row gap-4 h-auto sm:h-40 w-full bg-[#202024] rounded-2xl p-4 relative items-center select-none">
-      <button onClick={() => onToggleFavorite(persona.id)} className="absolute top-3.5 right-4 p-1 z-10 cursor-pointer" aria-label="Toggle Favorite">
-        <Star size={15} className={`transition-colors ${isFavorite ? 'text-yellow-400' : 'text-[#9C9CA5] hover:text-[#FAFAFA]'}`} fill={isFavorite ? 'currentColor' : 'transparent'} />
-      </button>
-      <img src={imageUrl} className="w-24 h-32 object-cover rounded-2xl flex-shrink-0" alt={persona.name} />
-      <div className="flex flex-col gap-1 h-full w-full">
-        <div className="font-inter font-bold text-sm text-[#F7F7F7]">{persona.name}</div>
-        <div className="text-sm text-[#88888F] mb-2 line-clamp-2 h-10">{persona.instructions}</div>
+    <div
+      className="flex flex-row gap-4 w-full bg-[#202024] rounded-2xl p-4 relative select-none cursor-pointer transition-colors duration-200 hover:bg-[#2a2a2e]"
+      onClick={() => onTryClick(persona)}
+    >
+      {/* IMAGEM */}
+      <div className="flex-shrink-0 w-24 h-32">
+        <img src={imageUrl} className="w-full h-full object-cover rounded-xl" alt={persona.name} />
+      </div>
+
+      {/* CONTEÚDO */}
+      <div className="flex flex-col flex-grow min-w-0">
+        <div className="relative">
+          {/* TÍTULO */}
+          <h3 className="font-inter font-bold text-sm text-[#F7F7F7] pr-6 truncate">{persona.name}</h3>
+
+          {/* BOTÃO STAR */}
+          <button
+            onClick={(e) => handleButtonClick(e, () => onToggleFavorite(persona.id))}
+            className="absolute -top-1 right-0 p-1 z-10 cursor-pointer"
+            aria-label="Toggle Favorite"
+          >
+            <Star size={15} className={`transition-colors ${isFavorite ? 'text-yellow-400' : 'text-[#9C9CA5] hover:text-[#FAFAFA]'}`} fill={isFavorite ? 'currentColor' : 'transparent'} />
+          </button>
+        </div>
+
+        {/* DESCRIÇÃO */}
+        <p className="text-sm text-[#88888F] mt-1 mb-2 line-clamp-3 flex-grow">{persona.instructions}</p>
+
+        {/* BOTÕES DE AÇÃO */}
         <div className="flex gap-2 justify-end mt-auto">
-          <button onClick={() => onApiClick(persona)} className="flex w-20 py-1.5 px-5 border-[#303136] border rounded-full text-white text-sm justify-center items-center cursor-pointer transition duration-200 active:scale-95 hover:bg-[#1F1F23]">API</button>
-          <button onClick={() => onTryClick(persona)} className="flex w-20 py-1.5 px-5 bg-white text-black text-sm rounded-full justify-center items-center cursor-pointer transition duration-200 active:scale-95 hover:bg-[#E3E3E4]">Try</button>
+          <button
+            onClick={(e) => handleButtonClick(e, () => onApiClick(persona))}
+            className="flex w-20 py-1.5 px-5 border-[#303136] border rounded-full text-white text-sm justify-center items-center cursor-pointer transition duration-200 active:scale-95 hover:bg-[#1f1f23]"
+          >
+            API
+          </button>
+          {/* TODO: A funcionalidade de Clone será implementada em breve. */}
+          <button
+            onClick={(e) => e.stopPropagation()}
+            className="flex w-20 py-1.5 px-5 bg-white text-black text-sm rounded-full justify-center items-center cursor-pointer transition duration-200 active:scale-95 hover:bg-[#E3E3E4] hidden"
+          >
+            Clone
+          </button>
         </div>
       </div>
     </div>
@@ -205,18 +243,15 @@ function PersonaList({ personas, onApiClick, onTryClick, favorites, onToggleFavo
 
 function CardSkeleton() {
   return (
-    <div className="flex flex-col sm:flex-row gap-4 h-auto sm:h-40 w-full bg-[#202024] rounded-2xl p-4 relative items-center select-none">
-      <button className="absolute top-3.5 right-4 p-1 z-10 cursor-pointer" aria-label="Toggle Favorite"></button>
-      <div className="w-24 h-32 object-cover rounded-2xl flex-shrink-0 animate-pulse bg-gray-400" />
-      <div className="flex flex-col gap-1 h-full w-full">
-        <div className="font-inter font-bold text-sm text-[#F7F7F7] w-40 h-[14px] animate-pulse bg-gray-400"></div>
-        <div className="">
-          <div className="text-sm text-[#88888F] mb-1 line-clamp-2 w-60 h-[14px] animate-pulse bg-gray-400"></div>
-          <div className="text-sm text-[#88888F] mb-2 line-clamp-2 w-60 h-[14px] animate-pulse bg-gray-400"></div>
-        </div>
+    <div className="flex flex-row gap-4 w-full bg-[#202024] rounded-2xl p-4 select-none">
+      <div className="w-24 h-32 object-cover rounded-xl flex-shrink-0 animate-pulse bg-gray-700" />
+      <div className="flex flex-col flex-grow gap-2 w-full">
+        <div className="w-3/4 h-4 animate-pulse bg-gray-700 rounded"></div>
+        <div className="w-full h-4 animate-pulse bg-gray-700 rounded"></div>
+        <div className="w-5/6 h-4 animate-pulse bg-gray-700 rounded"></div>
         <div className="flex gap-2 justify-end mt-auto">
-          <button className="flex w-20 py-1.5 px-5 border-[#303136] border rounded-full text-white text-sm justify-center items-center cursor-pointer transition duration-200 active:scale-95 hover:bg-[#1F1F23]">API</button>
-          <button className="flex w-20 py-1.5 px-5 bg-white text-black text-sm rounded-full justify-center items-center cursor-pointer transition duration-200 active:scale-95 hover:bg-[#E3E3E4]">Try</button>
+          <div className="w-20 h-8 animate-pulse bg-gray-700 rounded-full"></div>
+          <div className="w-20 h-8 animate-pulse bg-gray-600 rounded-full"></div>
         </div>
       </div>
     </div>
@@ -239,7 +274,6 @@ function removeChaplinSessionKeys(personaId) {
 
 function Home() {
   const location = useLocation();
-  // *** LINHA CORRIGIDA / ADICIONADA DE VOLTA ***
   const [isNavbarOpen, setIsNavbarOpen] = useState(false);
   const [activeModal, setActiveModal] = useState(null);
   const [selectedPersona, setSelectedPersona] = useState(null);
