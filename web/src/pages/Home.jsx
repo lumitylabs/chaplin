@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import { Search, Star, Menu, ChevronLeft, ChevronRight } from 'lucide-react';
-// 1. Importando a função de animação do framer-motion
 import { animate } from "framer-motion";
 import { getChaplins } from "../services/apiService";
 import "simplebar-react/dist/simplebar.min.css";
@@ -12,6 +11,7 @@ import PersonaNavbar from "../components/ui/general/PersonaNavbar";
 import ApiModal from "../components/ui/general/ApiModal";
 import TryModal from "../components/ui/general/TryModal";
 import ChaplinImage from "../assets/persona.png";
+import ChaplinCardSkeleton from "../components/ui/home/ChaplinCardSkeleton";
 
 const CHAPLIN_SESSION_MAP_KEY = "chaplin_jobs_map_session";
 
@@ -36,7 +36,7 @@ function TopBar({ searchTerm, onSearchChange, viewMode }) {
 }
 
 function FilterTag({ name, isActive, onClick }) {
-  const baseClasses = "flex items-center justify-center font-inter font-medium text-[0.90em] p-3 px-4 rounded-xl cursor-pointer transition-colors whitespace-nowrap";
+  const baseClasses = "flex items-center justify-center font-inter font-semibold text-[0.80em] p-[14px] px-4 rounded-xl cursor-pointer transition-colors whitespace-nowrap";
   const activeClasses = "bg-[#FAFAFA] text-[#1C1C1F]";
   const inactiveClasses = "bg-[#26272B] text-[#A2A2AB] hover:text-white";
   return (
@@ -46,9 +46,8 @@ function FilterTag({ name, isActive, onClick }) {
   );
 }
 
-// ---------- FilterBar: Implementado com animação de scroll suave via Framer Motion ----------
 function FilterBar({ activeCategory, onCategorySelect }) {
-  const categories = ["All", "Assistant", "Anime", "Creativity & Writing", "Entertainment & Gaming", "History", "Humor", "Learning", "Lifestyle", "Parody", "RPG & Puzzles"];
+  const categories = ["All", "Assistants", "Anime", "Creativity & Writing", "Entertainment & Gaming", "History", "Humor", "Learning", "Lifestyle", "Parody", "RPG & Puzzles"];
   const scrollContainerRef = useRef(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
@@ -57,25 +56,24 @@ function FilterBar({ activeCategory, onCategorySelect }) {
   const startX = useRef(0);
   const scrollLeftStart = useRef(0);
 
+  const checkScrollability = () => {
+    const container = scrollContainerRef.current;
+    if (container) {
+      const { scrollLeft, scrollWidth, clientWidth } = container;
+      const isOverflowing = scrollWidth > clientWidth;
+      setCanScrollLeft(isOverflowing && scrollLeft > 1);
+      setCanScrollRight(isOverflowing && Math.ceil(scrollLeft) < scrollWidth - clientWidth - 1);
+    }
+  };
+
   useEffect(() => {
     const container = scrollContainerRef.current;
     if (!container) return;
 
-    const firstItem = container.querySelector('.snap-start:first-child');
-    const lastItem = container.querySelector('.snap-start:last-child');
-    if (!firstItem || !lastItem) return;
+    const observer = new ResizeObserver(() => checkScrollability());
+    observer.observe(container);
 
-    container.scrollLeft = 0;
-
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.target === firstItem) setCanScrollLeft(!entry.isIntersecting);
-        if (entry.target === lastItem) setCanScrollRight(!entry.isIntersecting);
-      });
-    }, { root: container, threshold: 1.0 });
-
-    observer.observe(firstItem);
-    observer.observe(lastItem);
+    container.addEventListener('scroll', checkScrollability, { passive: true });
 
     const handleMouseDown = (e) => {
       isDragging.current = true;
@@ -99,8 +97,11 @@ function FilterBar({ activeCategory, onCategorySelect }) {
     container.addEventListener('mouseup', handleMouseUp);
     container.addEventListener('mousemove', handleMouseMove);
 
+    checkScrollability();
+
     return () => {
       observer.disconnect();
+      container.removeEventListener('scroll', checkScrollability);
       container.removeEventListener('mousedown', handleMouseDown);
       container.removeEventListener('mouseleave', handleMouseLeave);
       container.removeEventListener('mouseup', handleMouseUp);
@@ -119,7 +120,6 @@ function FilterBar({ activeCategory, onCategorySelect }) {
     if (prefersReducedMotion) {
       container.scrollLeft = newScrollLeft;
     } else {
-      // 2. Usando a função animate para controlar a propriedade scrollLeft
       animate(container.scrollLeft, newScrollLeft, {
         type: "spring",
         stiffness: 400,
@@ -133,12 +133,11 @@ function FilterBar({ activeCategory, onCategorySelect }) {
 
   return (
     <div className="relative w-full group">
-      {/* 3. Removida a classe 'scroll-smooth' para evitar conflito com a animação do framer-motion */}
       <div
         ref={scrollContainerRef}
         className="w-full overflow-x-auto hide-scrollbar snap-x snap-mandatory cursor-grab"
       >
-        <div className="flex gap-2 px-6 py-2">
+        <div className="flex gap-2 py-2">
           {categories.map((category) => (
             <div key={category} className="snap-start">
               <FilterTag name={category} isActive={activeCategory === category} onClick={onCategorySelect} />
@@ -150,24 +149,24 @@ function FilterBar({ activeCategory, onCategorySelect }) {
       {canScrollLeft && (
         <button
           onClick={() => handleScrollByButton('left')}
-          className="absolute top-1/2 left-0 transform -translate-y-1/2 z-20 w-24 h-full flex items-center justify-start
-                     opacity-0 group-hover:opacity-100 transition-opacity duration-300
-                     bg-gradient-to-r from-[#18181B] to-transparent cursor-pointer"
+          className="absolute top-1/2 -left-4 sm:-left-6 lg:-left-8 transform -translate-y-1/2 z-20 w-24 h-full flex items-center justify-start
+                       opacity-0 group-hover:opacity-100 transition-opacity duration-300
+                       bg-gradient-to-r from-[#18181B] to-transparent cursor-pointer"
           aria-label="Scroll left"
         >
-          <ChevronLeft size={24} className="text-white/80 ml-2" />
+          <ChevronLeft size={24} className="text-white/80 ml-4 sm:ml-6 lg:ml-8" />
         </button>
       )}
 
       {canScrollRight && (
         <button
           onClick={() => handleScrollByButton('right')}
-          className="absolute top-1/2 right-0 transform -translate-y-1/2 z-20 w-24 h-full flex items-center justify-end
-                     opacity-0 group-hover:opacity-100 transition-opacity duration-300
-                     bg-gradient-to-l from-[#18181B] to-transparent cursor-pointer"
+          className="absolute top-1/2 -right-4 sm:-right-6 lg:-right-8 transform -translate-y-1/2 z-20 w-24 h-full flex items-center justify-end
+                       opacity-0 group-hover:opacity-100 transition-opacity duration-300
+                       bg-gradient-to-l from-[#18181B] to-transparent cursor-pointer"
           aria-label="Scroll right"
         >
-          <ChevronRight size={24} className="text-white/80 mr-2" />
+          <ChevronRight size={24} className="text-white/80 mr-4 sm:mr-6 lg:mr-8" />
         </button>
       )}
     </div>
@@ -177,18 +176,47 @@ function FilterBar({ activeCategory, onCategorySelect }) {
 function PersonaCard({ persona, onApiClick, onTryClick, isFavorite, onToggleFavorite }) {
   const imageUrl = persona.image_url || ChaplinImage;
 
+  const handleButtonClick = (e, callback) => {
+    e.stopPropagation();
+    callback();
+  };
+
   return (
-    <div className="flex flex-col sm:flex-row gap-4 h-auto sm:h-40 w-full bg-[#202024] rounded-2xl p-4 relative items-center select-none">
-      <button onClick={() => onToggleFavorite(persona.id)} className="absolute top-3.5 right-4 p-1 z-10 cursor-pointer" aria-label="Toggle Favorite">
-        <Star size={15} className={`transition-colors ${isFavorite ? 'text-yellow-400' : 'text-[#9C9CA5] hover:text-[#FAFAFA]'}`} fill={isFavorite ? 'currentColor' : 'transparent'} />
-      </button>
-      <img src={imageUrl} className="w-24 h-32 object-cover rounded-2xl flex-shrink-0" alt={persona.name} />
-      <div className="flex flex-col gap-1 h-full w-full">
-        <div className="font-inter font-bold text-sm text-[#F7F7F7]">{persona.name}</div>
-        <div className="text-sm text-[#88888F] mb-2 line-clamp-2 h-10">{persona.instructions}</div>
+    <div
+      className="flex flex-row gap-4 w-full bg-[#202024] rounded-2xl p-4 relative select-none cursor-pointer transition-colors duration-200 hover:bg-[#2a2a2e]"
+      onClick={() => onTryClick(persona)}
+    >
+      <div className="flex-shrink-0 w-24 h-32">
+        <img src={imageUrl} className="w-full h-full object-cover rounded-xl" alt={persona.name} />
+      </div>
+
+      <div className="flex flex-col flex-grow min-w-0">
+        <div className="relative">
+          <h3 className="font-inter font-bold text-sm text-[#F7F7F7] pr-6 truncate">{persona.name}</h3>
+          <button
+            onClick={(e) => handleButtonClick(e, () => onToggleFavorite(persona.id))}
+            className="absolute -top-1 right-0 p-1 z-10 cursor-pointer"
+            aria-label="Toggle Favorite"
+          >
+            <Star size={15} className={`transition-colors ${isFavorite ? 'text-yellow-400' : 'text-[#9C9CA5] hover:text-[#FAFAFA]'}`} fill={isFavorite ? 'currentColor' : 'transparent'} />
+          </button>
+        </div>
+
+        <p className="text-sm text-[#88888F] mt-1 mb-2 line-clamp-3 flex-grow">{persona.instructions}</p>
+
         <div className="flex gap-2 justify-end mt-auto">
-          <button onClick={() => onApiClick(persona)} className="flex w-20 py-1.5 px-5 border-[#303136] border rounded-full text-white text-sm justify-center items-center cursor-pointer transition duration-200 active:scale-95 hover:bg-[#1F1F23]">API</button>
-          <button onClick={() => onTryClick(persona)} className="flex w-20 py-1.5 px-5 bg-white text-black text-sm rounded-full justify-center items-center cursor-pointer transition duration-200 active:scale-95 hover:bg-[#E3E3E4]">Try</button>
+          <button
+            onClick={(e) => handleButtonClick(e, () => onApiClick(persona))}
+            className="flex w-20 py-1.5 px-5 border-[#303136] border rounded-full text-white text-sm justify-center items-center cursor-pointer transition duration-200 active:scale-95 hover:bg-[#1f1f23]"
+          >
+            API
+          </button>
+          <button
+            onClick={(e) => e.stopPropagation()}
+            className="flex w-20 py-1.5 px-5 bg-white text-black text-sm rounded-full justify-center items-center cursor-pointer transition duration-200 active:scale-95 hover:bg-[#E3E3E4] hidden"
+          >
+            Clone
+          </button>
         </div>
       </div>
     </div>
@@ -201,26 +229,6 @@ function PersonaList({ personas, onApiClick, onTryClick, favorites, onToggleFavo
       {personas.map((persona) => (
         <PersonaCard key={persona.id} persona={persona} onApiClick={onApiClick} onTryClick={onTryClick} isFavorite={favorites.includes(persona.id)} onToggleFavorite={onToggleFavorite} />
       ))}
-    </div>
-  );
-}
-
-function CardSkeleton() {
-  return (
-    <div className="flex flex-col sm:flex-row gap-4 h-auto sm:h-40 w-full bg-[#202024] rounded-2xl p-4 relative items-center select-none">
-      <button className="absolute top-3.5 right-4 p-1 z-10 cursor-pointer" aria-label="Toggle Favorite"></button>
-      <div className="w-24 h-32 object-cover rounded-2xl flex-shrink-0 animate-pulse bg-gray-400" />
-      <div className="flex flex-col gap-1 h-full w-full">
-        <div className="font-inter font-bold text-sm text-[#F7F7F7] w-40 h-[14px] animate-pulse bg-gray-400"></div>
-        <div className="">
-          <div className="text-sm text-[#88888F] mb-1 line-clamp-2 w-60 h-[14px] animate-pulse bg-gray-400"></div>
-          <div className="text-sm text-[#88888F] mb-2 line-clamp-2 w-60 h-[14px] animate-pulse bg-gray-400"></div>
-        </div>
-        <div className="flex gap-2 justify-end mt-auto">
-          <button className="flex w-20 py-1.5 px-5 border-[#303136] border rounded-full text-white text-sm justify-center items-center cursor-pointer transition duration-200 active:scale-95 hover:bg-[#1F1F23]">API</button>
-          <button className="flex w-20 py-1.5 px-5 bg-white text-black text-sm rounded-full justify-center items-center cursor-pointer transition duration-200 active:scale-95 hover:bg-[#E3E3E4]">Try</button>
-        </div>
-      </div>
     </div>
   );
 }
@@ -297,7 +305,11 @@ function Home() {
       <div className="bg-[#18181B] min-h-screen font-inter text-white">
         <PersonaNavbar isOpen={isNavbarOpen} setIsOpen={setIsNavbarOpen} viewMode={viewMode} setViewMode={setViewMode} handleMobileNavClick={handleMobileNavClick} />
 
-        <button onClick={() => setIsNavbarOpen(true)} className={`fixed top-5 left-2 z-20 p-2 rounded-full cursor-pointer hover:bg-[#1F1F22] ...`}>
+        <button
+          onClick={() => setIsNavbarOpen(true)}
+          className={`fixed top-5 left-2 z-20 p-2 rounded-full cursor-pointer hover:bg-[#1F1F22] transition-opacity ${isNavbarOpen && window.innerWidth < 1024 ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
+          aria-label="Open navigation menu"
+        >
           <Menu color="#A2A2AB" size={23} />
         </button>
 
@@ -314,7 +326,11 @@ function Home() {
 
               <div className="flex flex-col">
                 {isLoading ? (
-                  <div className="mt-5 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"> <CardSkeleton /> <CardSkeleton /> <CardSkeleton /> </div>
+                  <div className="mt-5 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                    <ChaplinCardSkeleton /> {/* <-- ATUALIZADO */}
+                    <ChaplinCardSkeleton /> {/* <-- ATUALIZADO */}
+                    <ChaplinCardSkeleton /> {/* <-- ATUALIZADO */}
+                  </div>
                 ) : error ? (
                   <div className="col-span-full text-center text-red-400 py-10">{`Error: ${error}`}</div>
                 ) : (
@@ -326,7 +342,6 @@ function Home() {
         </main>
 
         {activeModal === "api" && selectedPersona && <ApiModal persona={selectedPersona} onClose={handleCloseModal} />}
-        {/* CORREÇÃO: A propriedade foi alterada de 'persona' para 'chaplin' para corresponder à nova API do TryModal */}
         {activeModal === "try" && selectedPersona && <TryModal chaplin={selectedPersona} onClose={handleCloseModal} />}
       </div>
     </SimpleBar>
