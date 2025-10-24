@@ -54,24 +54,39 @@ async function handler(req, res) {
 
     await redis.json.set(jobKey, "$.status", '"running"');
     
-    // <<< CORREÇÃO PRINCIPAL: AGORA USAMOS AWAIT AQUI >>>
-    // A função inteira vai esperar a conclusão do job antes de responder ao QStash.
-    // Isso requer que o timeout da função seja longo o suficiente.
+    // <<< INÍCIO DA CORREÇÃO >>>
+    // 1. Criar a função de callback que escreve o progresso no Redis.
+    const onProgressCallback = async (progressChunk) => {
+        if (progressChunk) {
+            try {
+                await redis.json.arrappend(jobKey, "$.progress", progressChunk);
+            } catch (e) {
+                console.warn(`[Worker] Falha ao registrar progresso para o job ${jobId}:`, e.message);
+            }
+        }
+    };
+
+    // 2. Passar o callback para o executeWorkgroupStream através das opções.
     const stream = executeWorkgroupStream({
         input: jobData.input,
         workgroup: jobData.chaplinData.workgroup,
         responseformat: jobData.chaplinData.responseformat,
-        options: { executorJobId: jobId },
+        options: { 
+            executorJobId: jobId,
+            onProgress: onProgressCallback // Passando o callback aqui
+        },
     });
+    // <<< FIM DA CORREÇÃO >>>
 
     for await (const chunk of stream) {
+        // O callback já está lidando com os chunks de 'agent_attempt'.
+        // Este loop agora lida com os chunks principais ('agent_start', 'agent_result', etc.).
         await redis.json.arrappend(jobKey, "$.progress", chunk);
     }
 
     await redis.json.set(jobKey, "$.status", '"done"');
     console.log(`[Worker] Job ${jobId} finalizado com sucesso.`);
 
-    // Responde ao QStash apenas após a conclusão bem-sucedida.
     res.status(200).send("OK");
 
   } catch (err) {
@@ -79,7 +94,6 @@ async function handler(req, res) {
     await redis.json.set(jobKey, "$.status", '"failed"');
     await redis.json.set(jobKey, "$.error", `"${err.message}"`);
     
-    // Responde com erro para que o QStash possa tentar novamente.
     res.status(500).send("Internal Server Error");
   }
 }

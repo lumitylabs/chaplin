@@ -1,7 +1,10 @@
 // lib/models/CortensorModel.js
 import fs from "fs";
 import path from "path";
-import { db } from "../firebase.js"; // ajuste PATH se necessário (lib/firebase.js)
+import { db } from "../firebase.js";
+
+// 2. Voltar a usar fs.readFileSync para carregar os arquivos JSON.
+// Esta é a forma mais compatível para o ambiente Node.js da Vercel.
 const ABIS_DIR = path.join(process.cwd(), "abis");
 const SESSION_V2_ABI = JSON.parse(
   fs.readFileSync(path.join(ABIS_DIR, "SessionV2.json"), "utf8")
@@ -14,13 +17,14 @@ class CortensorModel {
   constructor(config = {}) {
     this.name = "cortensor";
     this.rpcUrl = config.rpcUrl || process.env.CORTENSOR_RPC_URL;
-    this.sessionAddress =
-      config.sessionAddress || process.env.SESSION_V2_ADDRESS;
-    this.queueAddress =
-      config.queueAddress || process.env.SESSION_QUEUE_V2_ADDRESS;
+    this.sessionAddress = config.sessionAddress || process.env.SESSION_V2_ADDRESS;
+    this.queueAddress = config.queueAddress || process.env.SESSION_QUEUE_V2_ADDRESS;
     this.privateKey = config.privateKey || process.env.CORTENSOR_PRIVATE_KEY;
-    this.sessionIdEnv =
-      config.sessionId || process.env.CORTENSOR_SESSION_ID || null;
+    
+    // <<< MUDANÇA AQUI: Armazenar ambos os IDs de sessão >>>
+    this.sessionIdSmall = process.env.CORTENSOR_SESSION_ID_SMALL || null;
+    this.sessionIdBig = process.env.CORTENSOR_SESSION_ID_BIG || null;
+
     this.defaultSessionParams = config.defaultSessionParams || {};
     this._provider = null;
     this._signer = null;
@@ -189,15 +193,21 @@ class CortensorModel {
     return sid;
   }
 
-  async getSessionId() {
+  async getSessionId(sessionSize = 'small') {
     await this._initProviderAndSigner();
-    if (this.sessionIdEnv) {
-      console.log(
-        `[CortensorModel] Using existing session ID: ${this.sessionIdEnv}`
-      );
-      return Number(this.sessionIdEnv);
+    
+    if (sessionSize === 'big' && this.sessionIdBig) {
+      console.log(`[CortensorModel] Using BIG session ID: ${this.sessionIdBig}`);
+      return Number(this.sessionIdBig);
+    }
+    
+    // O padrão é 'small' ou se 'big' não for encontrado
+    if (this.sessionIdSmall) {
+      console.log(`[CortensorModel] Using SMALL session ID: ${this.sessionIdSmall}`);
+      return Number(this.sessionIdSmall);
     }
 
+    console.warn("[CortensorModel] No pre-configured session ID found. Creating a new session as fallback.");
     return await this.createSession();
   }
 
@@ -265,175 +275,61 @@ class CortensorModel {
   async generateText(prompt, opts = {}) {
     await this._initProviderAndSigner();
 
-    // normalize prompt to object shape expected by submitTask
     let promptObj;
     if (typeof prompt === "string") {
       promptObj = { prompt };
-    } else if (
-      prompt &&
-      typeof prompt === "object" &&
-      typeof prompt.prompt === "string"
-    ) {
+    } else if (prompt && typeof prompt === "object" && typeof prompt.prompt === "string") {
       promptObj = prompt;
     } else {
-      throw new Error(
-        "Invalid prompt parameter. Expect string or { prompt: string } object."
-      );
+      throw new Error("Invalid prompt parameter. Expect string or { prompt: string } object.");
     }
 
-    const sessionId = await this.getSessionId();
+    const sessionId = await this.getSessionId(opts.sessionSize);
+    const friendlyName = opts && opts.agentName ? String(opts.agentName) : "Cortensor";
 
-    // derive friendly agent name from opts
-    const friendlyName =
-      opts && opts.agentName ? String(opts.agentName) : "Cortensor";
-
-    // notify start (best-effort) if we have an executorJobId
-    if (opts && opts.executorJobId) {
-      try {
-        await db.ref(`chaplin_jobs/${opts.executorJobId}/progress`).push({
-          type: "agent_start",
-          data: { name: friendlyName, message: "submitted task", sessionId },
-          ts: Date.now(),
-        });
-      } catch (e) {
-        console.warn(
-          "[CortensorModel] failed to write agent_start progress:",
-          e?.message || e
-        );
-      }
-    }
+    // <<< MUDANÇA AQUI: REMOVIDO O 'agent_start' - será feito pelo workgroupEngine >>>
 
     const { taskId } = await this.submitTask(sessionId, promptObj);
 
     let attempts = 0;
-    const maxAttempts = 20; // ~200 seconds
-    const pollInterval = 10000; // 10 seconds
+    const maxAttempts = 20;
+    const pollInterval = 10000;
 
-    console.log(
-      `[CortensorModel] Polling for the first available result of Task ID ${taskId}...`
-    );
     while (attempts < maxAttempts) {
       const attemptNumber = attempts + 1;
 
-      // push agent_attempt event (best-effort) for frontend visibility.
-      if (opts && opts.executorJobId) {
-        // Normalize key safe para path
-        const safeAgentKey = encodeURIComponent(
-          String(friendlyName).replace(/\s+/g, "_")
-        );
-
-        // 1) update latest snapshot (single small write)
-        try {
-          await db
-            .ref(
-              `chaplin_jobs/${opts.executorJobId}/progress_latest/${safeAgentKey}`
-            )
-            .set({
-              type: "agent_attempt",
-              data: { name: friendlyName, attempt: attemptNumber, maxAttempts },
-              ts: Date.now(),
-            });
-        } catch (e) {
-          console.warn(
-            "[CortensorModel] failed to write progress_latest:",
-            e?.message || e
-          );
-        }
-
-        // 2) optionally push to history only every X attempts (ex: every 5) — reduces writes
-        const SHOULD_PUSH_HISTORY = attemptNumber % 2 === 0; // tweak divisor
-        if (SHOULD_PUSH_HISTORY) {
-          try {
-            await db.ref(`chaplin_jobs/${opts.executorJobId}/progress`).push({
-              type: "agent_attempt",
-              data: { name: friendlyName, attempt: attemptNumber, maxAttempts },
-              ts: Date.now(),
-            });
-          } catch (e) {
-            console.warn(
-              "[CortensorModel] failed to push attempt to history:",
-              e?.message || e
-            );
-          }
-        }
+      // <<< MUDANÇA AQUI: Chamar o callback 'onProgress' em vez de escrever no Firebase >>>
+      if (opts.onProgress && typeof opts.onProgress === 'function') {
+        const progressChunk = {
+          type: "agent_attempt",
+          data: { name: friendlyName, attempt: attemptNumber, maxAttempts },
+        };
+        // Chamamos o callback e esperamos que ele termine (caso seja assíncrono)
+        await opts.onProgress(progressChunk);
       }
-
+      
       const { miners, results } = await this.getTaskResults(sessionId, taskId);
 
-      console.log("miners:", miners);
-      console.log("results:", results);
-
       if (results && results.length > 0) {
-        const firstValidResult = results.find(
-          (result) => result && result.trim() !== ""
-        );
-
+        const firstValidResult = results.find((result) => result && result.trim() !== "");
         if (firstValidResult) {
-          const minerIndex = results.indexOf(firstValidResult);
-          const respondingMiner = miners[minerIndex] || "unknown";
-          console.log(
-            `[CortensorModel] First result received for Task ${taskId} from miner: ${respondingMiner}`
-          );
-
-          // write agent_result for frontend history
-          if (opts && opts.executorJobId) {
-            try {
-              await db.ref(`chaplin_jobs/${opts.executorJobId}/progress`).push({
-                type: "agent_result",
-                data: { name: friendlyName, miner: respondingMiner, taskId },
-                ts: Date.now(),
-              });
-            } catch (e) {
-              console.warn(
-                "[CortensorModel] failed to write agent_result:",
-                e?.message || e
-              );
-            }
-          }
-
+          // <<< MUDANÇA AQUI: REMOVIDO O 'agent_result' - será feito pelo workgroupEngine >>>
           try {
             const parsedResult = JSON.parse(firstValidResult);
-            return (
-              parsedResult.result || parsedResult.message || firstValidResult
-            );
+            return parsedResult.result || parsedResult.message || firstValidResult;
           } catch (e) {
             return firstValidResult;
           }
         }
       }
-      // =================================================================
 
       attempts++;
-      console.log(
-        `[CortensorModel] Attempt ${attempts}/${maxAttempts}: No result yet. Waiting ${
-          pollInterval / 1000
-        }s...`
-      );
+      console.log(`[CortensorModel] Attempt ${attempts}/${maxAttempts}: No result yet. Waiting ${pollInterval / 1000}s...`);
       await new Promise((r) => setTimeout(r, pollInterval));
     }
 
-    // on timeout, push an agent_error event (best-effort)
-    if (opts && opts.executorJobId) {
-      try {
-        await db.ref(`chaplin_jobs/${opts.executorJobId}/progress`).push({
-          type: "agent_error",
-          data: {
-            name: friendlyName,
-            message: `timeout waiting for result (${maxAttempts} attempts)`,
-          },
-          ts: Date.now(),
-        });
-      } catch (e) {
-        console.warn(
-          "[CortensorModel] failed to write agent_error:",
-          e?.message || e
-        );
-      }
-    }
-
-    throw new Error(
-      `Timeout waiting for result of task ${taskId} in session ${sessionId}.`
-    );
+    // <<< MUDANÇA AQUI: REMOVIDO O 'agent_error' - será feito pelo workgroupEngine >>>
+    throw new Error(`Timeout waiting for result of task ${taskId} in session ${sessionId}.`);
   }
 }
 
