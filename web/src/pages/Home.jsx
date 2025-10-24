@@ -330,9 +330,15 @@ function Home() {
       <div className="bg-[#18181B] min-h-screen font-inter text-white">
         <PersonaNavbar isOpen={isNavbarOpen} setIsOpen={setIsNavbarOpen} viewMode={viewMode} setViewMode={setViewMode} handleMobileNavClick={handleMobileNavClick} />
 
-        <button onClick={() => setIsNavbarOpen(true)} className={`lg:hidden fixed top-5 left-2 z-20 p-2 rounded-full cursor-pointer hover:bg-[#1F1F22]`}>
+        {/* BOTÃO MODIFICADO ABAIXO */}
+        <button
+          onClick={() => setIsNavbarOpen(true)}
+          className={`fixed top-5 left-2 z-20 p-2 rounded-full cursor-pointer hover:bg-[#1F1F22] transition-opacity ${isNavbarOpen && window.innerWidth < 1024 ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
+          aria-label="Open navigation menu"
+        >
           <Menu color="#A2A2AB" size={23} />
         </button>
+        {/* FIM DA MODIFICAÇÃO */}
 
         <main className={`transition-all duration-300 ease-in-out ${isNavbarOpen ? 'lg:ml-[260px]' : 'lg:ml-0'}`}>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

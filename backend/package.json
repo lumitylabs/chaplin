@@ -8,6 +8,8 @@
     "cross-fetch": "^4.1.0",
     "dotenv": "^17.2.3",
     "ethers": "^6.15.0",
-    "firebase-admin": "^13.5.0"
+    "firebase-admin": "^13.5.0",
+    "json5": "^2.2.3",
+    "jsonrepair": "^3.13.1"
   }
 }
