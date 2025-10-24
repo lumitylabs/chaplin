@@ -10,12 +10,12 @@ export const CATEGORY_OPTIONS = [
 ];
 
 // Limites do 'responseformat' (Step 2)
-export const RESPONSE_KEY_MAX = 25;
+export const RESPONSE_KEY_MAX = 60;
 export const RESPONSE_DESC_MAX = 100;
 export const MAX_RESPONSE_PAIRS = 6;
 
 // Limites do Workgroup (Agentes)
-export const AGENT_NAME_MAX = 25;
+export const AGENT_NAME_MAX = 60;
 export const AGENT_PROMPT_MAX = 3000;
 
 // Limites do Servidor e da API
