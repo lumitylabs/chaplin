@@ -11,6 +11,7 @@ import PersonaNavbar from "../components/ui/general/PersonaNavbar";
 import ApiModal from "../components/ui/general/ApiModal";
 import TryModal from "../components/ui/general/TryModal";
 import ChaplinImage from "../assets/persona.png";
+import ChaplinCardSkeleton from "../components/ui/home/ChaplinCardSkeleton";
 
 const CHAPLIN_SESSION_MAP_KEY = "chaplin_jobs_map_session";
 
@@ -175,7 +176,6 @@ function FilterBar({ activeCategory, onCategorySelect }) {
 function PersonaCard({ persona, onApiClick, onTryClick, isFavorite, onToggleFavorite }) {
   const imageUrl = persona.image_url || ChaplinImage;
 
-  // Lida com o clique nos botões para evitar que o clique no card seja acionado também
   const handleButtonClick = (e, callback) => {
     e.stopPropagation();
     callback();
@@ -186,18 +186,13 @@ function PersonaCard({ persona, onApiClick, onTryClick, isFavorite, onToggleFavo
       className="flex flex-row gap-4 w-full bg-[#202024] rounded-2xl p-4 relative select-none cursor-pointer transition-colors duration-200 hover:bg-[#2a2a2e]"
       onClick={() => onTryClick(persona)}
     >
-      {/* IMAGEM */}
       <div className="flex-shrink-0 w-24 h-32">
         <img src={imageUrl} className="w-full h-full object-cover rounded-xl" alt={persona.name} />
       </div>
 
-      {/* CONTEÚDO */}
       <div className="flex flex-col flex-grow min-w-0">
         <div className="relative">
-          {/* TÍTULO */}
           <h3 className="font-inter font-bold text-sm text-[#F7F7F7] pr-6 truncate">{persona.name}</h3>
-
-          {/* BOTÃO STAR */}
           <button
             onClick={(e) => handleButtonClick(e, () => onToggleFavorite(persona.id))}
             className="absolute -top-1 right-0 p-1 z-10 cursor-pointer"
@@ -207,10 +202,8 @@ function PersonaCard({ persona, onApiClick, onTryClick, isFavorite, onToggleFavo
           </button>
         </div>
 
-        {/* DESCRIÇÃO */}
         <p className="text-sm text-[#88888F] mt-1 mb-2 line-clamp-3 flex-grow">{persona.instructions}</p>
 
-        {/* BOTÕES DE AÇÃO */}
         <div className="flex gap-2 justify-end mt-auto">
           <button
             onClick={(e) => handleButtonClick(e, () => onApiClick(persona))}
@@ -218,7 +211,6 @@ function PersonaCard({ persona, onApiClick, onTryClick, isFavorite, onToggleFavo
           >
             API
           </button>
-          {/* TODO: A funcionalidade de Clone será implementada em breve. */}
           <button
             onClick={(e) => e.stopPropagation()}
             className="flex w-20 py-1.5 px-5 bg-white text-black text-sm rounded-full justify-center items-center cursor-pointer transition duration-200 active:scale-95 hover:bg-[#E3E3E4] hidden"
@@ -237,23 +229,6 @@ function PersonaList({ personas, onApiClick, onTryClick, favorites, onToggleFavo
       {personas.map((persona) => (
         <PersonaCard key={persona.id} persona={persona} onApiClick={onApiClick} onTryClick={onTryClick} isFavorite={favorites.includes(persona.id)} onToggleFavorite={onToggleFavorite} />
       ))}
-    </div>
-  );
-}
-
-function CardSkeleton() {
-  return (
-    <div className="flex flex-row gap-4 w-full bg-[#202024] rounded-2xl p-4 select-none">
-      <div className="w-24 h-32 object-cover rounded-xl flex-shrink-0 animate-pulse bg-gray-700" />
-      <div className="flex flex-col flex-grow gap-2 w-full">
-        <div className="w-3/4 h-4 animate-pulse bg-gray-700 rounded"></div>
-        <div className="w-full h-4 animate-pulse bg-gray-700 rounded"></div>
-        <div className="w-5/6 h-4 animate-pulse bg-gray-700 rounded"></div>
-        <div className="flex gap-2 justify-end mt-auto">
-          <div className="w-20 h-8 animate-pulse bg-gray-700 rounded-full"></div>
-          <div className="w-20 h-8 animate-pulse bg-gray-600 rounded-full"></div>
-        </div>
-      </div>
     </div>
   );
 }
@@ -330,7 +305,6 @@ function Home() {
       <div className="bg-[#18181B] min-h-screen font-inter text-white">
         <PersonaNavbar isOpen={isNavbarOpen} setIsOpen={setIsNavbarOpen} viewMode={viewMode} setViewMode={setViewMode} handleMobileNavClick={handleMobileNavClick} />
 
-        {/* BOTÃO MODIFICADO ABAIXO */}
         <button
           onClick={() => setIsNavbarOpen(true)}
           className={`fixed top-5 left-2 z-20 p-2 rounded-full cursor-pointer hover:bg-[#1F1F22] transition-opacity ${isNavbarOpen && window.innerWidth < 1024 ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
@@ -338,7 +312,6 @@ function Home() {
         >
           <Menu color="#A2A2AB" size={23} />
         </button>
-        {/* FIM DA MODIFICAÇÃO */}
 
         <main className={`transition-all duration-300 ease-in-out ${isNavbarOpen ? 'lg:ml-[260px]' : 'lg:ml-0'}`}>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -353,7 +326,11 @@ function Home() {
 
               <div className="flex flex-col">
                 {isLoading ? (
-                  <div className="mt-5 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"> <CardSkeleton /> <CardSkeleton /> <CardSkeleton /> </div>
+                  <div className="mt-5 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                    <ChaplinCardSkeleton /> {/* <-- ATUALIZADO */}
+                    <ChaplinCardSkeleton /> {/* <-- ATUALIZADO */}
+                    <ChaplinCardSkeleton /> {/* <-- ATUALIZADO */}
+                  </div>
                 ) : error ? (
                   <div className="col-span-full text-center text-red-400 py-10">{`Error: ${error}`}</div>
                 ) : (
