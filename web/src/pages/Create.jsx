@@ -22,7 +22,7 @@ const PROMPT_SPECIALIST_MAX = 4000;
 const MAX_STEP2_GROUPS = 6;
 const SPECIALIST_NAME_MAX = 60;
 const CATEGORY_OPTIONS = [
-  "Assistant", "Anime", "Creativity & Writing", "Entertainment & Gaming",
+  "Assistants", "Anime", "Creativity & Writing", "Entertainment & Gaming",
   "History", "Humor", "Learning",
 ];
 
@@ -817,11 +817,10 @@ function Create() {
                           <button
                             onClick={handleRunWorkgroup}
                             disabled={!isPublishable || isGenerating}
-                            className={`flex items-center gap-2 px-3 py-1.5 bg-[#202024] text-[#D9D9D9] text-sm font-semibold rounded-full transition duration-200 active:scale-95 select-none ${
-                              isPublishable && !isGenerating
+                            className={`flex items-center gap-2 px-3 py-1.5 bg-[#202024] text-[#D9D9D9] text-sm font-semibold rounded-full transition duration-200 active:scale-95 select-none ${isPublishable && !isGenerating
                                 ? 'cursor-pointer hover:bg-[#3B3B42]'
                                 : 'cursor-not-allowed opacity-50'
-                            }`}
+                              }`}
                             title="Run Workgroup"
                           >
                             <Play size={8} fill="#D9D9D9" />

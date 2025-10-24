@@ -48,7 +48,7 @@ function FilterTag({ name, isActive, onClick }) {
 
 // ---------- FilterBar: Implementado com animação de scroll suave via Framer Motion ----------
 function FilterBar({ activeCategory, onCategorySelect }) {
-  const categories = ["All", "Assistant", "Anime", "Creativity & Writing", "Entertainment & Gaming", "History", "Humor", "Learning", "Lifestyle", "Parody", "RPG & Puzzles"];
+  const categories = ["All", "Assistants", "Anime", "Creativity & Writing", "Entertainment & Gaming", "History", "Humor", "Learning", "Lifestyle", "Parody", "RPG & Puzzles"];
   const scrollContainerRef = useRef(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
