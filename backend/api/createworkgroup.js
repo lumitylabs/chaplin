@@ -99,7 +99,8 @@ async function createWorkgroupHandler(req, res) {
 
     const { parsedJson: parsedWorkgroup, rawText: lastLlmText } = await generateTextAndParseJson(
       { prompt: prompt, maxTokens: 1500, temperature: 0.18 },
-      { expectedShape: 'array' }
+      { expectedShape: 'array' },
+      { sessionSize: 'big' } // Passa a dica para o aiProvider
     );
 
     const normalized = parsedWorkgroup

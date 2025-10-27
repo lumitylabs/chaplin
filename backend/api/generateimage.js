@@ -23,7 +23,10 @@ async function handler(req, res) {
     });
 
     // A geração do prompt de imagem não precisa de retry de parse, pois espera uma string.
-    const imagePrompt = (await generateText({ prompt: promptForImage, maxTokens: 200, temperature: 0.8 })).trim();
+    const imagePrompt = (await generateText(
+        { prompt: promptForImage, maxTokens: 200, temperature: 0.8 },
+        { sessionSize: 'small' } // Passa a dica para o aiProvider
+    )).trim();
 
     const url = process.env.IMAGE_WORKER_URL +`/?prompt=${encodeURIComponent(imagePrompt)}`;
     const resp = await fetch(url);
