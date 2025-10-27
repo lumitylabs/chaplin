@@ -67,7 +67,7 @@ export async function runAgentsSequentially({ input, workgroup, workgroupRespons
 }
 
 
-export async function* executeWorkgroupStream({ input, workgroup, workgroupResponseMap = {}, responseformat, options = {} }) {
+export async function* executeWorkgroupStream({ input, description, instructions, workgroup, workgroupResponseMap = {}, responseformat, options = {} }) {
   const {
     maxTokens = 800, temperature = 0.7,
     integratorMaxAttempts = 3, integratorMaxTokens = 900, integratorTemperature = 0.5,
@@ -104,7 +104,7 @@ export async function* executeWorkgroupStream({ input, workgroup, workgroupRespo
   
   while (attempt < integratorMaxAttempts) {
     attempt++;
-    const integratorPrompt = buildHardcodedIntegratorPrompt({ responseformat, outputs: outputsInOrder, workgroup });
+    const integratorPrompt = buildHardcodedIntegratorPrompt({ responseformat, outputs: outputsInOrder, workgroup, description, instructions, input });
 
     const integratorGenerateOpts = {
         executorJobId,
