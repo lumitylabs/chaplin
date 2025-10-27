@@ -3,8 +3,8 @@ import { useNavigate, useLocation } from "react-router-dom"; // Importar useLoca
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, LogOut, Star, ChevronDown, ChevronsLeft } from 'lucide-react';
 import hatIcon from "../../../assets/hatIcon.svg";
-import Avatar from "../../../assets/Avatar.png";
-import Persona from "../../../assets/Persona.png";
+import Avatar from "../../../assets/avatar.png";
+import Persona from "../../../assets/persona.png";
 import SimpleBar from "simplebar-react";
 import "simplebar-react/dist/simplebar.min.css";
 import { SignOutButton, useUser } from "@clerk/clerk-react";

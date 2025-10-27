@@ -1,18 +1,23 @@
-// lib/aiProvider.js
-// Multi-model manager for text generation with retry logic.
-
 import CortensorModel from "./models/CortensorModel.js";
 import GeminiFlashModel from "./models/GeminiFlashModel.js";
 import GeminiFlashLiteModel from "./models/GeminiFlashLiteModel.js";
 import GeminiProModel from "./models/GeminiProModel.js";
-import { LLM_MAX_ATTEMPTS } from "./constants.js"; // <<< IMPORTAÇÃO CORRIGIDA
+import { LLM_MAX_ATTEMPTS } from "./constants.js";
 import { jsonrepair } from "jsonrepair";
 import JSON5 from 'json5'
 
-const DEFAULT_PRIORITY = [
+
+const DEFAULT_PRIORITY_SMALL = [
   "cortensor",
-  "geminiflash",
   "geminiflashlite",
+  "geminiflash",
+  "geminipro",
+];
+
+const DEFAULT_PRIORITY_BIG = [
+  "cortensor",
+  "geminiflashlite",
+  "geminiflash",
   "geminipro",
 ];
 
@@ -23,7 +28,53 @@ const MODEL_REGISTRY = {
   geminipro: GeminiProModel,
 };
 
-// coloque no topo do arquivo (CommonJS)
+
+function buildPriorityFromEnv(envVarName, defaultPriority) {
+  const raw = process.env[envVarName];
+  if (!raw) {
+    console.log(`[aiProvider] Variável de ambiente '${envVarName}' não encontrada. Usando a prioridade padrão.`);
+    return defaultPriority;
+  }
+  const arr = raw
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  
+  if (arr.length > 0) {
+    console.log(`[aiProvider] Prioridade carregada de '${envVarName}': [${arr.join(", ")}]`);
+    return arr;
+  }
+  
+  return defaultPriority;
+}
+
+let modelsPrioritySmall = buildPriorityFromEnv('MODELS_PRIORITY_SMALL', DEFAULT_PRIORITY_SMALL);
+let modelsPriorityBig = buildPriorityFromEnv('MODELS_PRIORITY_BIG', DEFAULT_PRIORITY_BIG);
+
+let modelInstancesCache = null;
+
+
+function initModelInstances() {
+  if (modelInstancesCache) return;
+  
+  const allModelKeys = [...new Set([...modelsPrioritySmall, ...modelsPriorityBig])];
+  
+  modelInstancesCache = {};
+
+  for (const key of allModelKeys) {
+    const Cls = MODEL_REGISTRY[key];
+    if (!Cls) {
+      console.warn(`[aiProvider] Nenhuma classe de modelo registrada para a chave="${key}"`);
+      continue;
+    }
+    try {
+      modelInstancesCache[key] = new Cls({ key });
+    } catch (err) {
+      console.error(`[aiProvider] Falha ao instanciar o modelo ${key}:`, err);
+    }
+  }
+}
+
 
 async function tryParseLlmJson(llmText, expectedShape = "array") {
   // 1) quick native parse
@@ -41,33 +92,30 @@ async function tryParseLlmJson(llmText, expectedShape = "array") {
   let candidate = llmText;
   if (first !== -1 && last > first) candidate = llmText.slice(first, last + 1);
 
-  // 3) try jsonrepair
   try {
     const repaired = jsonrepair(candidate);
     return JSON.parse(repaired);
   } catch (eJsonRepair) {
-    // fallthrough to next attempts
     console.debug("jsonrepair failed:", eJsonRepair.message);
   }
 
-  // 4) try JSON5.parse (accepts single quotes, trailing commas, comments)
+
   try {
     return JSON5.parse(candidate);
   } catch (eJson5) {
     console.debug("JSON5.parse failed:", eJson5.message);
   }
 
-  // 5) last-resort: a small sanitizer (escape smart quotes + remove code fences + remove control chars)
   const sanitized = candidate
-    .replace(/```json[\s\S]*?```/g, "") // strip fenced blocks if any
-    .replace(/[\u2018\u2019]/g, "'") // smart single -> '
-    .replace(/[\u201C\u201D]/g, '"') // smart double -> "
-    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, ""); // remove control chars
+    .replace(/```json[\s\S]*?```/g, "") 
+    .replace(/[\u2018\u2019]/g, "'") 
+    .replace(/[\u201C\u201D]/g, '"') 
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, "");
 
   try {
     return JSON.parse(sanitized);
   } catch (eFinal) {
-    // give up — return meaningful diagnostic
+
     const err = new Error("All JSON parse attempts failed");
     err.cause = {
       originalError: eFinal.message,
@@ -78,44 +126,10 @@ async function tryParseLlmJson(llmText, expectedShape = "array") {
   }
 }
 
-function buildPriorityFromEnv() {
-  const raw = process.env.MODELS_PRIORITY;
-  if (!raw) return DEFAULT_PRIORITY;
-  const arr = raw
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean);
-  return arr.length > 0 ? arr : DEFAULT_PRIORITY;
-}
-
-let modelsPriority = buildPriorityFromEnv();
-let modelInstances = null;
-
-function initModelInstances() {
-  if (modelInstances) return;
-  modelInstances = modelsPriority
-    .map((key) => {
-      const Cls = MODEL_REGISTRY[key];
-      if (!Cls) {
-        console.warn(`[aiProvider] No registered model class for key="${key}"`);
-        return null;
-      }
-      try {
-        return new Cls({ key });
-      } catch (err) {
-        console.error(`[aiProvider] Failed to instantiate model ${key}:`, err);
-        return null;
-      }
-    })
-    .filter(Boolean);
-}
-
 /**
  * generateText(params, opts)
  * - params: { prompt, maxTokens = 512, temperature = 0.7 }
- * - opts: optional object forwarded to model.generateText as second parameter (e.g. { executorJobId })
- *
- * Backwards-compatible: callers that don't provide opts behave exactly as before.
+ * - opts: { sessionSize: 'small' | 'big' } e outros...
  */
 export async function generateText(
   { prompt, maxTokens = 512, temperature = 0.7 } = {},
@@ -123,17 +137,24 @@ export async function generateText(
 ) {
   if (!prompt || typeof prompt !== "string")
     throw new Error("prompt (string) is required");
+  
   initModelInstances();
-  if (!modelInstances || modelInstances.length === 0) {
-    throw new Error("No model instances available.");
+
+  // Nenhuma mudança aqui, a lógica continua a mesma.
+  const priorityList = opts.sessionSize === 'big' ? modelsPriorityBig : modelsPrioritySmall;
+  
+  const modelsToTry = priorityList
+    .map(key => modelInstancesCache[key])
+    .filter(Boolean);
+
+  if (!modelsToTry || modelsToTry.length === 0) {
+    throw new Error("Nenhuma instância de modelo disponível para a prioridade selecionada.");
   }
 
   const errors = [];
-  for (const model of modelInstances) {
+  for (const model of modelsToTry) {
     const key = model.key || "unknown";
     try {
-      // Forward opts as second argument to model.generateText so models that support it can use it.
-      // Models that do not declare/use a second parameter will simply ignore it (JS allows extra args).
       const out = await model.generateText(
         { prompt, maxTokens, temperature },
         opts
@@ -146,16 +167,13 @@ export async function generateText(
   }
 
   const agg = errors.map((e) => `${e.model}: ${e.reason}`).join(" | ");
-  throw new Error(`All models failed. Details: ${agg}`);
+  throw new Error(`Todos os modelos falharam. Detalhes: ${agg}`);
 }
 
 /**
  * generateTextAndParseJson(promptParams, parseOptions = {}, generateOpts = {})
- * - promptParams: { prompt, maxTokens, temperature }
- * - parseOptions: { maxAttempts = LLM_MAX_ATTEMPTS, expectedShape = 'array' }
- * - generateOpts: optional object forwarded to generateText (e.g. { executorJobId })
- *
- * Returns { parsedJson, rawText } on success, otherwise throws after attempts.
+ * - ...
+ * - generateOpts: { sessionSize: 'small' | 'big' } e outros...
  */
 export async function generateTextAndParseJson(
   { prompt, maxTokens, temperature } = {},
@@ -168,7 +186,7 @@ export async function generateTextAndParseJson(
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
       console.log(
-        `Attempt ${attempt} of ${maxAttempts} to generate and parse JSON.`
+        `Tentativa ${attempt} de ${maxAttempts} para gerar e analisar JSON.`
       );
       const llmText = await generateText(
         { prompt, maxTokens, temperature },
@@ -180,7 +198,6 @@ export async function generateTextAndParseJson(
       try {
         parsed = await tryParseLlmJson(llmText, expectedShape);
       } catch (e) {
-        // rethrow/retry logic do seu loop principal
         throw e;
       }
 
@@ -194,15 +211,15 @@ export async function generateTextAndParseJson(
         return { parsedJson: parsed, rawText: lastRawText };
       } else {
         throw new Error(
-          `Parsed content is not the expected shape ('${expectedShape}').`
+          `O conteúdo analisado não tem o formato esperado ('${expectedShape}').`
         );
       }
     } catch (error) {
       lastError = error;
-      console.warn(`Attempt ${attempt} failed: ${error.message}`);
+      console.warn(`Tentativa ${attempt} falhou: ${error.message}`);
     }
   }
   throw new Error(
-    `LLM failed to produce valid JSON after ${maxAttempts} attempts. Last error: ${lastError.message}`
+    `LLM falhou em produzir um JSON válido após ${maxAttempts} tentativas. Último erro: ${lastError.message}`
   );
 }

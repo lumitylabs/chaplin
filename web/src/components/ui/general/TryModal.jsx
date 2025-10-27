@@ -3,7 +3,7 @@ import { Wrench, X } from "lucide-react";
 import { SendSolid } from "iconoir-react";
 import SimpleBar from "simplebar-react";
 import "simplebar-react/dist/simplebar.min.css";
-import Avatar from "../../../assets/Avatar.png";
+import Avatar from "../../../assets/avatar.png";
 import ChaplinImage from "../../../assets/persona.png";
 import { startChaplinStream } from "../../../services/apiService";
 

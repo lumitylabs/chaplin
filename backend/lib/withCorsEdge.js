@@ -1,8 +1,12 @@
 // server/src/utils/withCors.js
 const allowedOrigins = [
   'http://localhost:5173',
-  'https://seu-dominio.vercel.app', // Adicione seu domínio de produção
+  'https://chaplins.netlify.app',
+  'https://chaplin.lumitylabs.com',
+  'https://web3museum.lumitylabs.com',
+  'https://web3museum.netlify.app'
 ];
+
 
 export const withCorsEdge = (handler) => {
   return async (req, context) => {

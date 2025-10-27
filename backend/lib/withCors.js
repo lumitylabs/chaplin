@@ -1,7 +1,10 @@
 // lib/withCors.js — versão para Node runtime (Express-like)
 const allowedOrigins = [
   'http://localhost:5173',
-  // 'https://sua-plataforma.com'
+  'https://chaplins.netlify.app',
+  'https://chaplin.lumitylabs.com',
+  'https://web3museum.lumitylabs.com',
+  'https://web3museum.netlify.app'
 ];
 
 export const withCors = (handler) => {
