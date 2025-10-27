@@ -40,7 +40,7 @@ export function buildAgentExecutionPrompt({ agent, input, previousOutputs }) {
   prompt += `2. Your entire output must be ONLY the direct answer. Do not include "Understood", explanations, or any extra text.\n`;
   prompt += `3. GENERATE THE TEXT RESPONSE IMMEDIATELY.`;
 
-  prompt += `\n\nassistant:`;
+  prompt += `\n\nresponse:`;
   return prompt;
 }
 
