@@ -13,7 +13,7 @@ import {
 import SimpleBar from 'simplebar-react';
 
 // ===================================================================================
-// === COMPONENTE ProgressStep - SAÍDAS DE TEXTO PADRONIZADAS                      ===
+// === COMPONENTE ProgressStep - (PERMANECEU IDÊNTICO)                            ===
 // ===================================================================================
 const ProgressStep = ({ step }) => {
   const isCompleted = step.status === 'completed';
@@ -25,7 +25,6 @@ const ProgressStep = ({ step }) => {
   const processingRing = isProcessing ? 'ring-2 ring-offset-2 ring-offset-[#131316] ring-white/80' : '';
   const pulseClass = isProcessing ? 'animate-pulse' : '';
 
-  // --- ESTILOS PADRONIZADOS PARA O TEXTO DE SAÍDA ---
   const outputTextStyle = "font-mono text-xs text-[#A2A2AB] whitespace-pre-wrap break-words";
 
   const getStepIcon = () => {
@@ -63,7 +62,6 @@ const ProgressStep = ({ step }) => {
           <StepHeader />
         </summary>
         <div className="p-4 pt-2 border-t border-[#26272B]">
-          {/* --- BLOCO DE RENDERIZAÇÃO CORRIGIDO E PADRONIZADO --- */}
           {typeof step.content === 'string' ? (
             <p className={outputTextStyle}>{step.content}</p>
           ) : (
@@ -83,11 +81,9 @@ const ProgressStep = ({ step }) => {
   );
 };
 
-
 // ===================================================================================
-// === O RESTANTE DO CÓDIGO PERMANECE IDÊNTICO                                     ===
+// === COMPONENTE NavbarHeader - (PERMANECEU IDÊNTICO)                            ===
 // ===================================================================================
-
 function NavbarHeader({ closeNavbar }) {
   const navigate = useNavigate();
   return (
@@ -102,6 +98,10 @@ function NavbarHeader({ closeNavbar }) {
   );
 }
 
+
+// ===================================================================================
+// === COMPONENTE Navbar - ✨ MODIFICADO                                          ===
+// ===================================================================================
 function Navbar({ isOpen, setIsOpen, progressSteps }) {
   const variants = {
     open: { x: 0 },
@@ -132,13 +132,24 @@ function Navbar({ isOpen, setIsOpen, progressSteps }) {
         <NavbarHeader closeNavbar={() => setIsOpen(false)} />
 
         <div className="flex-grow overflow-hidden">
-          <SimpleBar style={{ maxHeight: 'calc(100vh - 80px)' }} className="chaplin-sidebar-scrollbar">
-            <div className="flex flex-col gap-3 p-5">
-              {progressSteps.map((step) => (
-                <ProgressStep key={step.id} step={step} />
-              ))}
+          {/* --- CONDIÇÃO ADICIONADA AQUI --- */}
+          {progressSteps && progressSteps.length > 0 ? (
+            <SimpleBar style={{ maxHeight: 'calc(100vh - 80px)' }} className="chaplin-sidebar-scrollbar">
+              <div className="flex flex-col gap-3 p-5">
+                {progressSteps.map((step) => (
+                  <ProgressStep key={step.id} step={step} />
+                ))}
+              </div>
+            </SimpleBar>
+          ) : (
+            // --- ESTADO VAZIO QUANDO NÃO HÁ PASSOS ---
+            <div className="flex flex-col items-center justify-center h-full text-center">
+              <Wrench size={45} strokeWidth={1} color="#1B1B1B" className="mb-2" />
+              <p className="font-mono text-sm text-[#414141] leading-tight tracking-tight">
+                Your workgroup will<br />appear here
+              </p>
             </div>
-          </SimpleBar>
+          )}
         </div>
       </motion.nav>
     </>
