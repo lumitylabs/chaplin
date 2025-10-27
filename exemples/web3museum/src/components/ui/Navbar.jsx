@@ -18,7 +18,7 @@ const ProgressStep = ({ step }) => {
   const hasContent = !!step.content;
 
   const isExpandable = isCompleted && hasContent &&
-    (step.type === 'integrator' || step.type !== 'image' &&
+    (step.type === 'integrator' || step.type !== 'image' &&  step.type !== 'connection' &&
       (typeof step.content === 'string' && step.content.length > 1));
 
   const backgroundColor = (step.type === 'agent' || step.type === 'integrator') ? 'bg-black' : 'bg-[#18181B]';

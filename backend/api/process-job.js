@@ -69,6 +69,8 @@ async function handler(req, res) {
     // 2. Passar o callback para o executeWorkgroupStream através das opções.
     const stream = executeWorkgroupStream({
         input: jobData.input,
+        description: jobData.chaplinData.description,
+        instructions: jobData.chaplinData.instructions,
         workgroup: jobData.chaplinData.workgroup,
         responseformat: jobData.chaplinData.responseformat,
         options: { 
