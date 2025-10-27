@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useCallback } from "react"; // Adicionado useCallback
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import "simplebar-react/dist/simplebar.min.css";
 import { useLocation } from "react-router-dom";
 import Navbar from "../components/ui/Navbar";
@@ -33,40 +33,41 @@ function App() {
   const location = useLocation();
   const [isNavbarOpen, setIsNavbarOpen] = useState(true);
   const [userInput, setUserInput] = useState('');
+  
+  // 'originalInput' agora representa o input da requisição ATUAL.
   const [originalInput, setOriginalInput] = useState(USE_MOCK_DATA ? mockState.originalInput : '');
+  
   const [isProcessing, setIsProcessing] = useState(USE_MOCK_DATA ? mockState.isProcessing : false);
-  const [finalResult, setFinalResult] = useState(USE_MOCK_DATA ? mockState.finalResult : null);
-  const [generatedImageUrl, setGeneratedImageUrl] = useState(USE_MOCK_DATA ? mockState.generatedImageUrl : null);
-  const [progressSteps, setProgressSteps] = useState([]);
+  
+  // Estados de 'display' para o que o usuário vê.
+  const [displayResult, setDisplayResult] = useState(USE_MOCK_DATA ? mockState.finalResult : null);
+  const [displayImageUrl, setDisplayImageUrl] = useState(USE_MOCK_DATA ? mockState.generatedImageUrl : null);
+  const [displayOriginalInput, setDisplayOriginalInput] = useState(USE_MOCK_DATA ? mockState.originalInput : '');
 
+  const [progressSteps, setProgressSteps] = useState([]);
   const streamControllerRef = useRef(null);
   const imageGenerationTriggeredRef = useRef(false);
   const jobIdRef = useRef(null);
   const pausedDueToHiddenRef = useRef(false);
 
-  // <<< CORREÇÃO 1: `startStream` agora é envolvida em `useCallback` e não depende de nenhum estado. >>>
-  // Ela recebe tudo o que precisa como argumentos, tornando-a pura e previsível.
-  const startStream = useCallback((jobId = null, inputForApi) => {
+  // <<< MUDANÇA 1: `startStream` agora recebe o input da requisição atual como argumento >>>
+  const startStream = useCallback((jobId = null, currentRequestInput) => {
     if (streamControllerRef.current) {
       streamControllerRef.current.abort();
     }
-
-    // Validação para garantir que o input nunca seja nulo aqui.
-    if (!inputForApi) {
-        console.error("startStream foi chamada sem um input válido!");
-        setIsProcessing(false); // Para a animação de loading
-        return;
+    if (!currentRequestInput) {
+      console.error("startStream foi chamada sem um input válido!");
+      setIsProcessing(false);
+      return;
     }
-
     const payload = {
       chaplin_id: "-OcHgnjtDj7ezNOTCrY0",
-      input: inputForApi, // Usa o argumento diretamente
+      input: currentRequestInput,
       clientSessionId: getClientSessionId(),
       jobId: jobId,
     };
 
     streamControllerRef.current = startChaplinStream(payload, {
-      // A lógica de onData, onError, onClose permanece a mesma de antes
       onData: (chunk) => {
         if (chunk.type === "start" && chunk.jobId && !jobIdRef.current) {
           jobIdRef.current = chunk.jobId;
@@ -75,7 +76,7 @@ function App() {
         if (chunk.type === 'integrator_result') {
           if (imageGenerationTriggeredRef.current) return;
           imageGenerationTriggeredRef.current = true;
-          setFinalResult(chunk.data.final);
+          
           setProgressSteps(prevSteps => [
             ...prevSteps.map(step =>
               step.type === 'integrator'
@@ -91,10 +92,16 @@ function App() {
                 : step
             ));
           }, 500);
+          
           generateImageFromPrompt(chunk.data.final.image_prompt).then(
             (imageUrl) => {
+              // <<< MUDANÇA 2: Usa `currentRequestInput` para atualizar o título de exibição >>>
+              // Isso garante que o título corresponda à requisição que acabou de terminar.
               if (imageUrl) {
-                setGeneratedImageUrl(imageUrl);
+                setDisplayResult(chunk.data.final);
+                setDisplayImageUrl(imageUrl);
+                setDisplayOriginalInput(currentRequestInput); // CORREÇÃO CRÍTICA
+                
                 setProgressSteps(currentSteps => currentSteps.map(step =>
                   step.type === 'image' ? { ...step, status: 'completed', content: 'Image generated successfully.' } : step
                 ));
@@ -105,6 +112,7 @@ function App() {
               }
               setIsProcessing(false);
               jobIdRef.current = null;
+              setUserInput(""); 
             }
           );
           return;
@@ -146,37 +154,29 @@ function App() {
         setIsProcessing(false);
         setProgressSteps((prev) => [...prev, { id: prev.length + 1, name: "Error", status: "error", type: "error", content: err.message }]);
       },
-      onClose: () => { if (!finalResult) { setIsProcessing(false); } },
+      onClose: () => { if (!displayResult) { setIsProcessing(false); } }, // Usa displayResult para a lógica de onClose
     });
-  }, [finalResult]); // Adicionado finalResult como dependência para que a lógica de onClose seja sempre a mais recente.
+  }, [displayResult]); // Depende de displayResult
 
-  // <<< CORREÇÃO 2: `handleSendMessage` agora é uma função "pura" que orquestra tudo com variáveis locais. >>>
+  // <<< MUDANÇA 3: `handleSendMessage` continua orquestrando tudo >>>
   const handleSendMessage = () => {
     const currentInput = userInput.trim();
     if (!currentInput || isProcessing) return;
 
-    // 1. Atualiza os estados da UI com o novo input
-    console.log("User input enviado:", currentInput);
+    // Define o input da requisição ATUAL.
     setOriginalInput(currentInput);
     setIsProcessing(true);
-
-    // 2. Reseta completamente o estado da execução anterior
-    setFinalResult(null);
-    setGeneratedImageUrl(null);
+    
     setProgressSteps([
       { id: 1, name: "Connect to Chaplin", status: "processing", type: "connection", content: "Connecting..." },
     ]);
     imageGenerationTriggeredRef.current = false;
     jobIdRef.current = null;
 
-    // 3. Chama a API com o dado fresco e local
+    // Passa o input atual diretamente para a stream.
     startStream(null, currentInput);
-
-    // 4. Limpa o campo de input para o usuário
-    setUserInput("");
   };
 
-  // useEffect para visibilidade (sem alterações, mas agora mais robusto por causa do useCallback em startStream)
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.hidden) {
@@ -187,7 +187,7 @@ function App() {
         }
       } else {
         if (pausedDueToHiddenRef.current && jobIdRef.current) {
-          // A dependência [originalInput] garante que este valor é o mais recente ao retomar.
+          // Usa `originalInput` para retomar, que foi definido em handleSendMessage
           startStream(jobIdRef.current, originalInput);
         }
         pausedDueToHiddenRef.current = false;
@@ -197,7 +197,7 @@ function App() {
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [originalInput, startStream]); // Adicionado startStream à lista de dependências
+  }, [originalInput, startStream]);
 
   useEffect(() => {
     const isDesktop = window.innerWidth >= 1024;
@@ -228,12 +228,12 @@ function App() {
         )}
         <ChatInterface
           isProcessing={isProcessing}
-          finalResult={finalResult}
-          generatedImageUrl={generatedImageUrl}
+          finalResult={displayResult}
+          generatedImageUrl={displayImageUrl}
           userInput={userInput}
           setUserInput={setUserInput}
           handleSendMessage={handleSendMessage}
-          originalInput={originalInput}
+          originalInput={displayOriginalInput}
         />
       </main>
     </div>
