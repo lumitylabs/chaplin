@@ -12,14 +12,14 @@ import {
 } from "lucide-react";
 import SimpleBar from 'simplebar-react';
 
-// ===================================================================================
-// === COMPONENTE ProgressStep - (PERMANECEU IDÊNTICO)                            ===
-// ===================================================================================
 const ProgressStep = ({ step }) => {
   const isCompleted = step.status === 'completed';
-  const isProcessing = !isCompleted;
+  const isProcessing = step.status === 'processing';
   const hasContent = !!step.content;
-  const isExpandable = isCompleted && hasContent && (step.type === 'agent' || step.type === 'integrator');
+
+  const isExpandable = isCompleted && hasContent &&
+    (step.type === 'integrator' || step.type !== 'image' &&
+      (typeof step.content === 'string' && step.content.length > 1));
 
   const backgroundColor = (step.type === 'agent' || step.type === 'integrator') ? 'bg-black' : 'bg-[#18181B]';
   const processingRing = isProcessing ? 'ring-2 ring-offset-2 ring-offset-[#131316] ring-white/80' : '';
@@ -37,23 +37,39 @@ const ProgressStep = ({ step }) => {
     }
   };
 
-  const StepHeader = () => (
-    <div className="flex items-center justify-between p-3">
-      <div className="flex items-center gap-4 min-w-0">
-        <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-r from-[#0A0A0A] to-[#2B2B2B] flex-shrink-0">
-          {getStepIcon()}
+
+  const StepHeader = () => {
+
+    const getStatusLineText = () => {
+      if (isProcessing) {
+
+        if (typeof step.content === 'string') {
+          return step.content;
+        }
+
+        return 'Processing...';
+      }
+      return step.status.charAt(0).toUpperCase() + step.status.slice(1);
+    };
+
+    return (
+      <div className="flex items-center justify-between p-3">
+        <div className="flex items-center gap-4 min-w-0">
+          <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-r from-[#0A0A0A] to-[#2B2B2B] flex-shrink-0">
+            {getStepIcon()}
+          </div>
+          <div className="flex flex-col min-w-0">
+            <span className="font-medium text-sm text-white truncate">{step.name}</span>
+            <span className="text-xs text-gray-400 truncate">{getStatusLineText()}</span>
+          </div>
         </div>
-        <div className="flex flex-col min-w-0">
-          <span className="font-medium text-sm text-white truncate">{step.name}</span>
-          <span className="text-xs text-gray-400 capitalize">{step.status}</span>
+        <div className="w-6 h-6 flex items-center justify-center flex-shrink-0 ml-2">
+          {isProcessing && <LoaderCircle size={20} className="animate-spin text-gray-400" />}
+          {isExpandable && <ChevronDown size={20} className="text-gray-500 transition-transform duration-300 group-open:rotate-180" />}
         </div>
       </div>
-      <div className="w-6 h-6 flex items-center justify-center flex-shrink-0 ml-2">
-        {isProcessing && <LoaderCircle size={20} className="animate-spin text-gray-400" />}
-        {isExpandable && <ChevronDown size={20} className="text-gray-500 transition-transform duration-300 group-open:rotate-180" />}
-      </div>
-    </div>
-  );
+    );
+  };
 
   if (isExpandable) {
     return (
@@ -81,9 +97,8 @@ const ProgressStep = ({ step }) => {
   );
 };
 
-// ===================================================================================
-// === COMPONENTE NavbarHeader - (PERMANECEU IDÊNTICO)                            ===
-// ===================================================================================
+
+
 function NavbarHeader({ closeNavbar }) {
   const navigate = useNavigate();
   return (
@@ -98,10 +113,6 @@ function NavbarHeader({ closeNavbar }) {
   );
 }
 
-
-// ===================================================================================
-// === COMPONENTE Navbar - ✨ MODIFICADO                                          ===
-// ===================================================================================
 function Navbar({ isOpen, setIsOpen, progressSteps }) {
   const variants = {
     open: { x: 0 },
@@ -132,7 +143,6 @@ function Navbar({ isOpen, setIsOpen, progressSteps }) {
         <NavbarHeader closeNavbar={() => setIsOpen(false)} />
 
         <div className="flex-grow overflow-hidden">
-          {/* --- CONDIÇÃO ADICIONADA AQUI --- */}
           {progressSteps && progressSteps.length > 0 ? (
             <SimpleBar style={{ maxHeight: 'calc(100vh - 80px)' }} className="chaplin-sidebar-scrollbar">
               <div className="flex flex-col gap-3 p-5">
@@ -142,7 +152,6 @@ function Navbar({ isOpen, setIsOpen, progressSteps }) {
               </div>
             </SimpleBar>
           ) : (
-            // --- ESTADO VAZIO QUANDO NÃO HÁ PASSOS ---
             <div className="flex flex-col items-center justify-center h-full text-center">
               <Wrench size={45} strokeWidth={1} color="#1B1B1B" className="mb-2" />
               <p className="font-mono text-sm text-[#414141] leading-tight tracking-tight">
