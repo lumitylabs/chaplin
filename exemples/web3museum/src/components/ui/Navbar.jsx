@@ -13,7 +13,7 @@ import {
 import SimpleBar from 'simplebar-react';
 
 const ProgressStep = ({ step }) => {
-  const isCompleted = step.status === 'completed';
+  const isCompleted = step.status === 'completed' || step.status === 'generated';
   const isProcessing = step.status === 'processing';
   const hasContent = !!step.content;
 
