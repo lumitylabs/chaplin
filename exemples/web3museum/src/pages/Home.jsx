@@ -129,7 +129,7 @@ function App() {
             }
             case "agent_result": {
               const agentIndex = newSteps.findIndex((step) => step.name === chunk.data.name);
-              if (agentIndex > -1) { newSteps[agentIndex].status = "completed"; newSteps[agentIndex].content = chunk.data.output; }
+              if (agentIndex > -1) { newSteps[agentIndex].status = "generated"; newSteps[agentIndex].content = chunk.data.output; }
               break;
             }
             case "integrator_start":
