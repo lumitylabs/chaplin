@@ -65,7 +65,7 @@ async function createWorkgroupHandler(req, res) {
       if (prev.length > 0) {
         try {
           const summarizeInstruction = buildSummarizePrevPrompt({ previousWorkgroup: prev, personaName, personaCategory });
-          prevSummary = await generateText({ prompt: summarizeInstruction, maxTokens: 250, temperature: 0.1 });
+          prevSummary = await generateText({ prompt: summarizeInstruction, maxTokens: 250, temperature: 0.1, sessionSize: 'big' });
         } catch (err) {
           console.error("Summarization error:", err);
           prevSummary = prev.map(p => `- ${p.name}: ${p.prompt.slice(0, 120)}`).join("\n");
@@ -77,7 +77,7 @@ async function createWorkgroupHandler(req, res) {
         agentName: targetAgentName, existingPrompt: existingText, previousWorkgroupSummary: prevSummary
       });
 
-      const improved = await generateText({ prompt: enhanceInstruction, maxTokens: 400, temperature: 0.2 });
+      const improved = await generateText({ prompt: enhanceInstruction, maxTokens: 400, temperature: 0.2, sessionSize: 'big' });
       const finalPrompt = (improved || "").trim().slice(0, AGENT_PROMPT_MAX);
 
       if (!finalPrompt) {
