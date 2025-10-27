@@ -3,7 +3,7 @@ import "simplebar-react/dist/simplebar.min.css";
 import { useLocation } from "react-router-dom";
 import Navbar from "../components/ui/Navbar";
 import ChatInterface from "../components/ChatInterface";
-import { Menu } from "lucide-react";
+import { Layers } from "lucide-react";
 import { startChaplinStream } from "../services/apiService";
 import { mockState } from '../_mockData'; // Ajuste o caminho se necessário
 const USE_MOCK_DATA = false;
@@ -282,7 +282,7 @@ function App() {
         className={`fixed top-5 left-2 z-20 p-2 rounded-full cursor-pointer hover:bg-[#1F1F22] lg:hidden ${isNavbarOpen ? "hidden" : "block"
           }`}
       >
-        <Menu color="#A2A2AB" size={23} />
+        <Layers color="#A2A2AB" size={21} />
       </button>
       <main
         className={`flex-grow transition-all duration-300 relative ${ // Adicionado 'relative' para posicionar o botão
@@ -298,7 +298,7 @@ function App() {
             onClick={() => setIsNavbarOpen(true)}
             className="fixed top-5 left-4 z-20 p-2 rounded-full cursor-pointer hover:bg-[#1F1F22] hidden lg:block"
           >
-            <Menu color="#A2A2AB" size={23} />
+            <Layers color="#A2A2AB" size={21} />
           </button>
         )}
 

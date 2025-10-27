@@ -1,9 +1,7 @@
-// src/components/ChatInterface.js
-
 import React from 'react';
 import { Send } from 'lucide-react';
 import HomeImage from '../assets/home.png';
-import HoloCard from './HoloCard'; // <<< PASSO 1: Importe o novo componente
+import HoloCard from './HoloCard';
 
 // Componente de Input reutilizável (permanece o mesmo)
 const ChatInput = ({ userInput, setUserInput, handleSendMessage, isProcessing }) => (
@@ -35,7 +33,7 @@ const MuseumDisplay = ({ imageUrl, result, originalInput, userInput, setUserInpu
     <div className="flex flex-col items-center justify-center min-h-screen p-8 text-white">
         <h1 className="text-3xl font-bold mb-12">Web 3 Museum</h1>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center max-w-5xl w-full">
-            
+
             {/* <<< PASSO 2: Substitua o <img> pelo HoloCard >>> */}
             <div className="w-full h-[600px] aspect-[1/1.4] cursor-pointer">
                 {imageUrl ? (
@@ -56,7 +54,7 @@ const MuseumDisplay = ({ imageUrl, result, originalInput, userInput, setUserInpu
             </div>
         </div>
         <div className="mt-16 w-full">
-            <ChatInput 
+            <ChatInput
                 userInput={userInput}
                 setUserInput={setUserInput}
                 handleSendMessage={handleSendMessage}
@@ -72,7 +70,7 @@ const InitialScreen = ({ userInput, setUserInput, handleSendMessage, isProcessin
         <div className="w-full max-w-md mb-12">
             <img src={HomeImage} alt="Abstract 3D art" className="w-full h-auto" />
         </div>
-        <ChatInput 
+        <ChatInput
             userInput={userInput}
             setUserInput={setUserInput}
             handleSendMessage={handleSendMessage}
@@ -82,9 +80,9 @@ const InitialScreen = ({ userInput, setUserInput, handleSendMessage, isProcessin
 );
 
 
-export default function ChatInterface({ 
-    isProcessing, 
-    finalResult, 
+export default function ChatInterface({
+    isProcessing,
+    finalResult,
     generatedImageUrl,
     userInput,
     setUserInput,
@@ -92,7 +90,7 @@ export default function ChatInterface({
     originalInput
 }) {
     if (finalResult) {
-        return <MuseumDisplay 
+        return <MuseumDisplay
             imageUrl={generatedImageUrl}
             result={finalResult}
             originalInput={originalInput}
@@ -103,7 +101,7 @@ export default function ChatInterface({
         />;
     }
 
-    return <InitialScreen 
+    return <InitialScreen
         userInput={userInput}
         setUserInput={setUserInput}
         handleSendMessage={handleSendMessage}
