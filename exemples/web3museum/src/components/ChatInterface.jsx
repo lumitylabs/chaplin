@@ -16,7 +16,7 @@ const ChatInput = ({ userInput, setUserInput, handleSendMessage, isProcessing })
                 onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
                 placeholder="Search"
                 disabled={isProcessing}
-                className="font-mono text-sm w-full bg-[#0C0B0F] text-white placeholder:text-[#3E394B] rounded-full py-4 pl-14 pr-16 border border-[#281A3B] focus:outline-none focus:ring-1 focus:ring-[#582497] transition-all"
+                className="font-mono text-sm w-full bg-[#0C0B0F] text-white placeholder:text-[#3E394B] rounded-full py-4 pl-14 pr-16 border border-[#2b2031] focus:outline-none focus:ring-1 focus:ring-[#663c99] transition-all"
             />
             {/* 
               MODIFICAÇÃO: 
@@ -40,7 +40,7 @@ const ChatInput = ({ userInput, setUserInput, handleSendMessage, isProcessing })
 // Tela Final - "Web 3 Museum" (sem alterações)
 const MuseumDisplay = ({ imageUrl, result, originalInput, userInput, setUserInput, handleSendMessage, isProcessing }) => (
     <div className="flex flex-col items-center justify-center min-h-screen p-8 text-white">
-        <h1 className="text-3xl font-bold mb-12">Web 3 Museum</h1>
+        <h1 className="text-3xl text-[#EADAFF] font-bold mb-12">Web 3 Museum</h1>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center max-w-5xl w-full">
             <div className="w-full h-[600px] aspect-[1/1.4] cursor-pointer">
                 {imageUrl ? (
@@ -72,12 +72,12 @@ const MuseumDisplay = ({ imageUrl, result, originalInput, userInput, setUserInpu
 // Tela Inicial (sem alterações nesta etapa)
 const InitialScreen = ({ userInput, setUserInput, handleSendMessage, isProcessing }) => (
     <div className="flex flex-col items-center justify-center min-h-screen p-4">
-        <div className="bg-[#060606] border border-zinc-800 rounded-3xl overflow-hidden max-w-lg w-full">
+        <div className="bg-[#060606] border border-[#312637] rounded-3xl overflow-hidden max-w-lg w-full">
             <img src={HomeImage} alt="Web3 Digital Museum" className="w-full h-auto object-cover" />
-            <hr className="border-zinc-800" />
-            <div className="flex flex-col p-8">
-                <h2 className="text-white font-mono text-xl">Web3 Digital Museum</h2>
-                <p className="font-mono text-[#5B5966] mb-10 text-sm">Search for an object, person or historical event</p>
+            <hr className="border-[#312637]" />
+            <div className="flex flex-col p-8 gap-1">
+                <h2 className="text-[#faf6ff] font-mono text-xl">Web3 Digital Museum</h2>
+                <p className="font-mono font-semibold text-[#703172] mb-8 text-sm">Search for an object, person or historical event</p>
 
                 <ChatInput
                     userInput={userInput}
