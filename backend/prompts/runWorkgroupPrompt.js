@@ -1,33 +1,54 @@
 // prompts/runWorkgroupPrompt.js
 /**
- * Helpers to build prompts for running the whole workgroup and the integrator.
- *
- * - buildAgentExecutionPrompt({ agent, input, previousOutputs })
- * - buildIntegratorPrompt({ responseformat, outputs, workgroup })
+ * Helpers to build extremely direct prompts with a clear separation of concerns.
+ * - AgentExecution: Generates ONLY plain text for context.
+ * - Integrator: Consumes all text and generates ONLY a JSON object.
+ * Optimized for models like LLaVA that need unambiguous instructions.
  */
 
+/**
+ * Builds a prompt for a regular agent.
+ * Its ONLY goal is to produce a plain text response.
+ * It is explicitly forbidden from using JSON.
+ */
 export function buildAgentExecutionPrompt({ agent, input, previousOutputs }) {
-  // reuse same structure as single-agent but tuned for full-run usage
-  const header = `You are the "${agent.name}" agent in a sequential workgroup.
-System note: Agents run in order and each receives the outputs of previous agents.
-Follow your role instructions and RETURN ONLY YOUR CONTENT (no meta or commentary).\n\n`;
+  // === INPUT DATA SECTION ===
+  let prompt = `== INPUT DATA ==\n`;
+  prompt += `User's Request: ${input}\n`;
 
-  let body = `User input:\n${input}\n\nPrevious outputs:\n`;
   if (!previousOutputs || previousOutputs.length === 0) {
-    body += "(none)\n\n";
+    prompt += `Results from Previous Steps: None. You are the first.\n`;
   } else {
-    previousOutputs.forEach((o, i) => {
-      var o_filter = o.replace("<end_of_turn>", '');
-      body += `Agent ${i} output:\n${o_filter}\n\n`;
-    });
+    const previousOutputsText = previousOutputs
+      .map((output, i) => {
+        const filteredOutput = (output || "").replace("<end_of_turn>", '').trim();
+        return `Result from Step ${i}:\n${filteredOutput}`;
+      })
+      .join("\n\n");
+    prompt += `Results from Previous Steps:\n${previousOutputsText}\n`;
   }
 
-  body += `Role instructions (below). Execute and return only your content:\n\n${agent.prompt}\n\n`;
-  body += `IMPORTANT: Return only your content (no labels, no extra JSON, unless the role explicitly asks for JSON). \n assistant:`;
+  // === YOUR INSTRUCTIONS SECTION ===
+  prompt += `\n== YOUR INSTRUCTIONS ==\n`;
+  prompt += `You are the "${agent.name}". Your instructions are below. Follow them exactly.\n\n${agent.prompt}\n`;
 
-  return header + body;
+  // === ACTION SECTION ===
+  // This section is now extremely clear about the output format.
+  prompt += `\n== ACTION ==\n`;
+  prompt += `Generate your response now based on your instructions. Follow these critical rules:\n`;
+  prompt += `1. Your response MUST be plain text. Do NOT use JSON format.\n`;
+  prompt += `2. Your entire output must be ONLY the direct answer. Do not include "Understood", explanations, or any extra text.\n`;
+  prompt += `3. GENERATE THE TEXT RESPONSE IMMEDIATELY.`;
+
+  prompt += `\n\nassistant:`;
+  return prompt;
 }
 
+
+/**
+ * Builds a prompt for the final Integrator agent.
+ * Its ONLY goal is to take all the previous text and create a single JSON object.
+ */
 export function buildIntegratorPrompt({ responseformat, outputs, workgroup }) {
   // responseformat is an object with keys->descriptions
   const rfStr = JSON.stringify(responseformat || {}, null, 2);
