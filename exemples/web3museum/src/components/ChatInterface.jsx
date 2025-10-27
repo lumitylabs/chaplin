@@ -28,7 +28,7 @@ const ChatInput = ({ userInput, setUserInput, handleSendMessage, isProcessing })
             <button
                 onClick={handleSendMessage}
                 disabled={isProcessing || !userInput.trim()}
-                className="absolute right-1.5 top-1/2 -translate-y-1/2 bg-white w-11 h-11 flex items-center justify-center rounded-full hover:bg-gray-200 transition-colors"
+                className="absolute right-1.5 top-1/2 -translate-y-1/2 bg-white w-11 h-11 flex items-center justify-center rounded-full hover:bg-gray-200 transition-colors cursor-pointer"
             >
                 <SendSolid height={15} width={15} color='#242424' />
             </button>
