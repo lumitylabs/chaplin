@@ -15,7 +15,7 @@ function getClientSessionId() {
     id = `cs_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
     try {
       localStorage.setItem("clientSessionId", id);
-    } catch (e) {}
+    } catch (e) { }
   }
   return id;
 }
@@ -52,7 +52,7 @@ function App() {
   const [finalResult, setFinalResult] = useState(USE_MOCK_DATA ? mockState.finalResult : null);
   const [generatedImageUrl, setGeneratedImageUrl] = useState(USE_MOCK_DATA ? mockState.generatedImageUrl : null);
   const [progressSteps, setProgressSteps] = useState([]); // Pode deixar vazio ou mockar também
-  
+
   const streamControllerRef = useRef(null);
   const imageGenerationTriggeredRef = useRef(false);
   const jobIdRef = useRef(null);
@@ -105,14 +105,16 @@ function App() {
               }
               break;
             case "agent_result":
-              {const agentIndex = newSteps.findIndex(
-                (step) => step.name === chunk.data.name
-              );
-              if (agentIndex > -1) {
-                newSteps[agentIndex].status = "completed";
-                newSteps[agentIndex].content = chunk.data.output;
+              {
+                const agentIndex = newSteps.findIndex(
+                  (step) => step.name === chunk.data.name
+                );
+                if (agentIndex > -1) {
+                  newSteps[agentIndex].status = "completed";
+                  newSteps[agentIndex].content = chunk.data.output;
+                }
+                break;
               }
-              break;}
             case "integrator_start":
               if (!newSteps.some((step) => step.type === "integrator")) {
                 newSteps.push({
@@ -150,10 +152,10 @@ function App() {
                         currentSteps.map((step) =>
                           step.type === "image"
                             ? {
-                                ...step,
-                                status: "completed",
-                                content: "Image generated successfully.",
-                              }
+                              ...step,
+                              status: "completed",
+                              content: "Image generated successfully.",
+                            }
                             : step
                         )
                       );
@@ -162,10 +164,10 @@ function App() {
                         currentSteps.map((step) =>
                           step.type === "image"
                             ? {
-                                ...step,
-                                status: "error",
-                                content: "Failed to generate image.",
-                              }
+                              ...step,
+                              status: "error",
+                              content: "Failed to generate image.",
+                            }
                             : step
                         )
                       );
@@ -271,19 +273,35 @@ function App() {
         setIsOpen={setIsNavbarOpen}
         progressSteps={progressSteps}
       />
+      {/* 
+        Este botão já existe e funciona para telas pequenas (mobile/tablet).
+        Ele aparece quando a navbar está fechada.
+      */}
       <button
         onClick={() => setIsNavbarOpen(true)}
-        className={`fixed top-5 left-2 z-20 p-2 rounded-full cursor-pointer hover:bg-[#1F1F22] lg:hidden ${
-          isNavbarOpen ? "hidden" : "block"
-        }`}
+        className={`fixed top-5 left-2 z-20 p-2 rounded-full cursor-pointer hover:bg-[#1F1F22] lg:hidden ${isNavbarOpen ? "hidden" : "block"
+          }`}
       >
         <Menu color="#A2A2AB" size={23} />
       </button>
       <main
-        className={`flex-grow transition-all duration-300 ${
+        className={`flex-grow transition-all duration-300 relative ${ // Adicionado 'relative' para posicionar o botão
           isNavbarOpen ? "lg:ml-[340px]" : "ml-0"
-        }`}
+          }`}
       >
+        {/*
+          >>> BOTÃO ADICIONADO AQUI <<<
+          Este novo botão aparece apenas em telas grandes (lg) quando a navbar está fechada.
+        */}
+        {!isNavbarOpen && (
+          <button
+            onClick={() => setIsNavbarOpen(true)}
+            className="fixed top-5 left-4 z-20 p-2 rounded-full cursor-pointer hover:bg-[#1F1F22] hidden lg:block"
+          >
+            <Menu color="#A2A2AB" size={23} />
+          </button>
+        )}
+
         <ChatInterface
           isProcessing={isProcessing}
           finalResult={finalResult}
