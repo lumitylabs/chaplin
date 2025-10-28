@@ -8,7 +8,7 @@ import { startChaplinStream } from "../services/apiService";
 import { mockState } from '../_mockData';
 const USE_MOCK_DATA = false;
 
-// Funções utilitárias (sem alterações)
+
 function getClientSessionId() {
   let id = localStorage.getItem("clientSessionId");
   if (!id) {
@@ -33,13 +33,9 @@ function App() {
   const location = useLocation();
   const [isNavbarOpen, setIsNavbarOpen] = useState(true);
   const [userInput, setUserInput] = useState('');
-  
-  // 'originalInput' agora representa o input da requisição ATUAL.
   const [originalInput, setOriginalInput] = useState(USE_MOCK_DATA ? mockState.originalInput : '');
-  
   const [isProcessing, setIsProcessing] = useState(USE_MOCK_DATA ? mockState.isProcessing : false);
   
-  // Estados de 'display' para o que o usuário vê.
   const [displayResult, setDisplayResult] = useState(USE_MOCK_DATA ? mockState.finalResult : null);
   const [displayImageUrl, setDisplayImageUrl] = useState(USE_MOCK_DATA ? mockState.generatedImageUrl : null);
   const [displayOriginalInput, setDisplayOriginalInput] = useState(USE_MOCK_DATA ? mockState.originalInput : '');
@@ -50,122 +46,130 @@ function App() {
   const jobIdRef = useRef(null);
   const pausedDueToHiddenRef = useRef(false);
 
-  // <<< MUDANÇA 1: `startStream` agora recebe o input da requisição atual como argumento >>>
-  const startStream = useCallback((jobId = null, currentRequestInput) => {
-    if (streamControllerRef.current) {
-      streamControllerRef.current.abort();
-    }
-    if (!currentRequestInput) {
-      console.error("startStream foi chamada sem um input válido!");
-      setIsProcessing(false);
-      return;
-    }
-    const payload = {
-      chaplin_id: "-OcHgnjtDj7ezNOTCrY0",
-      input: currentRequestInput,
-      clientSessionId: getClientSessionId(),
-      jobId: jobId,
-    };
+  // Substitua a definição atual de startStream por esta versão:
+const startStream = useCallback((jobId = null, currentRequestInput) => {
+  if (streamControllerRef.current) {
+    streamControllerRef.current.abort();
+  }
+  if (!currentRequestInput) {
+    console.error("startStream foi chamada sem um input válido!");
+    setIsProcessing(false);
+    return;
+  }
+  const payload = {
+    chaplin_id: "-OcHgnjtDj7ezNOTCrY0",
+    input: currentRequestInput,
+    clientSessionId: getClientSessionId(),
+    jobId: jobId,
+  };
 
-    streamControllerRef.current = startChaplinStream(payload, {
-      onData: (chunk) => {
-        if (chunk.type === "start" && chunk.jobId && !jobIdRef.current) {
-          jobIdRef.current = chunk.jobId;
-        }
 
-        if (chunk.type === 'integrator_result') {
-          if (imageGenerationTriggeredRef.current) return;
-          imageGenerationTriggeredRef.current = true;
-          
-          setProgressSteps(prevSteps => [
-            ...prevSteps.map(step =>
-              step.type === 'integrator'
-                ? { ...step, status: 'processing', content: 'output formatter is working...' }
-                : step
-            ),
-            { id: prevSteps.length + 1, name: "Generate Image", status: "processing", type: "image", content: "building image..." }
-          ]);
-          setTimeout(() => {
-            setProgressSteps(currentSteps => currentSteps.map(step =>
-              step.type === 'integrator'
-                ? { ...step, status: 'completed', content: chunk.data.final }
-                : step
-            ));
-          }, 500);
-          
-          generateImageFromPrompt(chunk.data.final.image_prompt).then(
-            (imageUrl) => {
-              // <<< MUDANÇA 2: Usa `currentRequestInput` para atualizar o título de exibição >>>
-              // Isso garante que o título corresponda à requisição que acabou de terminar.
-              if (imageUrl) {
-                setDisplayResult(chunk.data.final);
-                setDisplayImageUrl(imageUrl);
-                setDisplayOriginalInput(currentRequestInput); // CORREÇÃO CRÍTICA
-                
-                setProgressSteps(currentSteps => currentSteps.map(step =>
-                  step.type === 'image' ? { ...step, status: 'completed', content: 'Image generated successfully.' } : step
-                ));
-              } else {
-                setProgressSteps(currentSteps => currentSteps.map(step =>
-                  step.type === 'image' ? { ...step, status: 'error', content: 'Failed to generate image.' } : step
-                ));
-              }
+  streamControllerRef.current = startChaplinStream(payload, {
+    onData: (chunk) => {
+      if (chunk.type === "start" && chunk.jobId && !jobIdRef.current) {
+        jobIdRef.current = chunk.jobId;
+      }
+
+      if (chunk.type === 'integrator_result') {
+        if (imageGenerationTriggeredRef.current) return;
+        imageGenerationTriggeredRef.current = true;
+
+        setProgressSteps(prevSteps => [
+          ...prevSteps.map(step =>
+            step.type === 'integrator'
+              ? { ...step, status: 'processing', content: 'output formatter is working...' }
+              : step
+          ),
+          { id: prevSteps.length + 1, name: "Generate Image", status: "processing", type: "image", content: "building image..." }
+        ]);
+        setTimeout(() => {
+          setProgressSteps(currentSteps => currentSteps.map(step =>
+            step.type === 'integrator'
+              ? { ...step, status: 'completed', content: chunk.data.final }
+              : step
+          ));
+        }, 500);
+
+        generateImageFromPrompt(chunk.data.final.image_prompt).then(
+          (imageUrl) => {
+            if (imageUrl) {
+              setDisplayResult(chunk.data.final);
+              setDisplayImageUrl(imageUrl);
+              setDisplayOriginalInput(currentRequestInput);
+
+              setProgressSteps(currentSteps => currentSteps.map(step =>
+                step.type === 'image' ? { ...step, status: 'completed', content: 'Image generated successfully.' } : step
+              ));
+            } else {
+              // erro na geração da imagem — interrompe o estado de processamento
               setIsProcessing(false);
-              jobIdRef.current = null;
-              setUserInput(""); 
+              setProgressSteps(currentSteps => currentSteps.map(step =>
+                step.type === 'image' ? { ...step, status: 'error', content: 'Failed to generate image.' } : step
+              ));
             }
-          );
-          return;
+            jobIdRef.current = null;
+            // NOTA: não setIsProcessing(false) aqui — deixamos o useEffect([displayImageUrl]) cuidar disso
+          }
+        );
+        return;
+      }
+
+      // resto do onData (atualiza progressSteps)
+      setProgressSteps((prevSteps) => {
+        let newSteps = [...prevSteps];
+        if ((chunk.type === "agent_start" || chunk.type === "start") && newSteps.length > 0 && newSteps[0].type === "connection" && newSteps[0].status === "processing") {
+          newSteps[0].status = "completed";
+          newSteps[0].content = "Connection established.";
         }
+        switch (chunk.type) {
+          case "agent_start":
+            if (!newSteps.some((step) => step.name === chunk.data.name)) {
+              newSteps.push({ id: prevSteps.length + 1, name: chunk.data.name, status: "processing", type: "agent", content: "requesting to cortensor..." });
+            }
+            break;
+          case "agent_attempt": {
+            const agentIndex = newSteps.findIndex((step) => step.name === chunk.data.name);
+            if (agentIndex > -1) { newSteps[agentIndex].content = `waiting for cortensor ${chunk.data.attempt} of ${chunk.data.maxAttempts}`; }
+            break;
+          }
+          case "agent_result": {
+            const agentIndex = newSteps.findIndex((step) => step.name === chunk.data.name);
+            if (agentIndex > -1) { newSteps[agentIndex].status = "generated"; newSteps[agentIndex].content = chunk.data.output; }
+            break;
+          }
+          case "integrator_start":
+            if (!newSteps.some((step) => step.type === "integrator")) {
+              newSteps.push({ id: prevSteps.length + 1, name: "Output", status: "processing", type: "integrator", content: "requesting to output formatter..." });
+            }
+            break;
+        }
+        return newSteps;
+      });
+    },
+    onError: (err) => {
+      console.error("Stream error:", err);
+      setIsProcessing(false);
+      setProgressSteps((prev) => [...prev, { id: prev.length + 1, name: "Error", status: "error", type: "error", content: err.message }]);
+    },
+    onClose: () => {
 
-        setProgressSteps((prevSteps) => {
-          let newSteps = [...prevSteps];
-          if ((chunk.type === "agent_start" || chunk.type === "start") && newSteps.length > 0 && newSteps[0].type === "connection" && newSteps[0].status === "processing") {
-            newSteps[0].status = "completed";
-            newSteps[0].content = "Connection established.";
-          }
-          switch (chunk.type) {
-            case "agent_start":
-              if (!newSteps.some((step) => step.name === chunk.data.name)) {
-                newSteps.push({ id: prevSteps.length + 1, name: chunk.data.name, status: "processing", type: "agent", content: "requesting to cortensor..." });
-              }
-              break;
-            case "agent_attempt": {
-              const agentIndex = newSteps.findIndex((step) => step.name === chunk.data.name);
-              if (agentIndex > -1) { newSteps[agentIndex].content = `waiting for cortensor ${chunk.data.attempt} of ${chunk.data.maxAttempts}`; }
-              break;
-            }
-            case "agent_result": {
-              const agentIndex = newSteps.findIndex((step) => step.name === chunk.data.name);
-              if (agentIndex > -1) { newSteps[agentIndex].status = "generated"; newSteps[agentIndex].content = chunk.data.output; }
-              break;
-            }
-            case "integrator_start":
-              if (!newSteps.some((step) => step.type === "integrator")) {
-                newSteps.push({ id: prevSteps.length + 1, name: "Output", status: "processing", type: "integrator", content: "requesting to output formatter..." });
-              }
-              break;
-          }
-          return newSteps;
-        });
-      },
-      onError: (err) => {
-        console.error("Stream error:", err);
+      if (!imageGenerationTriggeredRef.current && !jobIdRef.current) {
         setIsProcessing(false);
-        setProgressSteps((prev) => [...prev, { id: prev.length + 1, name: "Error", status: "error", type: "error", content: err.message }]);
-      },
-      onClose: () => { if (!displayResult) { setIsProcessing(false); } }, // Usa displayResult para a lógica de onClose
-    });
-  }, [displayResult]); // Depende de displayResult
+      }
+    },
+  });
 
-  // <<< MUDANÇA 3: `handleSendMessage` continua orquestrando tudo >>>
+}, []); 
+
+
   const handleSendMessage = () => {
     const currentInput = userInput.trim();
     if (!currentInput || isProcessing) return;
 
-    // Define o input da requisição ATUAL.
     setOriginalInput(currentInput);
     setIsProcessing(true);
+    
+
     
     setProgressSteps([
       { id: 1, name: "Connect to Chaplin", status: "processing", type: "connection", content: "Connecting..." },
@@ -173,9 +177,17 @@ function App() {
     imageGenerationTriggeredRef.current = false;
     jobIdRef.current = null;
 
-    // Passa o input atual diretamente para a stream.
     startStream(null, currentInput);
   };
+
+  useEffect(() => {
+
+    if (displayImageUrl) {
+
+      setIsProcessing(false);
+      setUserInput("");
+    }
+  }, [displayImageUrl]);
 
   useEffect(() => {
     const handleVisibilityChange = () => {
@@ -187,7 +199,6 @@ function App() {
         }
       } else {
         if (pausedDueToHiddenRef.current && jobIdRef.current) {
-          // Usa `originalInput` para retomar, que foi definido em handleSendMessage
           startStream(jobIdRef.current, originalInput);
         }
         pausedDueToHiddenRef.current = false;

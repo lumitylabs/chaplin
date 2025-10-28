@@ -103,7 +103,7 @@ function NavbarHeader({ closeNavbar }) {
   const navigate = useNavigate();
   return (
     <div className="flex items-center justify-between px-5 pr-2 pt-5 pb-4 flex-shrink-0">
-      <div className="font-inter w-min font-medium text-md text-white tracking-[-0.04em] cursor-pointer" onClick={() => navigate("/home")}>
+      <div className="font-inter w-min font-medium text-md text-white tracking-[-0.04em] cursor-pointer" onClick={() => navigate("/")}>
         Workgroup
       </div>
       <button onClick={closeNavbar} className="flex items-center justify-center w-9 h-9 rounded-full hover:bg-[#1F1F22] transition duration-200 cursor-pointer">
