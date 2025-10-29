@@ -31,7 +31,7 @@ Chaplin is an AI agent orchestrator that allows you to create and manage special
 [![Video Demo](https://i.imgur.com/zF0PInT.png)](https://www.youtube.com/watch?v=gflTpuVK_80)
 
 ## 🔌 API Integration
-### **Como Integrar**  
+### **How to Integrate with the Chaplin API**  
 
 1.  **Find your Chaplin ID:** After creating or selecting a Chaplin in the web interface, click the **API** button. This will reveal your unique `chaplin_id`.
 2.  **View Examples:** In the same popup, you will find code examples for **Python**, **JavaScript**, and **cURL (CLI)** to get you started quickly.
@@ -42,7 +42,7 @@ Chaplin is an AI agent orchestrator that allows you to create and manage special
   "input": "Your text or prompt here"
 }
 ```
-### **Projeto Real com Exemplo de Integração**  
+### **Live Integration Example**  
 You can find a demo project that uses the Chaplin API in the `/examples/web3museum` directory.
 - View the __Web3Museum__ live demo - **[click here](https://web3museum.lumitylabs.com/)**
 
