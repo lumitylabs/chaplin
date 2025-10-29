@@ -8,7 +8,7 @@
 - [🔎 Why?](#-why)
 - [💡 How does it Work?](#-how-does-it-work)
 - [🎥 Demo](#-demo)
-- [🔌 API Integration](#️-api-integration)
+- [🔌 API Integration](#-api-integration)
 - [🔧 Technologies](#-technologies)
 - [💿 Installation](#-installation)
 - [🤝 How to Contribute](#-how-to-contribute)
