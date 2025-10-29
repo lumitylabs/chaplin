@@ -158,11 +158,11 @@ npm run dev
 Found a bug or encountered an error? We'd love to help! Here’s how you can get support:
 
 **Create a GitHub Issue**  
-  For well-defined bugs, errors, or feature requests, creating an issue is the best way to ensure it gets tracked and addressed by the team.  
+- For well-defined bugs, errors, or feature requests, creating an issue is the best way to ensure it gets tracked and addressed by the team.  
   ➡️ **[Create a new issue here](https://github.com/lumitylabs/chaplin/issues/new)**
 
 **Ask on our Discord**  
-  If you're not sure if it's a bug, have a quick question, or want to discuss the issue first, our community on Discord is the perfect place.  
+- If you're not sure if it's a bug, have a quick question, or want to discuss the issue first, our community on Discord is the perfect place.  
   ➡️ **[Join the discussion on Discord](https://discord.com/channels/1174034150462861324/1433186185253093517)**
 
 ## 📧 Contact
