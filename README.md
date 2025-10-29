@@ -60,8 +60,8 @@ You can find a demo project that uses the Chaplin API in the `/examples/web3muse
   <ul>
     <li><strong>Frontend:</strong> JavaScript, React, Tailwind CSS</li>
     <li><strong>Backend:</strong> Vercel Functions, Cloudflare Workers</li>
-    <li><strong>Banco de Dados e Infra:</strong> Firebase, Upstash (QStash), ImgBB</li>
-    <li><strong>Autenticação:</strong> Clerk</li>
+    <li><strong>Database & Infrastructure:</strong> Firebase, Upstash (QStash), ImgBB</li>
+    <li><strong>Authentication:</strong> Clerk</li>
     <li><strong>IA:</strong> LLM (via Cortensor e Gemini)</li>
     <li><strong>Blockchain:</strong> Alchemy, Cortensor</li>
   </ul>
