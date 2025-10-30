@@ -24,17 +24,14 @@ function ApiModal({ persona, onClose }) {
     "chaplin_id": "${persona.id}",
     "input": "Your message here..."
   }'`,
-    js: `// Use in an async function
-const response = await fetch('${apiUrl}', {
+    js: `const response = await fetch('${apiUrl}', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
     chaplin_id: '${persona.id}',
     input: 'Your message here...',
   }),
-});
-// Handle the Server-Sent Events stream from response.body
-// (See MDN docs for ReadableStream examples)`,
+});`,
     py: `import requests
 import json
 
@@ -74,6 +71,12 @@ with requests.post(api_url, json=payload, stream=True) as r:
     }, 2000);
   };
 
+  const tabs = [
+    { key: 'py', label: 'Python' },
+    { key: 'js', label: 'React' },
+    { key: 'curl', label: 'cURL' },
+  ];
+
   // --- Renderização ---
   return (
     <div
@@ -84,7 +87,7 @@ with requests.post(api_url, json=payload, stream=True) as r:
         className="bg-[#26272B] rounded-2xl w-[700px] max-w-[90vw] p-6 flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Cabeçalho e Divisor (Layout Original) */}
+        {/* Cabeçalho e Divisor */}
         <div className="flex justify-between items-center">
           <h2 className="text-md font-semibold text-[#E3E3E4]">API</h2>
           <button onClick={onClose} className="cursor-pointer p-1">
@@ -95,7 +98,7 @@ with requests.post(api_url, json=payload, stream=True) as r:
 
         {/* Conteúdo Principal */}
         <div className="flex flex-col gap-4">
-          {/* Campo de URL (Layout Original) */}
+          {/* Campo de URL */}
           <div className="relative">
             <input
               type="text"
@@ -118,8 +121,8 @@ with requests.post(api_url, json=payload, stream=True) as r:
           </div>
 
           {/* Bloco de Código com Abas */}
-          <div className="bg-[#333437] text-white p-4 rounded-lg font-mono text-sm relative h-[350px]">
-            {/* Botão de Copiar para o Bloco de Código */}
+          <div className="bg-[#333437] text-white p-4 rounded-lg font-mono text-sm relative h-[450px]">
+            {/* Botão de Copiar */}
             <button
               onClick={() => handleCopy(activeTab, codeSnippets[activeTab])}
               className="absolute top-1.5 right-2 p-2.5 rounded-full hover:bg-[#424344] cursor-pointer"
@@ -133,19 +136,33 @@ with requests.post(api_url, json=payload, stream=True) as r:
               </span>
             )}
 
-            {/* Abas de Seleção */}
-            <div className="flex items-center gap-2 mb-3 ">
-              <button onClick={() => setActiveTab('py')} className={`px-3 py-1 text-xs rounded ${activeTab === 'py' ? 'bg-gray-500' : 'bg-gray-700 hover:bg-gray-600'}`}>Python</button>
-              <button onClick={() => setActiveTab('js')} className={`px-3 py-1 text-xs rounded ${activeTab === 'js' ? 'bg-gray-500' : 'bg-gray-700 hover:bg-gray-600'}`}>JavaScript</button>
-              
-              <button onClick={() => setActiveTab('curl')} className={`px-3 py-1 text-xs rounded ${activeTab === 'curl' ? 'bg-gray-500' : 'bg-gray-700 hover:bg-gray-600'}`}>cURL</button>
-              
+            {/* Abas de Seleção (Novo Layout) */}
+            <div className="border-b border-gray-700">
+              <nav className="-mb-px flex space-x-8" aria-label="Tabs">
+                {tabs.map((tab) => (
+                  <button
+                    key={tab.key}
+                    onClick={() => setActiveTab(tab.key)}
+                    className={`whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm
+                      ${
+                        activeTab === tab.key
+                          ? 'border-white text-white'
+                          : 'border-transparent text-gray-400 hover:text-gray-200 hover:border-gray-500'
+                      }
+                    `}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </nav>
             </div>
 
             {/* Conteúdo do Código */}
-            <pre className="whitespace-pre-wrap">
-              <code>{codeSnippets[activeTab]}</code>
-            </pre>
+            <div className="mt-4">
+              <pre className="whitespace-pre-wrap">
+                <code>{codeSnippets[activeTab]}</code>
+              </pre>
+            </div>
           </div>
         </div>
       </div>
