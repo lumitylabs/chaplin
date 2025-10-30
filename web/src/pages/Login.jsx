@@ -158,14 +158,16 @@ function Footer() {
   return (
     <footer className="w-full py-8 flex flex-col items-center justify-center gap-4 bg-[#18181B] select-none">
       <div className="flex text-[#818182] gap-5 text-sm">
-        <a href="#" className="hover:text-white transition-colors">
-          How it Works
+        <a href="https://discord.com/channels/1174034150462861324/1433186185253093517" className="hover:text-white transition-colors" target="_blank">
+          Discord
         </a>
-        <a href="#" className="hover:text-white transition-colors">
-          Blog
+        <a href="https://github.com/lumitylabs/chaplin" className="hover:text-white transition-colors" target="_blank">
+          GitHub
         </a>
       </div>
+      <a href="https://lumitylabs.com/" className="text-xs text-[#818182] hover:text-white transition-colors" target="_blank">
       <img src={LumityFooter} alt="Powered by Lumity" />
+      </a>
     </footer>
   );
 }
