@@ -53,9 +53,9 @@ function ChaplinMessage({ persona, message }) {
     <div className="flex justify-start items-start gap-3">
       <img src={personaImage} alt={persona.name} className="w-10 h-10 rounded-full" />
       <div className="flex flex-col items-start w-full">
-        <p className="text-sm font-semibold text-[#E3E3E4] mb-1">{persona.name}</p>
+        <p className="text-xs font-medium text-[#F3F6FA] mb-1">{persona.name}</p>
         {message.status === 'processing' ? (
-          <div className="text-sm text-[#9e9e9e] italic">{message.statusText}</div>
+          <div className="text-sm text-[#9e9e9e] italic animate-pulse">{message.statusText}</div>
         ) : (
           <ResultsTable data={message.content} />
         )}
@@ -265,16 +265,16 @@ export default function TryModal({ chaplin, onClose, onSaveResults }) {
 
   return (
     <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex justify-center items-center z-50" onClick={handleCloseExplicit}>
-      <div className="bg-[#26272B] rounded-2xl w-[750px] h-[500px] p-6 flex flex-col" onClick={(e) => e.stopPropagation()}>
+      <div className="bg-[#26272B] rounded-2xl w-[800px] h-[600px] p-6 flex flex-col" onClick={(e) => e.stopPropagation()}>
         <div className="flex justify-between items-center">
           <h2 className="text-md font-semibold text-[#E3E3E4]">{chaplinName}</h2>
-          <button onClick={handleCloseExplicit} className="cursor-pointer p-1"><X color="#BFBCBC" size={22} /></button>
+          <button onClick={handleCloseExplicit} className="cursor-pointer p-1 pb-5"><X color="#BFBCBC" size={22} /></button>
         </div>
         <div className="w-full h-px bg-[#303135] mt-1"></div>
         <div className="flex-grow overflow-hidden my-4">
           <SimpleBar ref={simpleBarRef} className="category-dropdown-scrollbar h-full">
             <div className="flex flex-col gap-8 pr-3 pb-5">
-              <div className="flex justify-start items-start gap-3 pt-5">
+              <div className="flex justify-start items-start gap-3 pt-1">
                 <div className="flex-shrink-0 items-center justify-center w-10 h-10 rounded-full bg-gradient-to-r from-[#0A0A0A] to-[#2B2B2B] shadow-lg flex">
                   <Wrench color="#B3B3B3" size={21} />
                 </div>
@@ -288,7 +288,7 @@ export default function TryModal({ chaplin, onClose, onSaveResults }) {
               {messages.map((msg) => msg.type === 'user' ? (
                 <div key={msg.id} className="flex justify-end items-start gap-3">
                   <div className="flex flex-col items-end">
-                    <p className="text-sm font-semibold text-[#E3E3E4] mb-1">You</p>
+                    <p className="text-xs font-medium text-[#F3F6FA] mb-1">You</p>
                     <div className="bg-[#35373B] rounded-xl p-3 max-w-md">
                       <p className="text-sm text-[#C1C1C2] whitespace-pre-wrap">{msg.text}</p>
                     </div>
