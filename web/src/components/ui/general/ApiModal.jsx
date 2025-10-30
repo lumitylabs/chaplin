@@ -95,7 +95,7 @@ with requests.post(api_url, json=payload, stream=True) as r:
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex justify-between items-center">
-          <h2 className="text-md font-semibold text-[#E3E3E4]">API</h2>
+          <h2 className="text-md font-semibold text-[#E3E3E4] select-none">API</h2>
           <button onClick={onClose} className="cursor-pointer p-1 pb-5">
             <X color="#BFBCBC" size={22} />
           </button>
@@ -131,7 +131,7 @@ with requests.post(api_url, json=payload, stream=True) as r:
                   <button
                     key={tab.key}
                     onClick={() => setActiveTab(tab.key)}
-                    className={`whitespace-nowrap py-3 px-1 border-b-2 font-semibold text-sm cursor-pointer
+                    className={`whitespace-nowrap py-3 px-1 border-b-2 font-semibold text-sm cursor-pointer select-none
                       ${activeTab === tab.key
                         ? "border-white text-white"
                         : "border-transparent text-[#8D8D94] hover:text-[#dfdfdf]"
