@@ -12,7 +12,7 @@ function getClientSessionId() {
   let id = localStorage.getItem("clientSessionId");
   if (!id) {
     id = `cs_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-    try { localStorage.setItem("clientSessionId", id); } catch (e) {}
+    try { localStorage.setItem("clientSessionId", id); } catch (e) { }
   }
   return id;
 }
@@ -46,7 +46,6 @@ function ResultsTable({ data }) {
   );
 }
 
-// Sub-componente para a mensagem do Chaplin
 function ChaplinMessage({ persona, message }) {
   const personaImage = persona.image_url || ChaplinImage;
 
