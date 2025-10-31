@@ -57,7 +57,7 @@ const startStream = useCallback((jobId = null, currentRequestInput) => {
     return;
   }
   const payload = {
-    chaplin_id: "-OcHgnjtDj7ezNOTCrY0",
+    chaplin_id: "-OcwWkaAeD-aE1Aj3Wij",
     input: currentRequestInput,
     clientSessionId: getClientSessionId(),
     jobId: jobId,
