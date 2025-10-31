@@ -18,7 +18,7 @@ function Navbar() {
           href="https://discord.com/channels/1174034150462861324/1433186185253093517"
           target="_blank"
           rel="noopener noreferrer"
-          className="flex w-25 py-2 px-5 border-[#303136] border rounded-full text-white text-[0.92em] justify-center items-center cursor-pointer transition-all duration-200 active:scale-95 hover:bg-[#1F1F23] "
+          className="flex w-25 py-2 px-5 border-[#303136] border rounded-full text-white text-[0.92em] justify-center items-center cursor-pointer transition-all duration-200 active:scale-95 hover:bg-[#1F1F23] select-none"
         >
           Discord
         </a>
@@ -32,7 +32,7 @@ function Navbar() {
   href="https://github.com/lumitylabs/chaplin"
   target="_blank"
   rel="noopener noreferrer"
-  className="flex w-30 py-2 px-5 bg-white text-black text-[0.92em] rounded-full justify-center items-center gap-2 cursor-pointer  transition-all active:scale-95 duration-200 hover:bg-[#E3E3E4]"
+  className="flex w-30 py-2 px-5 bg-white text-black text-[0.92em] rounded-full justify-center items-center gap-2 cursor-pointer  transition-all active:scale-95 duration-200 hover:bg-[#E3E3E4] select-none"
 >
   <svg
     xmlns="http://www.w3.org/2000/svg"
