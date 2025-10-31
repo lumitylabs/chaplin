@@ -17,7 +17,7 @@ const CHAPLIN_SESSION_MAP_KEY = "chaplin_jobs_map_session";
 
 function TopBar({ searchTerm, onSearchChange, viewMode }) {
   return (
-    <header className="flex justify-end md:justify-between items-center w-full gap-4">
+    <header className="flex justify-end md:justify-between items-center w-full gap-4 select-none">
       <h1 className="hidden md:block font-inter font-semibold text-lg text-[#FAFAFA] whitespace-nowrap">
         {viewMode === 'favorites' ? 'Favorites' : 'Community Chaplins'}
       </h1>
@@ -36,7 +36,7 @@ function TopBar({ searchTerm, onSearchChange, viewMode }) {
 }
 
 function FilterTag({ name, isActive, onClick }) {
-  const baseClasses = "flex items-center justify-center font-inter font-semibold text-[0.80em] p-[14px] px-4 rounded-xl cursor-pointer transition-colors whitespace-nowrap";
+  const baseClasses = "flex items-center justify-center font-inter font-semibold text-[0.80em] p-[14px] px-4 rounded-xl cursor-pointer transition-colors whitespace-nowrap select-none";
   const activeClasses = "bg-[#FAFAFA] text-[#1C1C1F]";
   const inactiveClasses = "bg-[#26272B] text-[#A2A2AB] hover:text-white";
   return (

@@ -20,7 +20,7 @@ function NavbarHeader({ closeNavbar, handleMobileNavClick }) {
   };
 
   return (
-    <div className="flex flex-col gap-6 px-5 pr-2 pt-5 pb-0">
+    <div className="flex flex-col gap-6 px-5 pr-2 pt-5 pb-0 ">
       <div className="flex items-center justify-between">
         <div className="font-mali w-min font-medium text-2xl text-white tracking-[-0.04em] cursor-pointer" onClick={() => navigate("/home")}>
           Chaplin
@@ -180,7 +180,7 @@ function PersonaNavbar({ isOpen, setIsOpen, viewMode, setViewMode, handleMobileN
         animate={isOpen ? "open" : "closed"}
         variants={variants}
         transition={{ type: "spring", stiffness: 400, damping: 40 }}
-        className="fixed top-0 left-0 w-[260px] h-screen bg-[#131316] border-r-[1px] border-[#26272B] font-inter flex flex-col justify-between z-40"
+        className="fixed top-0 left-0 w-[260px] h-screen bg-[#131316] border-r-[1px] border-[#26272B] font-inter flex flex-col justify-between z-40 select-none"
       >
         <div className="flex flex-col gap-8 h-full">
           <div className="flex flex-col gap-5">
