@@ -106,7 +106,7 @@ function LoginModal() {
           <button 
         onClick={handleMetaMaskSignIn}
         disabled={isLoading}
-        className="w-full h-12 bg-white text-black rounded-xl hover:bg-[#E3E3E4] transition-colors flex items-center justify-center gap-3 text-[0.92em] tracking-tight cursor-pointer disabled:opacity-50"
+        className="w-full h-12 bg-white text-black rounded-xl hover:bg-[#E3E3E4] transition-all active:scale-95 duration-200 flex items-center justify-center gap-3 text-[0.92em] tracking-tight cursor-pointer disabled:opacity-50"
       >
         <img src={MetaMaskIcon} className="w-6 h-6" alt="MetaMask Icon" />
         <span>{isLoading ? 'Conecting...' : 'Continue with MetaMask'}</span>

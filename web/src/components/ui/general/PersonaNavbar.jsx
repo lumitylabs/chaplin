@@ -29,8 +29,8 @@ function NavbarHeader({ closeNavbar, handleMobileNavClick }) {
           <ChevronsLeft color="#86868E" size={17} />
         </button>
       </div>
-      <button onClick={handleCreateClick} className="flex p-1.5 px-3 gap-1 bg-[#202024] w-32 items-center rounded-full text-[#FAFAFA] text-[0.84em] border-[1px] border-[#26272B] cursor-pointer hover:bg-[#3B3B41]">
-        <Plus color="#94949C" height={36} width={36} />
+      <button onClick={handleCreateClick} className="flex p-1.5 px-3 gap-1 bg-[#202024] w-32 items-center rounded-full text-[#FAFAFA] text-[0.84em] border-[1px] border-[#26272B] cursor-pointer hover:bg-[#3B3B41] transition-all active:scale-95 duration-200">
+        <Plus color="#94949C" height={36} width={36} strokeWidth={1.5}/>
         Create
       </button>
     </div>
