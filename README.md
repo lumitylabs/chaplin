@@ -28,7 +28,7 @@ AI model responses are significantly improved when provided with relevant contex
 Chaplin is an AI agent orchestrator that allows you to create and manage specialized teams to solve complex tasks. Each agent acts as an expert in its field, processing information sequentially until the final answer is generated. With a flexible architecture, Chaplins are easy to share, test, and integrate into your projects, making them ideal for a wide range of applications.
 
 ## 🎥 Demo
-[![Video Demo](https://i.imgur.com/zF0PInT.png)](https://www.youtube.com/watch?v=gflTpuVK_80)
+[![Video Demo](https://i.imgur.com/zF0PInT.png)](https://www.youtube.com/watch?v=NiQcVNkmDac)
 
 ## 🔌 API Integration
 ### **How to Integrate with the Chaplin API**  
