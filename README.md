@@ -153,7 +153,7 @@ npm run dev
 ## 🤝 How to Contribute
 - __Integrate Chaplin__ with other systems, tools, or applications
 - __Create New Chaplins__ for the community - [**click here**](https://chaplin.lumitylabs.com/create)
-- __Check our Roadmap - [**click here**](https://github.com/lumitylabs/chaplin/blob/main/STATUS.md)
+- __Check our Roadmap__ - [**click here**](https://github.com/lumitylabs/chaplin/blob/main/STATUS.md)
 
 
 ## 🐞 Report Bug and Errors  
