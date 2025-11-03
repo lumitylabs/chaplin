@@ -1,6 +1,6 @@
 # Chaplin Project Status
 
-![Status: Active](https://img.shields.io/badge/status-active-success.svg)![Version 1.0.0](https://img.shields.io/badge/version-1.0.0-blue.svg)
+![Status: Active](https://img.shields.io/badge/status-active-success.svg) ![Version 1.0.0](https://img.shields.io/badge/version-1.0.0-blue.svg)
 
 This document provides an overview of the current status, future roadmap, and known issues for the Chaplin project. It is updated regularly to keep the community and collaborators informed.
 
