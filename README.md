@@ -1,6 +1,6 @@
-[![N|Solid](https://i.imgur.com/ESdUHmB.png)](https://chaplin.lumitylabs.com)
-# Chaplin
-###### _Unleashing the future of AI together - Cortensor Hackathon, 2025_  
+[![N|Solid](https://i.imgur.com/ESdUHmB.png)](https://chaplin.lumitylabs.com)  
+# Chaplin [![Status: Active](https://img.shields.io/badge/status-active-success.svg)](https://github.com/lumitylabs/chaplin/blob/main/STATUS.md) [![Version 1.0.0](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/lumitylabs/chaplin/releases/tag/1.0.0)
+###### _Unleashing the future of AI together - Cortensor Hackathon, 2025_
 ### The Specialist Agent Factory | [Try Chaplin Live](https://chaplin.lumitylabs.com/)
 "Transform any task into an AI-powered solution. Simply describe what you need, and Chaplin creates and deploys a team of specialist agents that collaborate to accomplish the task. You get a ready-to-use Chaplin that you can share or integrate into your projects."
 
