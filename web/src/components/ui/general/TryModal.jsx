@@ -201,7 +201,7 @@ export default function TryModal({ chaplin, onClose, onSaveResults }) {
         if (updated.status !== 'complete') { // Só finaliza se não tiver um resultado final ainda
           updated.status = 'complete';
           updated.statusText = '';
-          if (!updated.content) updated.content = { Info: "Processing finished." };
+          if (!updated.content) updated.content = { Info: "No response was returned from the model. Please try again." };
         }
       }
       return updated;

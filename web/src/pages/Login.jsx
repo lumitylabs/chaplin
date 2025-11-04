@@ -76,26 +76,18 @@ function IconGrid() {
   );
 }
 
-// ----- Função utilitária para detectar provider correto -----
-/**
- * Detecta e retorna o provider Ethereum a ser usado.
- * Lógica:
- *  - Se window.ethereum.providers (multi-inject) -> tenta achar isMetaMask === true
- *  - Senão -> usa window.ethereum (single provider)
- *  - Retorna null se não encontrar provider com método request
- */
+
 function detectPreferredEthereumProvider() {
   if (typeof window === 'undefined') return null;
 
   const eth = window.ethereum;
 
-  // múltiplos providers injetados (ex: MetaMask + outra wallet)
   if (eth && Array.isArray(eth.providers)) {
-    // preferir provider.isMetaMask === true
+
     const mm = eth.providers.find((p) => p && p.isMetaMask);
     if (mm && typeof mm.request === 'function') return mm;
 
-    // fallback: retornar primeiro provider que ofereça request
+
     const any = eth.providers.find((p) => p && typeof p.request === 'function');
     if (any) return any;
 
@@ -113,7 +105,7 @@ function LoginModal() {
   const signInHook = useSignIn();
   const signUpHook = useSignUp();
 
-  // signInHook pode ser undefined se Clerk não estiver inicializado (checar)
+
   const signIn = signInHook ? signInHook.signIn : null;
   const setActive = signInHook ? signInHook.setActive : null;
   const signUp = signUpHook ? signUpHook.signUp : null;
@@ -122,11 +114,11 @@ function LoginModal() {
   const [showInstallMetaMaskModal, setShowInstallMetaMaskModal] = useState(false);
   const [lastError, setLastError] = useState(null);
 
-  // Handler robusto para múltiplos wallets
+
   const handleMetaMaskSignIn = async () => {
     setLastError(null);
 
-    // Detect provider preferido (gera provider correto mesmo com multiplas wallets)
+
     const preferredProvider = detectPreferredEthereumProvider();
 
     if (!preferredProvider) {
@@ -135,7 +127,7 @@ function LoginModal() {
       return;
     }
 
-    // Requisitos: signIn.authenticateWithMetamask precisa existir
+
     if (!signIn || typeof signIn.authenticateWithMetamask !== 'function') {
       console.error('Clerk signIn.authenticateWithMetamask não disponível.');
       setLastError('Authentication subsystem is not ready. Please try again later.');
@@ -144,43 +136,35 @@ function LoginModal() {
 
     setIsLoading(true);
 
-    // Algumas libs checam window.ethereum global — para garantir que a lib use o provider correto,
-    // fazemos um swap temporário. Salvamos o original e restauramos no finally.
+
     const originalWindowEthereum = window.ethereum;
     try {
-      // colocar provider escolhido em window.ethereum temporariamente
+
       window.ethereum = preferredProvider;
 
-      // solicitar accounts ao provider explicitamente: boa prática e força popup de permissão
       if (typeof preferredProvider.request === 'function') {
         try {
           await preferredProvider.request({ method: 'eth_requestAccounts' });
         } catch (reqErr) {
-          // Usuário pode recusar; capture e exiba
           console.error('Usuário recusou permissão eth_requestAccounts ou request falhou:', reqErr);
           setLastError('Wallet permission was not granted.');
           return;
         }
       }
 
-      // Agora chamar Clerk usando Metamask. Se falhar por usuário não existir, tentar signup.
       try {
         const signInAttempt = await signIn.authenticateWithMetamask();
         if (signInAttempt && signInAttempt.status === 'complete') {
-          // setActive pode não existir dependendo do hook: checar
           if (typeof setActive === 'function') {
             await setActive({ session: signInAttempt.createdSessionId });
           }
           return; // sucesso
         }
 
-        // se Clerk retornou outro status, exibir para debug
         console.warn('signIn.authenticateWithMetamask result:', signInAttempt);
       } catch (signinError) {
-        // Possível caso: usuário não existe (Unprocessable Content), ou erro de fluxo
         console.error('Erro durante signIn.authenticateWithMetamask:', signinError);
 
-        // tentar signup apenas se signUp.authenticateWithMetamask existir
         if (signUp && typeof signUp.authenticateWithMetamask === 'function') {
           try {
             const signUpAttempt = await signUp.authenticateWithMetamask();
@@ -200,11 +184,9 @@ function LoginModal() {
         }
       }
     } finally {
-      // restaurar provider original
       try {
         window.ethereum = originalWindowEthereum;
       } catch (restoreErr) {
-        // Em alguns ambientes (sandbox), reassignment pode falhar; registrar apenas
         console.warn('Could not restore original window.ethereum:', restoreErr);
       }
       setIsLoading(false);
