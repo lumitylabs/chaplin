@@ -14,7 +14,7 @@ import "simplebar-react/dist/simplebar.min.css";
 import SimpleBar from 'simplebar-react';
 import { useSignIn, useSignUp } from '@clerk/clerk-react';
 
-// Componente do Modal para Instalação da MetaMask
+// ----- Modal para instalar MetaMask -----
 function InstallMetaMaskModal({ isOpen, onClose }) {
   if (!isOpen) return null;
 
@@ -47,6 +47,7 @@ function InstallMetaMaskModal({ isOpen, onClose }) {
   );
 }
 
+// ----- UI helpers -----
 function IconButton({ icon }) {
   return (
     <div className="flex p-1 bg-[#363639] rounded-xl w-10 h-10 justify-center items-center">
@@ -75,44 +76,137 @@ function IconGrid() {
   );
 }
 
+// ----- Função utilitária para detectar provider correto -----
+/**
+ * Detecta e retorna o provider Ethereum a ser usado.
+ * Lógica:
+ *  - Se window.ethereum.providers (multi-inject) -> tenta achar isMetaMask === true
+ *  - Senão -> usa window.ethereum (single provider)
+ *  - Retorna null se não encontrar provider com método request
+ */
+function detectPreferredEthereumProvider() {
+  if (typeof window === 'undefined') return null;
+
+  const eth = window.ethereum;
+
+  // múltiplos providers injetados (ex: MetaMask + outra wallet)
+  if (eth && Array.isArray(eth.providers)) {
+    // preferir provider.isMetaMask === true
+    const mm = eth.providers.find((p) => p && p.isMetaMask);
+    if (mm && typeof mm.request === 'function') return mm;
+
+    // fallback: retornar primeiro provider que ofereça request
+    const any = eth.providers.find((p) => p && typeof p.request === 'function');
+    if (any) return any;
+
+    return null;
+  }
+
+  // single provider
+  if (eth && typeof eth.request === 'function') return eth;
+
+  return null;
+}
+
+// ----- Modal / Login principal -----
 function LoginModal() {
-  const { signIn, setActive } = useSignIn();
-  const { signUp } = useSignUp();
+  const signInHook = useSignIn();
+  const signUpHook = useSignUp();
+
+  // signInHook pode ser undefined se Clerk não estiver inicializado (checar)
+  const signIn = signInHook ? signInHook.signIn : null;
+  const setActive = signInHook ? signInHook.setActive : null;
+  const signUp = signUpHook ? signUpHook.signUp : null;
+
   const [isLoading, setIsLoading] = useState(false);
   const [showInstallMetaMaskModal, setShowInstallMetaMaskModal] = useState(false);
+  const [lastError, setLastError] = useState(null);
 
+  // Handler robusto para múltiplos wallets
   const handleMetaMaskSignIn = async () => {
-    // Essencial: Verifica se o provedor `ethereum` existe E se ele se identifica
-    // como MetaMask. Isso resolve conflitos quando múltiplas carteiras estão instaladas.
-    const isMetaMaskInstalled = typeof window.ethereum !== 'undefined' && window.ethereum.isMetaMask;
+    setLastError(null);
 
-    if (!isMetaMaskInstalled) {
-      console.log('MetaMask não foi detectada.');
+    // Detect provider preferido (gera provider correto mesmo com multiplas wallets)
+    const preferredProvider = detectPreferredEthereumProvider();
+
+    if (!preferredProvider) {
+      console.warn('Nenhum provider Ethereum compatível detectado.');
       setShowInstallMetaMaskModal(true);
       return;
     }
 
-    if (!signIn) return;
+    // Requisitos: signIn.authenticateWithMetamask precisa existir
+    if (!signIn || typeof signIn.authenticateWithMetamask !== 'function') {
+      console.error('Clerk signIn.authenticateWithMetamask não disponível.');
+      setLastError('Authentication subsystem is not ready. Please try again later.');
+      return;
+    }
 
     setIsLoading(true);
-    try {
-      const signInAttempt = await signIn.authenticateWithMetamask();
 
-      if (signInAttempt.status === 'complete') {
-        await setActive({ session: signInAttempt.createdSessionId });
-      }
-    } catch (error) {
-      console.error('Erro na autenticação com MetaMask:', error);
-      // Fallback para tentar o cadastro se o usuário não existir.
-      try {
-        const signUpAttempt = await signUp.authenticateWithMetamask();
-        if (signUpAttempt.status === 'complete') {
-          await setActive({ session: signUpAttempt.createdSessionId });
+    // Algumas libs checam window.ethereum global — para garantir que a lib use o provider correto,
+    // fazemos um swap temporário. Salvamos o original e restauramos no finally.
+    const originalWindowEthereum = window.ethereum;
+    try {
+      // colocar provider escolhido em window.ethereum temporariamente
+      window.ethereum = preferredProvider;
+
+      // solicitar accounts ao provider explicitamente: boa prática e força popup de permissão
+      if (typeof preferredProvider.request === 'function') {
+        try {
+          await preferredProvider.request({ method: 'eth_requestAccounts' });
+        } catch (reqErr) {
+          // Usuário pode recusar; capture e exiba
+          console.error('Usuário recusou permissão eth_requestAccounts ou request falhou:', reqErr);
+          setLastError('Wallet permission was not granted.');
+          return;
         }
-      } catch (signUpError) {
-        console.error('Erro no cadastro com MetaMask:', signUpError);
+      }
+
+      // Agora chamar Clerk usando Metamask. Se falhar por usuário não existir, tentar signup.
+      try {
+        const signInAttempt = await signIn.authenticateWithMetamask();
+        if (signInAttempt && signInAttempt.status === 'complete') {
+          // setActive pode não existir dependendo do hook: checar
+          if (typeof setActive === 'function') {
+            await setActive({ session: signInAttempt.createdSessionId });
+          }
+          return; // sucesso
+        }
+
+        // se Clerk retornou outro status, exibir para debug
+        console.warn('signIn.authenticateWithMetamask result:', signInAttempt);
+      } catch (signinError) {
+        // Possível caso: usuário não existe (Unprocessable Content), ou erro de fluxo
+        console.error('Erro durante signIn.authenticateWithMetamask:', signinError);
+
+        // tentar signup apenas se signUp.authenticateWithMetamask existir
+        if (signUp && typeof signUp.authenticateWithMetamask === 'function') {
+          try {
+            const signUpAttempt = await signUp.authenticateWithMetamask();
+            if (signUpAttempt && signUpAttempt.status === 'complete') {
+              if (typeof setActive === 'function') {
+                await setActive({ session: signUpAttempt.createdSessionId });
+              }
+              return;
+            }
+            console.warn('signUp.authenticateWithMetamask result:', signUpAttempt);
+          } catch (signupErr) {
+            console.error('Erro no cadastro com MetaMask:', signupErr);
+            setLastError('Failed to register using the wallet.');
+          }
+        } else {
+          setLastError('Sign-in failed and signup flow is not available.');
+        }
       }
     } finally {
+      // restaurar provider original
+      try {
+        window.ethereum = originalWindowEthereum;
+      } catch (restoreErr) {
+        // Em alguns ambientes (sandbox), reassignment pode falhar; registrar apenas
+        console.warn('Could not restore original window.ethereum:', restoreErr);
+      }
       setIsLoading(false);
     }
   };
@@ -153,6 +247,12 @@ function LoginModal() {
               <span>{isLoading ? 'Conecting...' : 'Continue with MetaMask'}</span>
             </button>
 
+            {lastError && (
+              <div className="text-xs text-red-400 text-center max-w-[18rem] pt-2">
+                {lastError}
+              </div>
+            )}
+
             <div className="text-xs text-gray-500 text-center max-w-[18rem] pt-2">
               By continuing, you agree with the{" "}
               <a href="#" className="font-medium text-gray-400 hover:text-white transition-colors">
@@ -175,6 +275,7 @@ function LoginModal() {
   );
 }
 
+// ----- Imagem de fundo -----
 function ImageBg() {
   return (
     <div
@@ -194,6 +295,7 @@ function ImageBg() {
   );
 }
 
+// ----- Footer -----
 function Footer() {
   return (
     <footer className="w-full py-8 flex flex-col items-center justify-center gap-4 bg-[#18181B] select-none">
@@ -212,6 +314,7 @@ function Footer() {
   );
 }
 
+// ----- Componente principal de Login (com SimpleBar) -----
 function Login() {
   return (
     <SimpleBar style={{ maxHeight: '100vh' }} className="login-page-scrollbar">
@@ -227,6 +330,12 @@ function Login() {
           <ImageBg />
           <LoginModal />
         </main>
+
+        {/* Elemento necessário pelo Clerk para inicializar Smart CAPTCHA widget.
+            O log "Cannot initialize Smart CAPTCHA widget because the clerk-captcha DOM element was not found"
+            desaparece se esse elemento existir quando Clerk tentar inicializar. */}
+        <div id="clerk-captcha" style={{ display: 'none' }} />
+
         <Footer />
       </div>
     </SimpleBar>
