@@ -14,14 +14,12 @@ import "simplebar-react/dist/simplebar.min.css";
 import SimpleBar from 'simplebar-react';
 import { useSignIn, useSignUp } from '@clerk/clerk-react';
 
-// NOVO: Componente do Modal para Instalação da MetaMask
+// ----- Modal para instalar MetaMask -----
 function InstallMetaMaskModal({ isOpen, onClose }) {
   if (!isOpen) return null;
 
   return (
-    // Overlay
     <div className="fixed inset-0 bg-black/90 backdrop-blur-xs bg-opacity-70 z-50 flex justify-center items-center">
-      {/* Conteúdo do Modal */}
       <div className="bg-[#26272B] text-white p-8 flex flex-col items-center rounded-3xl shadow-lg w-[90%] max-w-sm">
         <img src={MetaMaskIcon} className="w-16 h-16 mb-4" alt="MetaMask Icon" />
         <h2 className="font-inter font-bold text-2xl mb-2 text-center">MetaMask not detected</h2>
@@ -49,7 +47,7 @@ function InstallMetaMaskModal({ isOpen, onClose }) {
   );
 }
 
-
+// ----- UI helpers -----
 function IconButton({ icon }) {
   return (
     <div className="flex p-1 bg-[#363639] rounded-xl w-10 h-10 justify-center items-center">
@@ -78,45 +76,137 @@ function IconGrid() {
   );
 }
 
-function LoginModal() {
-  const { signIn, setActive } = useSignIn();
-  const { signUp } = useSignUp();
-  const [isLoading, setIsLoading] = useState(false);
-  
-  // NOVO: Estado para controlar a visibilidade do modal de instalação
-  const [showInstallMetaMaskModal, setShowInstallMetaMaskModal] = useState(false);
+// ----- Função utilitária para detectar provider correto -----
+/**
+ * Detecta e retorna o provider Ethereum a ser usado.
+ * Lógica:
+ *  - Se window.ethereum.providers (multi-inject) -> tenta achar isMetaMask === true
+ *  - Senão -> usa window.ethereum (single provider)
+ *  - Retorna null se não encontrar provider com método request
+ */
+function detectPreferredEthereumProvider() {
+  if (typeof window === 'undefined') return null;
 
-  // ALTERADO: Lógica de clique no botão MetaMask
+  const eth = window.ethereum;
+
+  // múltiplos providers injetados (ex: MetaMask + outra wallet)
+  if (eth && Array.isArray(eth.providers)) {
+    // preferir provider.isMetaMask === true
+    const mm = eth.providers.find((p) => p && p.isMetaMask);
+    if (mm && typeof mm.request === 'function') return mm;
+
+    // fallback: retornar primeiro provider que ofereça request
+    const any = eth.providers.find((p) => p && typeof p.request === 'function');
+    if (any) return any;
+
+    return null;
+  }
+
+  // single provider
+  if (eth && typeof eth.request === 'function') return eth;
+
+  return null;
+}
+
+// ----- Modal / Login principal -----
+function LoginModal() {
+  const signInHook = useSignIn();
+  const signUpHook = useSignUp();
+
+  // signInHook pode ser undefined se Clerk não estiver inicializado (checar)
+  const signIn = signInHook ? signInHook.signIn : null;
+  const setActive = signInHook ? signInHook.setActive : null;
+  const signUp = signUpHook ? signUpHook.signUp : null;
+
+  const [isLoading, setIsLoading] = useState(false);
+  const [showInstallMetaMaskModal, setShowInstallMetaMaskModal] = useState(false);
+  const [lastError, setLastError] = useState(null);
+
+  // Handler robusto para múltiplos wallets
   const handleMetaMaskSignIn = async () => {
-    // 1. Verifica se a MetaMask está instalada
-    if (typeof window.ethereum === 'undefined') {
-      console.log('MetaMask não está instalada.');
-      setShowInstallMetaMaskModal(true); // Mostra o modal de instalação
-      return; // Para a execução da função aqui
+    setLastError(null);
+
+    // Detect provider preferido (gera provider correto mesmo com multiplas wallets)
+    const preferredProvider = detectPreferredEthereumProvider();
+
+    if (!preferredProvider) {
+      console.warn('Nenhum provider Ethereum compatível detectado.');
+      setShowInstallMetaMaskModal(true);
+      return;
     }
 
-    // 2. Se estiver instalada, prossegue com a lógica de login
-    if (!signIn) return;
-    
+    // Requisitos: signIn.authenticateWithMetamask precisa existir
+    if (!signIn || typeof signIn.authenticateWithMetamask !== 'function') {
+      console.error('Clerk signIn.authenticateWithMetamask não disponível.');
+      setLastError('Authentication subsystem is not ready. Please try again later.');
+      return;
+    }
+
     setIsLoading(true);
+
+    // Algumas libs checam window.ethereum global — para garantir que a lib use o provider correto,
+    // fazemos um swap temporário. Salvamos o original e restauramos no finally.
+    const originalWindowEthereum = window.ethereum;
     try {
-      const signInAttempt = await signIn.authenticateWithMetamask();
-      
-      if (signInAttempt.status === 'complete') {
-        await setActive({ session: signInAttempt.createdSessionId });
-      }
-    } catch (error) {
-      console.error('Erro na autenticação:', error);
-      // Tentativa de cadastro caso o usuário não exista
-      try {
-        const signUpAttempt = await signUp.authenticateWithMetamask();
-        if (signUpAttempt.status === 'complete') {
-          await setActive({ session: signUpAttempt.createdSessionId });
+      // colocar provider escolhido em window.ethereum temporariamente
+      window.ethereum = preferredProvider;
+
+      // solicitar accounts ao provider explicitamente: boa prática e força popup de permissão
+      if (typeof preferredProvider.request === 'function') {
+        try {
+          await preferredProvider.request({ method: 'eth_requestAccounts' });
+        } catch (reqErr) {
+          // Usuário pode recusar; capture e exiba
+          console.error('Usuário recusou permissão eth_requestAccounts ou request falhou:', reqErr);
+          setLastError('Wallet permission was not granted.');
+          return;
         }
-      } catch (signUpError) {
-        console.error('Erro no cadastro com MetaMask:', signUpError);
+      }
+
+      // Agora chamar Clerk usando Metamask. Se falhar por usuário não existir, tentar signup.
+      try {
+        const signInAttempt = await signIn.authenticateWithMetamask();
+        if (signInAttempt && signInAttempt.status === 'complete') {
+          // setActive pode não existir dependendo do hook: checar
+          if (typeof setActive === 'function') {
+            await setActive({ session: signInAttempt.createdSessionId });
+          }
+          return; // sucesso
+        }
+
+        // se Clerk retornou outro status, exibir para debug
+        console.warn('signIn.authenticateWithMetamask result:', signInAttempt);
+      } catch (signinError) {
+        // Possível caso: usuário não existe (Unprocessable Content), ou erro de fluxo
+        console.error('Erro durante signIn.authenticateWithMetamask:', signinError);
+
+        // tentar signup apenas se signUp.authenticateWithMetamask existir
+        if (signUp && typeof signUp.authenticateWithMetamask === 'function') {
+          try {
+            const signUpAttempt = await signUp.authenticateWithMetamask();
+            if (signUpAttempt && signUpAttempt.status === 'complete') {
+              if (typeof setActive === 'function') {
+                await setActive({ session: signUpAttempt.createdSessionId });
+              }
+              return;
+            }
+            console.warn('signUp.authenticateWithMetamask result:', signUpAttempt);
+          } catch (signupErr) {
+            console.error('Erro no cadastro com MetaMask:', signupErr);
+            setLastError('Failed to register using the wallet.');
+          }
+        } else {
+          setLastError('Sign-in failed and signup flow is not available.');
+        }
       }
     } finally {
+      // restaurar provider original
+      try {
+        window.ethereum = originalWindowEthereum;
+      } catch (restoreErr) {
+        // Em alguns ambientes (sandbox), reassignment pode falhar; registrar apenas
+        console.warn('Could not restore original window.ethereum:', restoreErr);
+      }
       setIsLoading(false);
     }
   };
@@ -125,11 +215,9 @@ function LoginModal() {
     <>
       <div
         className="
-          absolute z-20 top-60
-          w-[90%] max-w-sm sm:max-w-md
+          absolute z-20 top-60 w-[90%] max-w-sm sm:max-w-md
           bg-[#26272B] text-white p-8 flex flex-col items-center rounded-3xl
-          shadow-neutral-950 shadow-lg select-none
-          mx-auto
+          shadow-neutral-950 shadow-lg select-none mx-auto
           md:absolute md:top-[45%] md:-translate-y-1/2 md:left-[5%] md:translate-x-[30%]
           md:w-[380px] lg:w-[400px]
         "
@@ -150,7 +238,7 @@ function LoginModal() {
           <Separator />
 
           <div className="w-full flex flex-col items-center gap-4">
-            <button 
+            <button
               onClick={handleMetaMaskSignIn}
               disabled={isLoading}
               className="w-full h-12 bg-white text-black rounded-xl hover:bg-[#E3E3E4] transition-all active:scale-95 duration-200 flex items-center justify-center gap-3 text-[0.92em] tracking-tight cursor-pointer disabled:opacity-50"
@@ -158,20 +246,20 @@ function LoginModal() {
               <img src={MetaMaskIcon} className="w-6 h-6" alt="MetaMask Icon" />
               <span>{isLoading ? 'Conecting...' : 'Continue with MetaMask'}</span>
             </button>
-            
+
+            {lastError && (
+              <div className="text-xs text-red-400 text-center max-w-[18rem] pt-2">
+                {lastError}
+              </div>
+            )}
+
             <div className="text-xs text-gray-500 text-center max-w-[18rem] pt-2">
               By continuing, you agree with the{" "}
-              <a
-                href="#"
-                className="font-medium text-gray-400 hover:text-white transition-colors"
-              >
+              <a href="#" className="font-medium text-gray-400 hover:text-white transition-colors">
                 Terms
               </a>{" "}
               and{" "}
-              <a
-                href="#"
-                className="font-medium text-gray-400 hover:text-white transition-colors"
-              >
+              <a href="#" className="font-medium text-gray-400 hover:text-white transition-colors">
                 Privacy Policy
               </a>
             </div>
@@ -179,22 +267,21 @@ function LoginModal() {
         </div>
       </div>
 
-      {/* NOVO: Renderiza o modal condicionalmente */}
-      <InstallMetaMaskModal 
-        isOpen={showInstallMetaMaskModal} 
-        onClose={() => setShowInstallMetaMaskModal(false)} 
+      <InstallMetaMaskModal
+        isOpen={showInstallMetaMaskModal}
+        onClose={() => setShowInstallMetaMaskModal(false)}
       />
     </>
   );
 }
 
+// ----- Imagem de fundo -----
 function ImageBg() {
   return (
     <div
       className="
         absolute lg:top-20 lg:right-60 w-full h-[40vh] sm:h-[50vh]
-        md:h-[600px] md:w-[60%] 
-        lg:h-[650px] lg:w-[60%]
+        md:h-[600px] md:w-[60%] lg:h-[650px] lg:w-[60%]
         flex items-center justify-center overflow-hidden
         rounded-none md:rounded-[2rem] lg:rounded-[2rem]
       "
@@ -208,6 +295,7 @@ function ImageBg() {
   );
 }
 
+// ----- Footer -----
 function Footer() {
   return (
     <footer className="w-full py-8 flex flex-col items-center justify-center gap-4 bg-[#18181B] select-none">
@@ -220,28 +308,33 @@ function Footer() {
         </a>
       </div>
       <a href="https://lumitylabs.com/" className="text-xs text-[#818182] hover:text-white transition-colors" target="_blank" rel="noopener noreferrer">
-      <img src={LumityFooter} alt="Powered by Lumity" />
+        <img src={LumityFooter} alt="Powered by Lumity" />
       </a>
     </footer>
   );
 }
 
+// ----- Componente principal de Login (com SimpleBar) -----
 function Login() {
   return (
     <SimpleBar style={{ maxHeight: '100vh' }} className="login-page-scrollbar">
       <div className="bg-[#18181B] font-inter text-white overflow-hidden">
         <Navbar />
-
         <main
           className="
-          relative min-h-screen flex flex-col justify-start items-center
-          md:flex-row md:justify-center md:items-center
-          md:overflow-visible pb-16 md:pb-0
-        "
+            relative min-h-screen flex flex-col justify-start items-center
+            md:flex-row md:justify-center md:items-center
+            md:overflow-visible pb-16 md:pb-0
+          "
         >
           <ImageBg />
           <LoginModal />
         </main>
+
+        {/* Elemento necessário pelo Clerk para inicializar Smart CAPTCHA widget.
+            O log "Cannot initialize Smart CAPTCHA widget because the clerk-captcha DOM element was not found"
+            desaparece se esse elemento existir quando Clerk tentar inicializar. */}
+        <div id="clerk-captcha" style={{ display: 'none' }} />
 
         <Footer />
       </div>
