@@ -292,8 +292,8 @@ class CortensorModel {
     const { taskId } = await this.submitTask(sessionId, promptObj);
 
     let attempts = 0;
-    const maxAttempts = 24;
-    const pollInterval = 10000;
+    const maxAttempts = 20;
+    const pollInterval = 5000;
 
     while (attempts < maxAttempts) {
       const attemptNumber = attempts + 1;

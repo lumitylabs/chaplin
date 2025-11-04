@@ -165,7 +165,7 @@ export async function generateText(
     .filter(Boolean);
 
   if (!modelsToTry || modelsToTry.length === 0) {
-    throw new Error("Nenhuma instância de modelo disponível para a prioridade selecionada.");
+    throw new Error("No model instances available for the selected priority.");
   }
 
   const errors = [];
@@ -184,7 +184,7 @@ export async function generateText(
   }
 
   const agg = errors.map((e) => `${e.model}: ${e.reason}`).join(" | ");
-  throw new Error(`Todos os modelos falharam. Detalhes: ${agg}`);
+  throw new Error(`Unable to get a response from the model. Try Again. Error: ${agg}`);
 }
 
 /**
@@ -228,15 +228,15 @@ export async function generateTextAndParseJson(
         return { parsedJson: parsed, rawText: lastRawText };
       } else {
         throw new Error(
-          `O conteúdo analisado não tem o formato esperado ('${expectedShape}').`
+          `The analyzed content does not have the expected format ('${expectedShape}').`
         );
       }
     } catch (error) {
       lastError = error;
-      console.warn(`Tentativa ${attempt} falhou: ${error.message}`);
+      console.warn(`Attempt ${attempt} failed: ${error.message}`);
     }
   }
   throw new Error(
-    `LLM falhou em produzir um JSON válido após ${maxAttempts} tentativas. Último erro: ${lastError.message}`
+    `LLM failed to produce a valid JSON after ${maxAttempts} attempts. Last error: ${lastError.message}`
   );
 }
