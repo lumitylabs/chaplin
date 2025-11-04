@@ -1,6 +1,6 @@
-[![N|Solid](https://i.imgur.com/ESdUHmB.png)](https://chaplin.lumitylabs.com)
-# Chaplin
-###### _Unleashing the future of AI together - Cortensor Hackathon, 2025_  
+[![N|Solid](https://i.imgur.com/ESdUHmB.png)](https://chaplin.lumitylabs.com)  
+# Chaplin [![Status: Active](https://img.shields.io/badge/status-active-success.svg)](https://github.com/lumitylabs/chaplin/blob/main/STATUS.md) [![Version 1.0.0](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/lumitylabs/chaplin/releases/tag/1.0.0)
+###### _Unleashing the future of AI together - Cortensor Hackathon, 2025_
 ### The Specialist Agent Factory | [Try Chaplin Live](https://chaplin.lumitylabs.com/)
 "Transform any task into an AI-powered solution. Simply describe what you need, and Chaplin creates and deploys a team of specialist agents that collaborate to accomplish the task. You get a ready-to-use Chaplin that you can share or integrate into your projects."
 
@@ -28,7 +28,7 @@ AI model responses are significantly improved when provided with relevant contex
 Chaplin is an AI agent orchestrator that allows you to create and manage specialized teams to solve complex tasks. Each agent acts as an expert in its field, processing information sequentially until the final answer is generated. With a flexible architecture, Chaplins are easy to share, test, and integrate into your projects, making them ideal for a wide range of applications.
 
 ## 🎥 Demo
-[![Video Demo](https://i.imgur.com/zF0PInT.png)](https://www.youtube.com/watch?v=gflTpuVK_80)
+[![Video Demo](https://i.imgur.com/zF0PInT.png)](https://www.youtube.com/watch?v=NiQcVNkmDac)
 
 ## 🔌 API Integration
 ### **How to Integrate with the Chaplin API**  
@@ -153,6 +153,8 @@ npm run dev
 ## 🤝 How to Contribute
 - __Integrate Chaplin__ with other systems, tools, or applications
 - __Create New Chaplins__ for the community - [**click here**](https://chaplin.lumitylabs.com/create)
+- __Check our Roadmap__ - [**click here**](https://github.com/lumitylabs/chaplin/blob/main/STATUS.md)
+
 
 ## 🐞 Report Bug and Errors  
 Found a bug or encountered an error? We'd love to help! Here’s how you can get support:

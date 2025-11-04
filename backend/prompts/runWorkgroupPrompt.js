@@ -63,7 +63,7 @@ into a single JSON object that strictly follows the response format specificatio
 - Produce a single JSON object that exactly matches the keys in the response format.
 - Also include a top-level key "final_message" containing a human-readable concise answer for the user.
 - Values should be strings or arrays as appropriate; keep them concise and ready-to-use.
-- RETURN ONLY THE JSON OBJECT (no explanation, no surrounding text, no code fences). \n assistant:`;
+- RETURN ONLY THE JSON OBJECT (no explanation, no surrounding text, no code fences). \n json response:`;
 
   return header + outputsBlock + task;
 }
