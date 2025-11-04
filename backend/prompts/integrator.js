@@ -57,6 +57,5 @@ ${rfPretty}
 3.  **Output Purity:** Your entire response MUST be ONLY the single, valid JSON object. Do not include any introductory text, explanations, or markdown code fences (\`\`\`) around the final output.
 4.  **Validity is Paramount:** Ensure the JSON is syntactically perfect (correct quotes, no trailing commas).
 
-assistant:
-`;
+json response:`;
 }
