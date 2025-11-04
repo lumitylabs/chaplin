@@ -77,21 +77,38 @@ function initModelInstances() {
 
 
 async function tryParseLlmJson(llmText, expectedShape = "array") {
-  // 1) quick native parse
-  try {
-    return JSON.parse(llmText);
-  } catch (e) {
-    /* continue */
+  let processedText = llmText;
+
+  // 1) Novo passo: Remover o '</think>' e tudo que vem antes.
+  const thinkTagIndex = processedText.lastIndexOf("</think>");
+  if (thinkTagIndex !== -1) {
+    processedText = processedText.substring(thinkTagIndex + "</think>".length);
   }
 
-  // 2) try extract outermost JSON block
-  const open = expectedShape === "array" ? "[" : "{";
-  const close = expectedShape === "array" ? "]" : "}";
-  const first = llmText.indexOf(open);
-  const last = llmText.lastIndexOf(close);
-  let candidate = llmText;
-  if (first !== -1 && last > first) candidate = llmText.slice(first, last + 1);
+  // 2) Tentar um parse nativo rápido no texto já pré-processado.
+  try {
+    return JSON.parse(processedText.trim());
+  } catch (e) {
+    /* falha esperada, continuar para métodos mais robustos */
+  }
 
+  // 3) Extrair o bloco JSON mais externo de forma mais inteligente.
+  const openChar = expectedShape === "array" ? "[" : "{";
+  const closeChar = expectedShape === "array" ? "]" : "}";
+  
+  const firstOpenIndex = processedText.indexOf(openChar);
+  const lastCloseIndex = processedText.lastIndexOf(closeChar);
+
+  let candidate = processedText;
+  if (firstOpenIndex !== -1 && lastCloseIndex > firstOpenIndex) {
+    candidate = processedText.slice(firstOpenIndex, lastCloseIndex + 1);
+  } else {
+    // Se não encontrar um bloco válido, pode ser um erro.
+    // Mas vamos deixar as próximas tentativas lidarem com isso.
+    candidate = processedText;
+  }
+
+  // 4) Tentar reparar com jsonrepair
   try {
     const repaired = jsonrepair(candidate);
     return JSON.parse(repaired);
@@ -99,13 +116,14 @@ async function tryParseLlmJson(llmText, expectedShape = "array") {
     console.debug("jsonrepair failed:", eJsonRepair.message);
   }
 
-
+  // 5) Tentar parse com JSON5
   try {
     return JSON5.parse(candidate);
   } catch (eJson5) {
     console.debug("JSON5.parse failed:", eJson5.message);
   }
-
+  
+  // 6) Última tentativa com sanitização (como no seu código original)
   const sanitized = candidate
     .replace(/```json[\s\S]*?```/g, "") 
     .replace(/[\u2018\u2019]/g, "'") 
@@ -115,7 +133,6 @@ async function tryParseLlmJson(llmText, expectedShape = "array") {
   try {
     return JSON.parse(sanitized);
   } catch (eFinal) {
-
     const err = new Error("All JSON parse attempts failed");
     err.cause = {
       originalError: eFinal.message,

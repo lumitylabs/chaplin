@@ -217,7 +217,7 @@ class CortensorModel {
     const taskData = JSON.stringify({ data: promptText.prompt });
 
     // example llm params array - keep as before
-    const llmParams = [1024, 35, 90, 40, 60, 20, 0];
+    const llmParams = [2048, 35, 90, 40, 60, 20, 0];
 
     console.log(`[CortensorModel] Submitting task for session ${sessionId}...`);
 
@@ -228,7 +228,7 @@ class CortensorModel {
       1, // promptType
       "", // promptTemplate
       llmParams,
-      [180, 0, 0, 0, 0, 0],
+      [240, 0, 0, 0, 0, 0],
       "my-client-side-reference"
     );
 
@@ -292,7 +292,7 @@ class CortensorModel {
     const { taskId } = await this.submitTask(sessionId, promptObj);
 
     let attempts = 0;
-    const maxAttempts = 20;
+    const maxAttempts = 36;
     const pollInterval = 10000;
 
     while (attempts < maxAttempts) {
