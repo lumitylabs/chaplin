@@ -209,3 +209,26 @@ export const runAgent = async ({ input, workgroup, workgroupresponse, targetAgen
     return { data: null, error: error.message };
   }
 };
+
+export const retryChaplinJob = async (jobId) => {
+  if (!API_BASE_URL) {
+    const errorMessage = "VITE_APP_API_BASE_URL is not defined.";
+    console.error(errorMessage);
+    return { data: null, error: errorMessage };
+  }
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/retry-job`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ jobId }),
+    });
+
+    const data = await handleResponse(response);
+    return { data, error: null };
+
+  } catch (error) {
+    console.error("Failed to retry job in service:", error);
+    return { data: null, error: error.message };
+  }
+};

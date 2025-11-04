@@ -13,7 +13,6 @@ const receiver = new Receiver({
   nextSigningKey: process.env.QSTASH_NEXT_SIGNING_KEY,
 });
 
-// A função de execução agora é o próprio handler
 async function handler(req, res) {
   let jobId = "unknown";
   let jobKey = `job:${jobId}`;
@@ -54,8 +53,7 @@ async function handler(req, res) {
 
     await redis.json.set(jobKey, "$.status", '"running"');
     
-    // <<< INÍCIO DA CORREÇÃO >>>
-    // 1. Criar a função de callback que escreve o progresso no Redis.
+
     const onProgressCallback = async (progressChunk) => {
         if (progressChunk) {
             try {
@@ -66,7 +64,6 @@ async function handler(req, res) {
         }
     };
 
-    // 2. Passar o callback para o executeWorkgroupStream através das opções.
     const stream = executeWorkgroupStream({
         input: jobData.input,
         description: jobData.chaplinData.description,
@@ -75,14 +72,14 @@ async function handler(req, res) {
         responseformat: jobData.chaplinData.responseformat,
         options: { 
             executorJobId: jobId,
-            onProgress: onProgressCallback // Passando o callback aqui
+            onProgress: onProgressCallback,
+            existingProgress: jobData.progress || [] 
         },
     });
-    // <<< FIM DA CORREÇÃO >>>
+
 
     for await (const chunk of stream) {
-        // O callback já está lidando com os chunks de 'agent_attempt'.
-        // Este loop agora lida com os chunks principais ('agent_start', 'agent_result', etc.).
+
         await redis.json.arrappend(jobKey, "$.progress", chunk);
     }
 

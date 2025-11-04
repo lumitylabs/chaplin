@@ -5,7 +5,7 @@ import SimpleBar from "simplebar-react";
 import "simplebar-react/dist/simplebar.min.css";
 import Avatar from "../../../assets/avatar.png";
 import ChaplinImage from "../../../assets/persona.png";
-import { startChaplinStream } from "../../../services/apiService";
+import { retryChaplinJob, startChaplinStream } from "../../../services/apiService";
 
 // Funções auxiliares para obter um ID de sessão do cliente
 function getClientSessionId() {
@@ -19,11 +19,18 @@ function getClientSessionId() {
 
 // Sub-componente para renderizar a tabela de resultados
 function ResultsTable({ data }) {
+  // Se 'data' não for um objeto, consideramos um erro ou um texto simples.
   if (!data || typeof data !== "object") {
     const errorMessage = data?.error || data?.raw || "An unknown error occurred.";
-    return <div className="text-sm text-red-400 p-3 bg-[#1B1B1B] rounded-xl">{String(errorMessage)}</div>;
+    // A correção está nesta linha: adicionamos as classes para quebra de linha.
+    return (
+      <div className="text-sm text-red-400 p-3 bg-[#1B1B1B] rounded-xl whitespace-pre-wrap break-words max-w-[200px]">
+        {String(errorMessage)}
+      </div>
+    );
   }
 
+  // Se 'data' for um objeto, renderiza a tabela.
   return (
     <div className="table w-full max-w-lg rounded-xl overflow-hidden border border-[#303135]">
       {Object.entries(data).map(([key, value], index) => {
@@ -37,7 +44,8 @@ function ResultsTable({ data }) {
               <p className="font-mono text-center text-xs px-2 py-1 bg-[#363636] rounded-full">{key}</p>
             </div>
             <div className="table-cell p-3 pl-4 border-l border-l-[#353535] align-middle">
-              <p className="text-sm text-[#C1C1C2] whitespace-pre-wrap">{displayValue}</p>
+              {/* Esta parte já estava correta */}
+              <p className="text-sm text-[#C1C1C2] whitespace-pre-wrap break-words max-w-[400px]">{displayValue}</p>
             </div>
           </div>
         );
@@ -46,8 +54,9 @@ function ResultsTable({ data }) {
   );
 }
 
-function ChaplinMessage({ persona, message }) {
+function ChaplinMessage({ persona, message, onRetry }) {
   const personaImage = persona.image_url || ChaplinImage;
+  const hasError = message.content?.Error || message.content?.error;
 
   return (
     <div className="flex justify-start items-start gap-3">
@@ -57,7 +66,18 @@ function ChaplinMessage({ persona, message }) {
         {message.status === 'processing' ? (
           <div className="text-sm text-[#9e9e9e] italic animate-pulse">{message.statusText}</div>
         ) : (
-          <ResultsTable data={message.content} />
+          <>
+            <ResultsTable data={message.content} />
+            {/* <<< BOTÃO DE RETRY >>> */}
+            {hasError && (
+              <button
+                onClick={onRetry}
+                className="mt-3 px-3 py-1.5 text-xs font-semibold text-white bg-[#4A4D54] hover:bg-[#5A5D64] rounded-lg transition-colors cursor-pointer"
+              >
+                Try Again
+              </button>
+            )}
+          </>
         )}
       </div>
     </div>
@@ -208,6 +228,35 @@ export default function TryModal({ chaplin, onClose, onSaveResults }) {
     }));
   }
 
+  const handleRetry = async () => {
+    if (!currentJobId || isProcessing) return;
+
+    console.log(`[TryModal] Tentando novamente o job: ${currentJobId}`);
+    setIsProcessing(true);
+
+    // Resetar a mensagem de erro do Chaplin na UI
+    setMessages(prev => prev.map(m => {
+      if (m.id === currentChaplinMessageIdRef.current) {
+        return { ...m, status: 'processing', statusText: 'Reconectando para tentar novamente...', content: null };
+      }
+      return m;
+    }));
+    
+    // 1. Chamar a API para "ressuscitar" o job no backend
+    const { error } = await retryChaplinJob(currentJobId);
+    if (error) {
+      console.error("Falha ao tentar novamente o job:", error);
+      // Atualizar UI com erro de retry
+      applyChunkToMessage({ type: 'error', data: { message: `Falha ao iniciar a tentativa: ${error}` } }, currentChaplinMessageIdRef.current);
+      setIsProcessing(false);
+      return;
+    }
+
+    // 2. Reanexar à stream para obter os novos resultados
+    processedChunkIdsRef.current.clear(); // Limpar chunks processados
+    startStreamWithPayload({ jobId: currentJobId });
+  };
+
   // Handler para o envio de uma nova mensagem
   const handleSendMessage = () => {
     if (!userInput.trim() || isProcessing) return;
@@ -296,7 +345,13 @@ export default function TryModal({ chaplin, onClose, onSaveResults }) {
                   <img src={Avatar} alt="user" className="w-10 h-10 rounded-full" />
                 </div>
               ) : (
-                <ChaplinMessage key={msg.id} persona={displayPersona} message={msg} />
+                <ChaplinMessage
+                  key={msg.id}
+                  persona={displayPersona}
+                  message={msg}
+                  // <<< MUDANÇA: Passar o handler de retry >>>
+                  onRetry={handleRetry}
+                />
               ))}
             </div>
           </SimpleBar>

@@ -28,5 +28,7 @@ Agent Description: ${description}
 
 ---
 Now, generate the image prompt.
+
+image prompt:
 `;
 }

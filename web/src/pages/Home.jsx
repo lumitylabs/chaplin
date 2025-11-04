@@ -302,7 +302,13 @@ function Home() {
 
   return (
     <SimpleBar style={{ maxHeight: '100vh' }} className="login-page-scrollbar">
-      <div className="bg-[#18181B] min-h-screen font-inter text-white">
+      <div className="bg-[#18181B] min-h-screen font-inter text-white" style={{
+      transform: 'translateZ(0)',
+      WebkitTransform: 'translateZ(0)',
+      backfaceVisibility: 'hidden',
+      WebkitBackfaceVisibility: 'hidden',
+      willChange: 'transform, opacity'
+    }}>
         <PersonaNavbar isOpen={isNavbarOpen} setIsOpen={setIsNavbarOpen} viewMode={viewMode} setViewMode={setViewMode} handleMobileNavClick={handleMobileNavClick} />
 
         <button
